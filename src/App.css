@@ -17,6 +17,9 @@
   --success-color: #10b981;
   --warning-color: #f59e0b;
   --error-color: #ef4444;
+  --success-hover: #059669;
+  --bg-quaternary: #f3f4f6;
+  --bg-hover: #e5e7eb;
   --code-bg: #f8f9fa;
   --code-border: #e5e7eb;
 }
@@ -39,7 +42,10 @@
   --success-color: #48bb78;
   --warning-color: #ed8936;
   --error-color: #f56565;
-  --code-bg: #2d3748;
+  --success-hover: #38a169;
+  --bg-quaternary: #2d3748;
+  --bg-hover: #4a5568;
+  --code-bg: #1a202c;
   --code-border: #4a5568;
 }
 

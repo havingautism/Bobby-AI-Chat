@@ -22,7 +22,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #e5e7eb;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
 }
@@ -33,18 +33,18 @@
 
 .language-name {
   text-transform: capitalize;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .copy-button {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #374151;
-  border: 1px solid #4b5563;
+  background: var(--bg-quaternary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 6px 12px;
-  color: #e5e7eb;
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -52,25 +52,25 @@
 }
 
 .copy-button:hover {
-  background: #4b5563;
-  border-color: #6b7280;
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .copy-button.copied {
-  background: #10b981;
-  border-color: #059669;
+  background: var(--success-color);
+  border-color: var(--success-color);
   color: #ffffff;
 }
 
 .copy-button.copied:hover {
-  background: #059669;
+  background: var(--success-hover);
 }
 
 .code-content {
   overflow-x: auto;
-  background: #1e1e1e;
+  background: var(--code-bg);
 }
 
 .code-content pre {
