@@ -1,0 +1,352 @@
+.message-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-content {
+  max-width: 800px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.api-warning {
+  background-color: var(--warning-color);
+  border: 1px solid var(--warning-color);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 32px;
+  text-align: center;
+  color: var(--bg-primary);
+  width: 100%;
+  max-width: 400px;
+}
+
+.warning-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.api-warning p {
+  margin: 8px 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.config-button {
+  background-color: var(--bg-primary);
+  color: var(--warning-color);
+  border: 1px solid var(--bg-primary);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.config-button:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.welcome-message {
+  text-align: center;
+}
+
+.bobby-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.bobby-face {
+  font-size: 48px;
+  animation: catBlink 3s ease-in-out infinite;
+}
+
+.bobby-welcome h1 {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin: 0;
+  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.bobby-welcome p {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin: 0;
+  opacity: 0.9;
+}
+
+.cat-paws {
+  font-size: 20px;
+  animation: pawsWave 2s ease-in-out infinite;
+}
+
+@keyframes catBlink {
+  0%, 90%, 100% { opacity: 1; }
+  95% { opacity: 0.3; }
+}
+
+@keyframes pawsWave {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+.message {
+  width: 100%;
+  padding: 24px 0;
+  transition: background-color 0.3s ease;
+}
+
+.message-container {
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.message-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.user-avatar {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: 2px solid var(--accent-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.bobby-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: 2px solid var(--accent-color);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.bobby-avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.bobby-logo {
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.bobby-avatar:hover .bobby-logo {
+  transform: rotate(10deg);
+}
+
+.assistant-avatar {
+  background: linear-gradient(135deg, var(--accent-color) 0%, #6366f1 100%);
+  color: #ffffff;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.assistant-avatar svg {
+  width: 16px;
+  height: 16px;
+}
+
+.message-content {
+  flex: 1;
+  line-height: 1.75;
+  color: var(--text-primary);
+  font-size: 16px;
+  word-wrap: break-word;
+}
+
+.message-content.error {
+  color: var(--error-color);
+}
+
+.message-content pre {
+  background-color: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  margin: 16px 0;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.message-content code {
+  background-color: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.message-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4,
+.message-content h5,
+.message-content h6 {
+  margin: 24px 0 16px 0;
+  font-weight: 600;
+}
+
+.message-content h1 {
+  font-size: 24px;
+}
+
+.message-content h2 {
+  font-size: 20px;
+}
+
+.message-content h3 {
+  font-size: 18px;
+}
+
+.message-content p {
+  margin: 16px 0;
+}
+
+.message-content ul,
+.message-content ol {
+  margin: 16px 0;
+  padding-left: 24px;
+}
+
+.message-content li {
+  margin: 8px 0;
+}
+
+.message-content blockquote {
+  border-left: 4px solid var(--accent-color);
+  padding-left: 16px;
+  margin: 16px 0;
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+}
+
+@media (max-width: 768px) {
+  .empty-state {
+    padding: 24px 16px;
+  }
+  
+  .empty-state h2 {
+    font-size: 24px;
+    margin-bottom: 32px;
+  }
+  
+  .example-prompts {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .message-container {
+    padding: 0 16px;
+    gap: 16px;
+  }
+  
+  .message-avatar {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .user-avatar,
+  .assistant-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+  
+  .assistant-avatar svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .message-content {
+    font-size: 14px;
+  }
+}
+/* 角
+色头像样式 */
+.role-avatar-large {
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.role-avatar-large:hover {
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 内联代码样式 */
+.message-content .inline-code {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}

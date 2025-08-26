@@ -1,0 +1,160 @@
+.message-input-container {
+  padding: 32px 24px 24px;
+  background: var(--bg-secondary);
+}
+
+.message-input-form {
+  max-width: 768px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.input-wrapper-clean {
+  display: flex;
+  align-items: flex-end;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-md);
+  gap: 12px;
+}
+
+.input-wrapper-clean:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.3), var(--shadow-lg);
+}
+
+.message-textarea-clean {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.5;
+  resize: none;
+  font-family: inherit;
+  padding: 12px 0;
+  box-shadow: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+.message-textarea-clean:focus,
+.message-textarea-clean:focus-visible,
+.message-textarea-clean:active {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+.message-textarea-clean::placeholder {
+  color: var(--text-tertiary);
+}
+
+.message-textarea-clean:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.send-button {
+  background: var(--accent-color);
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.send-button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.send-button:disabled {
+  background: var(--bg-tertiary);
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.send-button:disabled svg {
+  color: var(--text-tertiary);
+  transform: none;
+}
+
+.input-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 12px;
+  font-weight: 400;
+}
+
+/* 自定义滚动条 */
+.message-textarea-clean::-webkit-scrollbar {
+  width: 4px;
+}
+
+.message-textarea-clean::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message-textarea-clean::-webkit-scrollbar-thumb {
+  background-color: var(--border-hover);
+  border-radius: 2px;
+}
+
+.message-textarea-clean::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-tertiary);
+}
+
+/* 发送按钮图标样式 */
+.send-button svg {
+  transition: transform 0.2s ease;
+}
+
+.send-button:hover:not(:disabled) svg {
+  transform: translateX(2px);
+}
+
+@media (max-width: 768px) {
+  .message-input-container {
+    padding: 24px 16px 16px;
+  }
+  
+  .input-wrapper-clean {
+    padding: 10px 14px;
+  }
+  
+  .message-textarea-clean {
+    font-size: 16px; /* 防止iOS缩放 */
+  }
+  
+  .send-button {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .send-button svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .input-hint {
+    font-size: 11px;
+    margin-top: 8px;
+  }
+}

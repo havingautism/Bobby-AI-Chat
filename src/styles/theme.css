@@ -1,0 +1,221 @@
+/* 全局主题样式 */
+
+/* 基础元素主题化 */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* 输入框主题 */
+input, textarea {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+/* 按钮主题 */
+button {
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+/* 滚动条主题 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--border-hover);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-tertiary);
+}
+
+/* 代码块主题 */
+.code-block {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 16px 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.code-header {
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--code-border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.code-language {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.copy-button {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.copy-button.copied {
+  background: var(--success-color);
+  border-color: var(--success-color);
+  color: white;
+}
+
+/* 消息列表主题 */
+.message {
+  color: var(--text-primary);
+}
+
+.message.assistant {
+  background: var(--bg-primary);
+}
+
+.message.user {
+  background: var(--bg-secondary);
+}
+
+/* 欢迎界面主题 */
+.welcome-screen {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* 设置界面主题 */
+.settings-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.settings-modal {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 动画和过渡效果 */
+@media (prefers-reduced-motion: no-preference) {
+  .theme-toggle-btn svg {
+    transition: transform 0.3s ease;
+  }
+  
+  .theme-toggle-btn:hover svg {
+    transform: rotate(15deg);
+  }
+}
+
+/* 暗色模式特殊处理 */
+[data-theme="dark"] {
+  /* 确保某些元素在暗色模式下有足够的对比度 */
+}
+
+[data-theme="dark"] .sidebar-overlay {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="dark"] .search-highlight {
+  background-color: var(--warning-color);
+  color: var(--bg-primary);
+}
+
+/* 暗色模式下的特殊样式 */
+[data-theme="dark"] .message.user {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .message.assistant {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .message.assistant.loading {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .welcome-screen {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .new-chat-btn {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .new-chat-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+}
+
+[data-theme="dark"] .search-input {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .role-filter-trigger {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .role-filter-dropdown {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .role-filter-option:hover {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .conversation-item:hover {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .conversation-item.active {
+  background: var(--bg-tertiary);
+  border-left-color: var(--accent-color);
+}

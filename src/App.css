@@ -1,0 +1,105 @@
+/* CSS变量定义 */
+:root {
+  /* 明亮模式 */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f1f3f4;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --border-color: #e5e7eb;
+  --border-hover: #d1d5db;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --accent-color: #3b82f6;
+  --accent-hover: #2563eb;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --code-bg: #f8f9fa;
+  --code-border: #e5e7eb;
+}
+
+/* 暗夜模式 */
+[data-theme="dark"] {
+  --bg-primary: #2d3748;
+  --bg-secondary: #1a202c;
+  --bg-tertiary: #4a5568;
+  --text-primary: #f7fafc;
+  --text-secondary: #e2e8f0;
+  --text-tertiary: #a0aec0;
+  --border-color: #4a5568;
+  --border-hover: #718096;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  --accent-color: #63b3ed;
+  --accent-hover: #4299e1;
+  --success-color: #48bb78;
+  --warning-color: #ed8936;
+  --error-color: #f56565;
+  --code-bg: #2d3748;
+  --code-border: #4a5568;
+}
+
+.app {
+  display: flex;
+  height: 100vh;
+  background: var(--bg-secondary);
+  position: relative;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .main-content.sidebar-open {
+    margin-left: 0;
+  }
+}
+
+@media (min-width: 769px) {
+  .main-content.sidebar-collapsed {
+    margin-left: 60px;
+  }
+}
+
+/* 全局输入框重置 - 强制移除所有浏览器默认样式 */
+* {
+  outline: none !important;
+}
+
+textarea,
+textarea:focus,
+textarea:focus-visible,
+textarea:active,
+textarea:hover,
+input,
+input:focus,
+input:focus-visible,
+input:active,
+input:hover {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+/* 特别针对可能的浏览器默认聚焦样式 */
+*:focus,
+*:focus-visible,
+*:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
