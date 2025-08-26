@@ -350,3 +350,111 @@
   color: var(--text-primary);
   font-weight: 500;
 }
+
+/* 错误消息重试功能 */
+.error-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.retry-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--error-color);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.retry-button:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.retry-button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.retry-button svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+/* 错误消息样式增强 */
+.message.error {
+  background: rgba(239, 68, 68, 0.05);
+  border-left: 4px solid var(--error-color);
+}
+
+.message.error .message-content {
+  color: var(--error-color);
+}
+
+/* 暗色模式下的错误样式 */
+[data-theme="dark"] .message.error {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+[data-theme="dark"] .retry-button {
+  background: #dc2626;
+}
+
+[data-theme="dark"] .retry-button:hover {
+  background: #b91c1c;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .error-actions {
+    margin-top: 12px;
+  }
+  
+  .retry-button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .retry-button svg {
+    width: 14px;
+    height: 14px;
+  }
+}/* 
+推理模型标识 */
+.reasoning-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--accent-color);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.reasoning-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* 暗色模式下的推理标识 */
+[data-theme="dark"] .reasoning-badge {
+  background: var(--accent-color);
+  color: #ffffff;
+}

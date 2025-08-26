@@ -5,7 +5,7 @@ import WelcomeScreen from "./WelcomeScreen";
 import { sendMessage, isApiConfigured } from "../utils/api";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
 import "./ChatInterface.css";
-import bobbyLogo from "../imgs/bobby_logo.png";
+//
 
 const ChatInterface = ({
   conversation,
@@ -13,9 +13,12 @@ const ChatInterface = ({
   onToggleSidebar,
   onOpenSettings,
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingConversations, setLoadingConversations] = useState(new Set());
   const [currentRole, setCurrentRole] = useState(() => loadSelectedRole());
   const messagesEndRef = useRef(null);
+
+  // 检查当前对话是否正在加载
+  const isLoading = loadingConversations.has(conversation.id);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -50,6 +53,9 @@ const ChatInterface = ({
       return;
     }
 
+    // 保存当前对话ID，防止在异步操作过程中ID发生变化
+    const currentConversationId = conversation.id;
+
     const userMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -73,23 +79,46 @@ const ChatInterface = ({
       updates.role = options.role;
     }
 
-    onUpdateConversation(conversation.id, updates);
+    onUpdateConversation(currentConversationId, updates);
 
-    setIsLoading(true);
+    await sendMessageWithRetry(updatedMessages, options, currentConversationId);
+  };
+
+  // 带重试功能的消息发送
+  const sendMessageWithRetry = async (messages, options, conversationId) => {
+    // 为特定对话设置加载状态
+    setLoadingConversations((prev) => new Set([...prev, conversationId]));
 
     try {
       // 传递角色选项到API
-      const response = await sendMessage(updatedMessages, options);
+      const response = await sendMessage(messages, options);
 
-      const assistantMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response,
-        timestamp: new Date().toISOString(),
-      };
+      // 处理响应，可能包含推理过程
+      let assistantMessage;
 
-      onUpdateConversation(conversation.id, {
-        messages: [...updatedMessages, assistantMessage],
+      if (typeof response === "object" && response.hasReasoning) {
+        // 包含推理过程的响应
+        assistantMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: response.content,
+          reasoning: response.reasoning,
+          hasReasoning: true,
+          timestamp: new Date().toISOString(),
+        };
+      } else {
+        // 普通响应
+        assistantMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: typeof response === "string" ? response : response.content,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      // 确保只更新原始对话，即使用户已经切换到其他对话
+      onUpdateConversation(conversationId, {
+        messages: [...messages, assistantMessage],
       });
     } catch (error) {
       console.error("发送消息失败:", error);
@@ -109,14 +138,44 @@ const ChatInterface = ({
         content: errorContent,
         timestamp: new Date().toISOString(),
         isError: true,
+        retryData: {
+          messages,
+          options,
+          conversationId,
+        },
       };
 
-      onUpdateConversation(conversation.id, {
-        messages: [...updatedMessages, errorMessage],
+      // 确保只更新原始对话，即使用户已经切换到其他对话
+      onUpdateConversation(conversationId, {
+        messages: [...messages, errorMessage],
       });
     } finally {
-      setIsLoading(false);
+      // 移除特定对话的加载状态
+      setLoadingConversations((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(conversationId);
+        return newSet;
+      });
     }
+  };
+
+  // 重试失败的消息
+  const handleRetryMessage = async (errorMessage) => {
+    if (!errorMessage.retryData) return;
+
+    const { messages, options, conversationId } = errorMessage.retryData;
+
+    // 移除错误消息
+    const messagesWithoutError = conversation.messages.filter(
+      (msg) => msg.id !== errorMessage.id
+    );
+
+    onUpdateConversation(conversationId, {
+      messages: messagesWithoutError,
+    });
+
+    // 重新发送消息
+    await sendMessageWithRetry(messages, options, conversationId);
   };
 
   // 如果没有消息，显示欢迎界面
@@ -156,6 +215,7 @@ const ChatInterface = ({
           messages={conversation.messages}
           onOpenSettings={onOpenSettings}
           conversationRole={conversation.role}
+          onRetryMessage={handleRetryMessage}
         />
         {isLoading && (
           <div className="message assistant loading">

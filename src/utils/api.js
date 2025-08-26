@@ -79,7 +79,23 @@ export const sendMessage = async (messages, options = {}) => {
 
     // 解析响应
     if (response.data && response.data.choices && response.data.choices[0]) {
-      return response.data.choices[0].message.content;
+      const choice = response.data.choices[0];
+      const content = choice.message.content;
+
+      // 检查是否有推理过程（reasoning）
+      const reasoning = choice.message.reasoning;
+
+      // 如果有推理过程，返回包含推理过程的对象
+      if (reasoning) {
+        return {
+          content: content,
+          reasoning: reasoning,
+          hasReasoning: true,
+        };
+      }
+
+      // 否则返回普通内容
+      return content;
     } else {
       throw new Error("API响应格式不正确");
     }
