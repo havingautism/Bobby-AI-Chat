@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { getRoleById, loadSelectedRole } from "../utils/roles";
+
+import { getCurrentLanguage, t } from "../utils/language";
 import "./MessageInput.css";
 
 const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStreaming = () => {} }) => {
   const [message, setMessage] = useState("");
-  const [currentRole, setCurrentRole] = useState(() => loadSelectedRole());
+
+  const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -21,18 +23,17 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
     }
   };
 
-  // 监听角色变化
+
+
+  // 监听语言变化
   useEffect(() => {
-    const handleRoleChange = () => {
-      setCurrentRole(loadSelectedRole());
+    const handleLanguageChange = (event) => {
+      setCurrentLanguage(event.detail);
     };
 
-    window.addEventListener("storage", handleRoleChange);
-    window.addEventListener("roleChanged", handleRoleChange);
-
+    window.addEventListener("languageChanged", handleLanguageChange);
     return () => {
-      window.removeEventListener("storage", handleRoleChange);
-      window.removeEventListener("roleChanged", handleRoleChange);
+      window.removeEventListener("languageChanged", handleLanguageChange);
     };
   }, []);
 
@@ -44,9 +45,7 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={`和${getRoleById(currentRole).name}聊天... ${
-              getRoleById(currentRole).icon
-            }`}
+            placeholder={t("typeMessage", currentLanguage)}
             disabled={disabled}
             rows={1}
             className="message-textarea-clean"
@@ -72,7 +71,7 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
               type="button"
               className="stop-button"
               onClick={onStopStreaming}
-              title="停止生成"
+              title={t("stop", currentLanguage)}
             >
               <svg
                 width="20"
@@ -90,7 +89,7 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
               type="submit"
               disabled={!message.trim() || disabled}
               className="send-button"
-              title="发送消息"
+              title={t("send", currentLanguage)}
             >
               <svg
                 width="20"
@@ -109,7 +108,12 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
           )}
         </div>
       </form>
-      <div className="input-hint">Bobby 可能会犯错。请核查重要信息。</div>
+      <div className="input-hint">
+        {currentLanguage === "zh" 
+          ? "Bobby 可能会犯错。请核查重要信息。" 
+          : "Bobby may make mistakes. Please verify important information."
+        }
+      </div>
     </div>
   );
 };

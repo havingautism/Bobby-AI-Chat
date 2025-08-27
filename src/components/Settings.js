@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getApiConfig, updateApiConfig } from "../utils/api";
+import { getCurrentLanguage } from "../utils/language";
 import "./Settings.css";
 
 const Settings = ({ isOpen, onClose }) => {
@@ -12,31 +13,32 @@ const Settings = ({ isOpen, onClose }) => {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
 
   const presetConfigs = {
     siliconflow: {
-      name: "硅基流动",
+      name: currentLanguage === "zh" ? "硅基流动" : "SiliconFlow",
       baseURL: "https://api.siliconflow.cn/v1/chat/completions",
       model: "deepseek-ai/DeepSeek-V3",
-      placeholder: "请输入硅基流动API密钥",
+      placeholder: currentLanguage === "zh" ? "请输入硅基流动API密钥" : "Enter SiliconFlow API key",
     },
     openai: {
       name: "OpenAI",
       baseURL: "https://api.openai.com/v1/chat/completions",
       model: "gpt-3.5-turbo",
-      placeholder: "请输入OpenAI API密钥",
+      placeholder: currentLanguage === "zh" ? "请输入OpenAI API密钥" : "Enter OpenAI API key",
     },
     deepseek: {
       name: "DeepSeek",
       baseURL: "https://api.deepseek.com/v1/chat/completions",
       model: "deepseek-chat",
-      placeholder: "请输入DeepSeek API密钥",
+      placeholder: currentLanguage === "zh" ? "请输入DeepSeek API密钥" : "Enter DeepSeek API key",
     },
     custom: {
-      name: "自定义",
+      name: currentLanguage === "zh" ? "自定义" : "Custom",
       baseURL: "",
       model: "",
-      placeholder: "请输入API密钥",
+      placeholder: currentLanguage === "zh" ? "请输入API密钥" : "Enter API key",
     },
   };
 
@@ -46,6 +48,18 @@ const Settings = ({ isOpen, onClose }) => {
       setConfig(currentConfig);
     }
   }, [isOpen]);
+
+  // 监听语言变化
+  useEffect(() => {
+    const handleLanguageChange = (event) => {
+      setCurrentLanguage(event.detail);
+    };
+
+    window.addEventListener("languageChanged", handleLanguageChange);
+    return () => {
+      window.removeEventListener("languageChanged", handleLanguageChange);
+    };
+  }, []);
 
   const handlePresetChange = (presetKey) => {
     const preset = presetConfigs[presetKey];

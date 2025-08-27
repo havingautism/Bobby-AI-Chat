@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AI_ROLES, saveSelectedRole, loadSelectedRole } from "../utils/roles";
+import { getCurrentLanguage } from "../utils/language";
 import "./WelcomeScreen.css";
 
 const WelcomeScreen = ({ onSendMessage, disabled }) => {
   const [message, setMessage] = useState("");
   const [selectedRole, setSelectedRole] = useState(loadSelectedRole());
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const dropdownRef = useRef(null);
 
   // 点击外部关闭下拉菜单
@@ -22,15 +24,34 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
     };
   }, []);
 
+  // 监听语言变化
+  useEffect(() => {
+    const handleLanguageChange = (event) => {
+      setCurrentLanguage(event.detail);
+    };
+
+    window.addEventListener("languageChanged", handleLanguageChange);
+    return () => {
+      window.removeEventListener("languageChanged", handleLanguageChange);
+    };
+  }, []);
+
   const roles = AI_ROLES;
 
-  const quickPrompts = [
+  const quickPrompts = currentLanguage === "zh" ? [
     "🤔 解释一个复杂的概念",
     "💻 帮我写一段代码",
     "📈 分析当前趋势",
     "✨ 创意写作帮助",
     "😸 和Bobby聊天",
     "🎯 制定学习计划",
+  ] : [
+    "🤔 Explain a complex concept",
+    "💻 Help me write some code",
+    "📈 Analyze current trends",
+    "✨ Creative writing help",
+    "😸 Chat with Bobby",
+    "🎯 Create a learning plan",
   ];
 
   const handleSubmit = (e) => {
@@ -68,11 +89,11 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
       <div className="welcome-content">
         {/* Bobby Logo和标题 */}
         <div className="welcome-header">
-          <div className="bobby-logo-large">
+          {/* <div className="bobby-logo-large">
             <div className="logo-circle">
               <span className="logo-paw">🐾</span>
             </div>
-          </div>
+          </div> */}
           <h1 className="welcome-title">
             {roles.find((role) => role.id === selectedRole)?.name}{" "}
             {roles.find((role) => role.id === selectedRole)?.icon}
@@ -84,7 +105,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
         {/* 角色扮演选择 */}
         <div className="role-selection">
-          <h3 className="section-title">选择AI角色</h3>
+          <h3 className="section-title">{currentLanguage === "zh" ? "选择AI角色" : "Choose AI Role"}</h3>
           <div className="role-dropdown-container" ref={dropdownRef}>
             <button
               className="role-dropdown-trigger"
@@ -166,9 +187,11 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder={`和${
-                  roles.find((role) => role.id === selectedRole)?.name
-                }开始对话...`}
+                placeholder={
+                  currentLanguage === "zh" 
+                    ? `和${roles.find((role) => role.id === selectedRole)?.name}开始对话...`
+                    : `Start chatting with ${roles.find((role) => role.id === selectedRole)?.name}...`
+                }
                 disabled={disabled}
                 rows={1}
                 className="welcome-textarea-clean"
@@ -212,7 +235,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
         {/* 快速提示 */}
         <div className="quick-prompts">
-          <h3 className="section-title">快速开始</h3>
+          <h3 className="section-title">{currentLanguage === "zh" ? "快速开始" : "Quick Start"}</h3>
           <div className="prompt-grid">
             {quickPrompts.map((prompt, index) => (
               <button

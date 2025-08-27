@@ -2,8 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import WelcomeScreen from "./WelcomeScreen";
-import { sendMessage, sendMessageStream, isApiConfigured } from "../utils/api";
+import LanguageToggle from "./LanguageToggle";
+import { sendMessage, sendMessageStream, isApiConfigured, generateChatTitleStream } from "../utils/api";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
+
+
 import "./ChatInterface.css";
 //
 
@@ -20,6 +23,9 @@ const ChatInterface = ({
   const [streamingConversationId, setStreamingConversationId] = useState(null);
   // const [streamingMessageId, setStreamingMessageId] = useState(null);
   const [abortController, setAbortController] = useState(null);
+  const [isTitleGenerating, setIsTitleGenerating] = useState(false);
+  const [titleGeneratingId, setTitleGeneratingId] = useState(null);
+
   const messagesEndRef = useRef(null);
   
   // 停止流式输出
@@ -60,6 +66,8 @@ const ChatInterface = ({
     };
   }, []);
 
+
+
   const handleSendMessage = async (content, options = {}) => {
     if (!content.trim() || isStreaming) return;
 
@@ -84,10 +92,7 @@ const ChatInterface = ({
     const updatedMessages = [...conversation.messages, userMessage];
     const updates = {
       messages: updatedMessages,
-      title:
-        conversation.messages.length === 0
-          ? content.slice(0, 30) + (content.length > 30 ? "..." : "")
-          : conversation.title,
+      // 不在这里设置标题，让AI在回复后自动生成
     };
 
     // 如果是第一条消息且有角色信息，保存角色到对话中
@@ -105,6 +110,10 @@ const ChatInterface = ({
   const sendMessageWithStream = async (messages, options, conversationId) => {
     setIsStreaming(true);
     setStreamingConversationId(conversationId);
+    
+    // 创建 AbortController
+    const controller = new AbortController();
+    setAbortController(controller);
     
     // 创建初始的助手消息
     const assistantMessageId = (Date.now() + 1).toString();
@@ -179,10 +188,92 @@ const ChatInterface = ({
             isStreaming: false,
           };
           
+          const finalMessages = [...messages, finalMessage];
+          
           // 最终更新消息
           onUpdateConversation(conversationId, {
-            messages: [...messages, finalMessage],
+            messages: finalMessages,
           });
+
+          // 如果这是第一次对话（只有用户消息和AI回复），异步生成标题
+          console.log("检查是否生成标题:", {
+            finalMessagesLength: finalMessages.length,
+            firstMessageRole: finalMessages[0]?.role,
+            secondMessageRole: finalMessages[1]?.role,
+            conversationId: conversationId,
+            allMessages: finalMessages.map(m => ({ role: m.role, contentLength: m.content.length })),
+            shouldGenerate: finalMessages.length === 2 && finalMessages[0].role === "user" && finalMessages[1].role === "assistant"
+          });
+          
+          // 确保是用户消息+AI回复的第一次对话
+          if (finalMessages.length === 2 && 
+              finalMessages[0].role === "user" && 
+              finalMessages[1].role === "assistant") {
+            // 使用 setTimeout 来异步执行流式标题生成，不阻塞流式输出完成
+            setTimeout(async () => {
+              try {
+                console.log("自动生成标题 - 开始...", { conversationId, finalMessages });
+                
+                // 设置标题生成状态
+                setIsTitleGenerating(true);
+                setTitleGeneratingId(conversationId);
+                
+                // 显示正在生成标题的状态
+                onUpdateConversation(conversationId, {
+                  title: "正在生成标题...",
+                  isTitleGenerating: true,
+                });
+
+                // 使用流式生成标题
+                await generateChatTitleStream(
+                  finalMessages,
+                  // onChunk - 实时更新标题
+                  (partialTitle) => {
+                    console.log("标题生成中:", partialTitle);
+                    onUpdateConversation(conversationId, {
+                      title: partialTitle || "正在生成标题...",
+                      isTitleGenerating: true,
+                    });
+                  },
+                  // onComplete - 完成生成
+                  (finalTitle) => {
+                    console.log("流式标题生成完成:", finalTitle);
+                    setIsTitleGenerating(false);
+                    setTitleGeneratingId(null);
+                    onUpdateConversation(conversationId, {
+                      title: finalTitle || finalMessages[0].content,
+                      isTitleGenerating: false,
+                    });
+                  },
+                  // onError - 生成失败
+                  (error) => {
+                    console.error("流式标题生成失败:", error);
+                    setIsTitleGenerating(false);
+                    setTitleGeneratingId(null);
+                    // 使用用户的第一条消息作为标题
+                    const fallbackTitle = finalMessages[0].content;
+                    onUpdateConversation(conversationId, {
+                      title: fallbackTitle,
+                      isTitleGenerating: false,
+                    });
+                  }
+                );
+                
+              } catch (error) {
+                console.error("自动生成标题失败:", error);
+                setIsTitleGenerating(false);
+                setTitleGeneratingId(null);
+                // 使用用户的第一条消息作为标题
+                const fallbackTitle = finalMessages[0].content;
+                onUpdateConversation(conversationId, {
+                  title: fallbackTitle,
+                  isTitleGenerating: false,
+                });
+              }
+            }, 500); // 增加延迟，确保所有状态更新完成
+          } else {
+            console.log("不满足自动生成标题的条件");
+          }
         },
         // onError 回调
         (error) => {
@@ -200,7 +291,8 @@ const ChatInterface = ({
           onUpdateConversation(conversationId, {
             messages: [...messages, errorMessage],
           });
-        }
+        },
+        controller
       );
       
     } catch (error) {
@@ -325,9 +417,14 @@ const ChatInterface = ({
     return (
       <div className="chat-interface">
         <div className="chat-header">
-          <button className="sidebar-toggle" onClick={onToggleSidebar}>
-            ☰
-          </button>
+          <div className="header-left">
+            <button className="sidebar-toggle" onClick={onToggleSidebar}>
+              ☰
+            </button>
+          </div>
+          <div className="header-actions">
+            <LanguageToggle />
+          </div>
         </div>
         <WelcomeScreen onSendMessage={handleSendMessage} disabled={isStreaming} />
       </div>
@@ -337,18 +434,87 @@ const ChatInterface = ({
   return (
     <div className="chat-interface">
       <div className="chat-header">
-        <button className="sidebar-toggle" onClick={onToggleSidebar}>
-          ☰
-        </button>
-        <div className="app-title">
-          <div className="bobby-logo">🐾</div>
-          <h1>{getRoleById(currentRole).name}</h1>
-          <div
-            className="bobby-status"
-            style={{ color: getRoleById(currentRole).color }}
-          >
-            {getRoleById(currentRole).avatar}
+        <div className="header-left">
+          <button className="sidebar-toggle" onClick={onToggleSidebar}>
+            ☰
+          </button>
+          <div className="app-title">
+            <div className="bobby-logo">🐾</div>
+            <h1>{getRoleById(currentRole).name}</h1>
+            <div
+              className="bobby-status"
+              style={{ color: getRoleById(currentRole).color }}
+            >
+              {getRoleById(currentRole).avatar}
+            </div>
           </div>
+        </div>
+        <div className="header-actions">
+          <button 
+            onClick={async () => {
+              console.log("手动触发流式标题生成");
+              try {
+                setIsTitleGenerating(true);
+                setTitleGeneratingId(conversation.id);
+                
+                onUpdateConversation(conversation.id, { 
+                  title: "正在生成标题...",
+                  isTitleGenerating: true 
+                });
+
+                await generateChatTitleStream(
+                  conversation.messages,
+                  (partialTitle) => {
+                    onUpdateConversation(conversation.id, {
+                      title: partialTitle || "正在生成标题...",
+                      isTitleGenerating: true,
+                    });
+                  },
+                  (finalTitle) => {
+                    setIsTitleGenerating(false);
+                    setTitleGeneratingId(null);
+                    onUpdateConversation(conversation.id, {
+                      title: finalTitle || conversation.messages[0]?.content || "新对话",
+                      isTitleGenerating: false,
+                    });
+                  },
+                  (error) => {
+                    console.error("手动流式标题生成失败:", error);
+                    setIsTitleGenerating(false);
+                    setTitleGeneratingId(null);
+                    const fallbackTitle = conversation.messages.find(m => m.role === "user")?.content || "新对话";
+                    onUpdateConversation(conversation.id, {
+                      title: fallbackTitle,
+                      isTitleGenerating: false,
+                    });
+                  }
+                );
+              } catch (error) {
+                console.error("手动生成标题失败:", error);
+                setIsTitleGenerating(false);
+                setTitleGeneratingId(null);
+                const fallbackTitle = conversation.messages.find(m => m.role === "user")?.content || "新对话";
+                onUpdateConversation(conversation.id, { 
+                  title: fallbackTitle,
+                  isTitleGenerating: false 
+                });
+              }
+            }}
+            disabled={isTitleGenerating && titleGeneratingId === conversation.id}
+            style={{ 
+              padding: "4px 8px", 
+              fontSize: "12px", 
+              marginRight: "8px",
+              background: "var(--bg-primary)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "4px",
+              cursor: "pointer",
+              opacity: (isTitleGenerating && titleGeneratingId === conversation.id) ? 0.6 : 1
+            }}
+          >
+            生成标题
+          </button>
+          <LanguageToggle />
         </div>
       </div>
 

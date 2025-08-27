@@ -9,14 +9,21 @@
 .chat-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 12px 16px;
   background-color: var(--bg-secondary);
-  gap: 12px;
   position: sticky;
   top: 0;
   z-index: 10;
   min-height: 60px;
   border-bottom: 1px solid var(--border-color);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
 }
 
 .sidebar-toggle {
@@ -44,7 +51,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .bobby-logo {

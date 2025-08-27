@@ -145,6 +145,7 @@ function App() {
         onSelectConversation={setCurrentConversationId}
         onNewConversation={createNewConversation}
         onDeleteConversation={deleteConversation}
+        onUpdateConversation={updateConversation}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         isCollapsed={sidebarCollapsed}

@@ -1,0 +1,95 @@
+.language-toggle {
+  position: relative;
+  z-index: 1000;
+}
+
+.language-toggle-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  color: var(--text-primary);
+  min-width: 60px;
+}
+
+.language-toggle-button:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+}
+
+.language-flag {
+  font-size: 14px;
+}
+
+.language-code {
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.dropdown-arrow {
+  font-size: 8px;
+  transition: transform 0.2s ease;
+  margin-left: 2px;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+.language-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  overflow: hidden;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.language-option:hover {
+  background: var(--bg-hover);
+}
+
+.language-name {
+  font-weight: 400;
+}
+
+/* 暗色模式下的调整 */
+[data-theme="dark"] .language-dropdown {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
