@@ -110,43 +110,47 @@
 
 .message {
   width: 100%;
-  padding: 24px 0;
-  transition: background-color 0.3s ease;
+  padding: 32px 0;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
 .message-container {
-  max-width: 1200px; /* 增加最大宽度，更好地利用屏幕空间 */
+  max-width: 768px;
   margin: 0 auto;
   padding: 0 24px;
   display: flex;
-  gap: 24px;
+  gap: 16px;
   align-items: flex-start;
+  position: relative;
 }
 
 .message-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 2px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 18px;
+  border-radius: 6px;
+  background: var(--avatar-bg);
+  border: 1px solid var(--avatar-border);
+  transition: all 0.2s ease;
+  position: relative;
 }
 
 .user-avatar {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+  background: var(--user-avatar-bg);
+  color: var(--user-avatar-text);
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  border: 2px solid var(--accent-color);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--user-avatar-border);
+  box-shadow: var(--avatar-shadow);
 }
 
 .bobby-avatar {
@@ -177,14 +181,16 @@
 }
 
 .assistant-avatar {
-  background: linear-gradient(135deg, var(--accent-color) 0%, #6366f1 100%);
-  color: #ffffff;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  background: var(--assistant-avatar-bg);
+  color: var(--assistant-avatar-text);
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 16px;
+  border: 1px solid var(--assistant-avatar-border);
+  box-shadow: var(--avatar-shadow);
 }
 
 .assistant-avatar svg {
@@ -194,13 +200,13 @@
 
 .message-content {
   flex: 1;
-  line-height: 1.75;
-  color: var(--text-primary);
+  line-height: 1.7;
   font-size: 16px;
   word-wrap: break-word;
-  max-width: calc(100% - 54px); /* 留出头像和gap的空间 */
   overflow-wrap: break-word;
-  min-width: 0; /* 允许flex子项缩小 */
+  min-width: 0;
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .message-content.error {
@@ -210,16 +216,15 @@
 .message-content pre {
   background-color: var(--code-bg);
   border: 1px solid var(--code-border);
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 12px;
   overflow-x: auto;
-  margin: 16px 0;
+  margin: 12px 0;
   font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 13px;
+  line-height: 1.4;
   color: var(--text-primary);
   max-width: 100%;
-  width: 100%;
   box-sizing: border-box;
   white-space: pre;
   word-wrap: normal;
@@ -228,10 +233,10 @@
 .message-content code {
   background-color: var(--code-bg);
   border: 1px solid var(--code-border);
-  border-radius: 4px;
-  padding: 2px 6px;
+  border-radius: 6px;
+  padding: 3px 6px;
   font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-primary);
   word-break: break-all;
   white-space: pre-wrap;
@@ -317,14 +322,30 @@
     padding: 16px 0;
   }
   
+  .message {
+    padding: 24px 0;
+  }
+  
   .message-container {
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 0 16px;
+    padding: 0 20px;
     gap: 12px;
     display: flex;
     align-items: flex-start;
+  }
+  
+  .message.user .message-content {
+    max-width: 85%;
+    padding: 14px 16px;
+    border-radius: 16px;
+    font-size: 15px;
+  }
+  
+  .message-content {
+    font-size: 15px;
+    line-height: 1.6;
   }
   
   .message-avatar {
@@ -337,7 +358,7 @@
   .assistant-avatar {
     width: 28px;
     height: 28px;
-    font-size: 12px;
+    font-size: 14px;
   }
   
   .assistant-avatar svg {
@@ -436,8 +457,55 @@
   border-left: 4px solid var(--error-color);
 }
 
+/* 用户消息样式 - GPT风格 */
+.message.user {
+  background: var(--user-bg);
+}
+
+.message.user .message-container {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+.message.user .message-content {
+  background: var(--user-message-bg);
+  color: var(--user-message-text);
+  padding: 16px 20px;
+  border-radius: 18px;
+  max-width: 80%;
+  margin-left: auto;
+  font-weight: 400;
+  box-shadow: var(--message-shadow);
+}
+
+/* 助手消息样式 - 现代化设计 */
+.message.assistant {
+  background: var(--assistant-bg);
+}
+
+.message.assistant .message-content {
+  color: var(--text-primary);
+  max-width: 100%;
+  padding: 0;
+}
+
+.message.assistant::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--border-color);
+  opacity: 0.1;
+}
+
 .message.error .message-content {
   color: var(--error-color);
+  background: var(--error-bg);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border-left: 4px solid var(--error-color);
 }
 
 /* 流式输出效果 */
@@ -518,15 +586,15 @@
   }
   
   .message-avatar {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
   }
   
   .user-avatar,
   .assistant-avatar {
-    width: 24px;
-    height: 24px;
-    font-size: 10px;
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
   }
   
   .assistant-avatar svg {

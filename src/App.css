@@ -22,6 +22,28 @@
   --bg-hover: #e5e7eb;
   --code-bg: #f8f9fa;
   --code-border: #e5e7eb;
+  
+  /* 高级消息样式变量 */
+  --user-bg: transparent;
+  --assistant-bg: #f7f7f8;
+  --user-message-bg: #007aff;
+  --user-message-text: #ffffff;
+  --message-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  
+  /* 头像样式变量 */
+  --avatar-bg: #ffffff;
+  --avatar-border: #e1e5e9;
+  --avatar-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --user-avatar-bg: #007aff;
+  --user-avatar-text: #ffffff;
+  --user-avatar-border: #007aff;
+  --assistant-avatar-bg: #19c37d;
+  --assistant-avatar-text: #ffffff;
+  --assistant-avatar-border: #19c37d;
+  
+  /* 错误样式 */
+  --error-bg: #fff5f5;
+  --error-border: #fed7d7;
 }
 
 /* 暗夜模式 */
@@ -47,6 +69,28 @@
   --bg-hover: #4a5568;
   --code-bg: #1a202c;
   --code-border: #4a5568;
+  
+  /* 高级消息样式变量 - 暗夜模式 */
+  --user-bg: transparent;
+  --assistant-bg: #2f2f2f;
+  --user-message-bg: #0084ff;
+  --user-message-text: #ffffff;
+  --message-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  
+  /* 头像样式变量 - 暗夜模式 */
+  --avatar-bg: #3f3f3f;
+  --avatar-border: #4f4f4f;
+  --avatar-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --user-avatar-bg: #0084ff;
+  --user-avatar-text: #ffffff;
+  --user-avatar-border: #0084ff;
+  --assistant-avatar-bg: #10a37f;
+  --assistant-avatar-text: #ffffff;
+  --assistant-avatar-border: #10a37f;
+  
+  /* 错误样式 - 暗夜模式 */
+  --error-bg: #2d1b1b;
+  --error-border: #553c3c;
 }
 
 .app {
@@ -71,11 +115,11 @@
   }
 }
 
-@media (min-width: 769px) {
+/* @media (min-width: 769px) {
   .main-content.sidebar-collapsed {
     margin-left: 60px;
   }
-}
+} */
 
 /* 全局输入框重置 - 强制移除所有浏览器默认样式 */
 * {
