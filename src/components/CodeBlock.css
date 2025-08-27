@@ -7,6 +7,9 @@
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-md);
   font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  max-width: 100%; /* 限制最大宽度 */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .code-header {
@@ -71,6 +74,9 @@
 .code-content {
   overflow-x: auto;
   background: var(--code-bg);
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .code-content pre {
@@ -82,6 +88,11 @@
   line-height: 1.5;
   color: #e5e7eb;
   overflow-x: auto;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre;
+  word-wrap: normal;
 }
 
 .code-content code {
@@ -147,15 +158,24 @@
   .code-block {
     margin: 12px 0;
     border-radius: 8px;
+    max-width: 100%;
+    overflow: hidden;
   }
   
   .code-header {
     padding: 10px 12px;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   
   .code-content pre {
     padding: 12px;
-    font-size: 13px;
+    font-size: 13px !important; /* 强制覆盖SyntaxHighlighter的内联样式 */
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre;
+    word-break: normal;
+    overflow-wrap: normal;
   }
   
   .copy-button {
@@ -165,5 +185,54 @@
   
   .copy-button span {
     display: none;
+  }
+}
+
+/* SyntaxHighlighter 全局字体覆盖 - 强制覆盖所有元素 */
+.code-content * {
+  font-size: 14px !important;
+}
+
+.code-content .token {
+  font-size: 14px !important;
+}
+
+.code-content pre * {
+  font-size: 14px !important;
+}
+
+.code-content code * {
+  font-size: 14px !important;
+}
+
+/* 移动端字体覆盖 */
+@media (max-width: 768px) {
+  .code-content *,
+  .code-content .token,
+  .code-content pre *,
+  .code-content code * {
+    font-size: 13px !important;
+  }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 480px) {
+  .code-block {
+    margin: 8px 0;
+    border-radius: 6px;
+  }
+  
+  .code-header {
+    padding: 6px 8px;
+  }
+  
+  .code-content pre {
+    padding: 8px;
+    font-size: 13px !important; /* 保持一致的字体大小 */
+  }
+  
+  .copy-button {
+    padding: 2px 4px;
+    font-size: 9px;
   }
 }

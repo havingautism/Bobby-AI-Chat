@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import WelcomeScreen from "./WelcomeScreen";
-import { sendMessage, isApiConfigured } from "../utils/api";
+import { sendMessage, sendMessageStream, isApiConfigured } from "../utils/api";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
 import "./ChatInterface.css";
 //
@@ -13,12 +13,28 @@ const ChatInterface = ({
   onToggleSidebar,
   onOpenSettings,
 }) => {
-  const [loadingConversations, setLoadingConversations] = useState(new Set());
+  // 不再需要独立的加载状态管理
+  // const [loadingConversations, setLoadingConversations] = useState(new Set());
   const [currentRole, setCurrentRole] = useState(() => loadSelectedRole());
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingConversationId, setStreamingConversationId] = useState(null);
+  // const [streamingMessageId, setStreamingMessageId] = useState(null);
+  const [abortController, setAbortController] = useState(null);
   const messagesEndRef = useRef(null);
+  
+  // 停止流式输出
+  const stopStreaming = () => {
+    if (abortController) {
+      abortController.abort();
+      setIsStreaming(false);
+      setStreamingConversationId(null);
+      // setStreamingMessageId(null);
+      setAbortController(null);
+    }
+  };
 
-  // 检查当前对话是否正在加载
-  const isLoading = loadingConversations.has(conversation.id);
+  // 不再需要独立的加载状态，使用流式输出的内联指示器
+  // const isLoading = loadingConversations.has(conversation.id) || (isStreaming && streamingConversationId === conversation.id);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -45,7 +61,7 @@ const ChatInterface = ({
   }, []);
 
   const handleSendMessage = async (content, options = {}) => {
-    if (!content.trim() || isLoading) return;
+    if (!content.trim() || isStreaming) return;
 
     // 检查API是否配置
     if (!isApiConfigured()) {
@@ -81,13 +97,139 @@ const ChatInterface = ({
 
     onUpdateConversation(currentConversationId, updates);
 
-    await sendMessageWithRetry(updatedMessages, options, currentConversationId);
+    // 使用流式输出
+    await sendMessageWithStream(updatedMessages, options, currentConversationId);
   };
 
-  // 带重试功能的消息发送
+  // 流式消息发送
+  const sendMessageWithStream = async (messages, options, conversationId) => {
+    setIsStreaming(true);
+    setStreamingConversationId(conversationId);
+    
+    // 创建初始的助手消息
+    const assistantMessageId = (Date.now() + 1).toString();
+    // setStreamingMessageId(assistantMessageId);
+    
+    const initialAssistantMessage = {
+      id: assistantMessageId,
+      role: "assistant",
+      content: "",
+      timestamp: new Date().toISOString(),
+      isStreaming: true,
+    };
+    
+    // 立即添加空的助手消息
+    onUpdateConversation(conversationId, {
+      messages: [...messages, initialAssistantMessage],
+    });
+    
+    try {
+      let fullContent = "";
+      let fullReasoning = "";
+      let hasReasoning = false;
+      
+      await sendMessageStream(
+        messages,
+        options,
+        // onChunk 回调
+        (chunk) => {
+          if (chunk.type === 'content') {
+            fullContent = chunk.fullContent;
+          } else if (chunk.type === 'reasoning') {
+            fullReasoning = chunk.fullReasoning;
+            hasReasoning = true;
+          }
+          
+          // 更新流式消息内容
+          const updatedMessage = {
+            id: assistantMessageId,
+            role: "assistant",
+            content: fullContent,
+            reasoning: hasReasoning ? fullReasoning : undefined,
+            hasReasoning,
+            timestamp: new Date().toISOString(),
+            isStreaming: true,
+          };
+          
+          // 更新消息列表 - 查找并更新现有消息，避免重复添加
+          const currentMessages = [...messages];
+          const existingMessageIndex = currentMessages.findIndex(msg => msg.id === assistantMessageId);
+          
+          if (existingMessageIndex >= 0) {
+            // 更新现有消息
+            currentMessages[existingMessageIndex] = updatedMessage;
+          } else {
+            // 添加新消息（第一次）
+            currentMessages.push(updatedMessage);
+          }
+          
+          onUpdateConversation(conversationId, {
+            messages: currentMessages,
+          });
+        },
+        // onComplete 回调
+        (result) => {
+          const finalMessage = {
+            id: assistantMessageId,
+            role: "assistant",
+            content: result.content,
+            reasoning: result.reasoning,
+            hasReasoning: result.hasReasoning,
+            timestamp: new Date().toISOString(),
+            isStreaming: false,
+          };
+          
+          // 最终更新消息
+          onUpdateConversation(conversationId, {
+            messages: [...messages, finalMessage],
+          });
+        },
+        // onError 回调
+        (error) => {
+          console.error("流式发送消息失败:", error);
+          
+          const errorMessage = {
+            id: assistantMessageId,
+            role: "assistant",
+            content: `抱歉，发生了错误：${error.message}`,
+            isError: true,
+            timestamp: new Date().toISOString(),
+            retryData: { messages, options, conversationId },
+          };
+          
+          onUpdateConversation(conversationId, {
+            messages: [...messages, errorMessage],
+          });
+        }
+      );
+      
+    } catch (error) {
+      console.error("流式发送消息失败:", error);
+      
+      const errorMessage = {
+        id: assistantMessageId,
+        role: "assistant",
+        content: `抱歉，发生了错误：${error.message}`,
+        isError: true,
+        timestamp: new Date().toISOString(),
+        retryData: { messages, options, conversationId },
+      };
+      
+      onUpdateConversation(conversationId, {
+        messages: [...messages, errorMessage],
+      });
+    } finally {
+      setIsStreaming(false);
+      setStreamingConversationId(null);
+      // setStreamingMessageId(null);
+      setAbortController(null);
+    }
+  };
+  
+  // 带重试功能的消息发送（保留非流式版本）
   const sendMessageWithRetry = async (messages, options, conversationId) => {
-    // 为特定对话设置加载状态
-    setLoadingConversations((prev) => new Set([...prev, conversationId]));
+    // 不再需要设置加载状态，使用流式输出的内联指示器
+    // setLoadingConversations((prev) => new Set([...prev, conversationId]));
 
     try {
       // 传递角色选项到API
@@ -150,12 +292,12 @@ const ChatInterface = ({
         messages: [...messages, errorMessage],
       });
     } finally {
-      // 移除特定对话的加载状态
-      setLoadingConversations((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(conversationId);
-        return newSet;
-      });
+      // 不再需要移除加载状态
+      // setLoadingConversations((prev) => {
+      //   const newSet = new Set(prev);
+      //   newSet.delete(conversationId);
+      //   return newSet;
+      // });
     }
   };
 
@@ -187,7 +329,7 @@ const ChatInterface = ({
             ☰
           </button>
         </div>
-        <WelcomeScreen onSendMessage={handleSendMessage} disabled={isLoading} />
+        <WelcomeScreen onSendMessage={handleSendMessage} disabled={isStreaming} />
       </div>
     );
   }
@@ -217,31 +359,16 @@ const ChatInterface = ({
           conversationRole={conversation.role}
           onRetryMessage={handleRetryMessage}
         />
-        {isLoading && (
-          <div className="message assistant loading">
-            <div className="message-container">
-              <div className="message-avatar">
-                <div
-                  className="role-avatar-large"
-                  style={{ color: getRoleById(currentRole).color }}
-                >
-                  {getRoleById(currentRole).avatar}
-                </div>
-              </div>
-              <div className="message-content">
-                <div className="typing-indicator">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* 移除独立的加载指示器，使用流式输出的内联指示器 */}
         <div ref={messagesEndRef} />
       </div>
 
-      <MessageInput onSendMessage={handleSendMessage} disabled={isLoading} />
+              <MessageInput 
+          onSendMessage={handleSendMessage} 
+          disabled={isStreaming && streamingConversationId === conversation.id}
+          isStreaming={isStreaming && streamingConversationId === conversation.id}
+          onStopStreaming={stopStreaming}
+        />
     </div>
   );
 };

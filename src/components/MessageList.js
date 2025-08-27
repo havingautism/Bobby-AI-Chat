@@ -12,12 +12,12 @@ const MessageList = ({
   conversationRole,
   onRetryMessage,
 }) => {
-  const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString("zh-CN", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  // const formatTime = (timestamp) => {
+  //   return new Date(timestamp).toLocaleTimeString("zh-CN", {
+  //     hour: "2-digit",
+  //     minute: "2-digit",
+  //   });
+  // };
 
   const apiConfigured = isApiConfigured();
 
@@ -54,6 +54,8 @@ const MessageList = ({
             key={message.id}
             className={`message ${message.role} ${
               message.isError ? "error" : ""
+            } ${
+              message.isStreaming ? "streaming" : ""
             }`}
           >
             <div className="message-container">
@@ -100,9 +102,17 @@ const MessageList = ({
                         推理模型
                       </div>
                     )}
-                    <MarkdownRenderer>{message.content}</MarkdownRenderer>
                     {message.hasReasoning && message.reasoning && (
-                      <ReasoningDisplay reasoning={message.reasoning} />
+                      <ReasoningDisplay 
+                        reasoning={message.reasoning} 
+                        isStreaming={message.isStreaming || false}
+                      />
+                    )}
+                    <MarkdownRenderer>{message.content}</MarkdownRenderer>
+                    {message.isStreaming && (
+                      <div className="streaming-indicator">
+                        <span className="streaming-text">正在生成回复...</span>
+                      </div>
                     )}
                   </>
                 ) : (

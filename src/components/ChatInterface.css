@@ -208,17 +208,33 @@
   }
 }
 
+/* 移动端优化 */
 @media (max-width: 768px) {
+  .chat-interface {
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    overflow: hidden;
+  }
+  
+  .chat-header {
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
   .chat-messages {
-    padding: 16px;
-  }
-  
-  .message.user .message-content {
-    max-width: 85%;
-  }
-  
-  .message.assistant .message-content {
-    max-width: 90%;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 0 120px 0; /* 底部留出输入框空间 */
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
   }
   
   .sidebar-toggle {

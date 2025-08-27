@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
 import "./MessageInput.css";
 
-const MessageInput = ({ onSendMessage, disabled }) => {
+const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStreaming = () => {} }) => {
   const [message, setMessage] = useState("");
   const [currentRole, setCurrentRole] = useState(() => loadSelectedRole());
 
@@ -67,26 +67,46 @@ const MessageInput = ({ onSendMessage, disabled }) => {
                 Math.min(e.target.scrollHeight, 128) + "px";
             }}
           />
-          <button
-            type="submit"
-            disabled={!message.trim() || disabled}
-            className="send-button"
-            title="发送消息"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {isStreaming ? (
+            <button
+              type="button"
+              className="stop-button"
+              onClick={onStopStreaming}
+              title="停止生成"
             >
-              <path d="m3 3 3 9-3 9 19-9Z" />
-              <path d="m6 12 13 0" />
-            </svg>
-          </button>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <rect x="6" y="6" width="12" height="12" rx="2" />
+              </svg>
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!message.trim() || disabled}
+              className="send-button"
+              title="发送消息"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m3 3 3 9-3 9 19-9Z" />
+                <path d="m6 12 13 0" />
+              </svg>
+            </button>
+          )}
         </div>
       </form>
       <div className="input-hint">Bobby 可能会犯错。请核查重要信息。</div>

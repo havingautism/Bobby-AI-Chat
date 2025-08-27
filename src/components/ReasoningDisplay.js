@@ -2,8 +2,21 @@ import React, { useState } from "react";
 import MarkdownRenderer from "./MarkdownRenderer";
 import "./ReasoningDisplay.css";
 
-const ReasoningDisplay = ({ reasoning }) => {
+const ReasoningDisplay = ({ reasoning, isStreaming = false }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // 流式输出时自动展开，结束后自动收起
+  React.useEffect(() => {
+    if (isStreaming) {
+      setIsExpanded(true);
+    } else if (!isStreaming && reasoning) {
+      // 流式结束后稍微延迟收起，让用户看到最终结果
+      const timer = setTimeout(() => {
+        setIsExpanded(false);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isStreaming, reasoning]);
 
   if (!reasoning) return null;
 

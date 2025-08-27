@@ -10,6 +10,21 @@ import "./CodeBlock.css";
 const CodeBlock = ({ children, language = "text" }) => {
   const [copied, setCopied] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(() => getCurrentTheme());
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 检测移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // 监听主题变化
   useEffect(() => {
@@ -123,12 +138,21 @@ const CodeBlock = ({ children, language = "text" }) => {
             margin: 0,
             padding: "16px",
             background: "transparent",
-            fontSize: "14px",
+            fontSize: isMobile ? "13px" : "14px", // 移动端使用更大字体
             lineHeight: "1.5",
+            maxWidth: "100%",
+            width: "100%",
+            boxSizing: "border-box",
+            overflowX: "auto",
+            whiteSpace: "pre",
+            wordWrap: "normal",
           }}
           codeTagProps={{
             style: {
               fontFamily: "inherit",
+              maxWidth: "100%",
+              display: "block",
+              overflow: "visible",
             },
           }}
         >

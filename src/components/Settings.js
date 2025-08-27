@@ -17,7 +17,7 @@ const Settings = ({ isOpen, onClose }) => {
     siliconflow: {
       name: "硅基流动",
       baseURL: "https://api.siliconflow.cn/v1/chat/completions",
-      model: "gpt-3.5-turbo",
+      model: "deepseek-ai/DeepSeek-V3",
       placeholder: "请输入硅基流动API密钥",
     },
     openai: {
@@ -143,23 +143,16 @@ const Settings = ({ isOpen, onClose }) => {
           </div>
 
           <div className="setting-group">
-            <label>API地址 *</label>
-            <input
-              type="text"
-              value={config.baseURL}
-              onChange={(e) => handleInputChange("baseURL", e.target.value)}
-              placeholder="https://api.example.com/v1/chat/completions"
-              className="setting-input"
-            />
-          </div>
-
-          <div className="setting-group">
             <label>API密钥 *</label>
             <input
               type="password"
               value={config.apiKey}
               onChange={(e) => handleInputChange("apiKey", e.target.value)}
-              placeholder="请输入API密钥"
+              placeholder={
+                Object.values(presetConfigs).find(
+                  (preset) => preset.baseURL === config.baseURL
+                )?.placeholder || "请输入API密钥"
+              }
               className="setting-input"
             />
           </div>
@@ -170,41 +163,60 @@ const Settings = ({ isOpen, onClose }) => {
               type="text"
               value={config.model}
               onChange={(e) => handleInputChange("model", e.target.value)}
-              placeholder="gpt-3.5-turbo"
+              placeholder="deepseek-ai/DeepSeek-V3, deepseek-ai/DeepSeek-R1, Qwen/QwQ-32B"
               className="setting-input"
             />
-          </div>
-
-          <div className="setting-row">
-            <div className="setting-group">
-              <label>温度 (0-2)</label>
-              <input
-                type="number"
-                min="0"
-                max="2"
-                step="0.1"
-                value={config.temperature}
-                onChange={(e) =>
-                  handleInputChange("temperature", parseFloat(e.target.value))
-                }
-                className="setting-input"
-              />
-            </div>
-
-            <div className="setting-group">
-              <label>最大令牌数</label>
-              <input
-                type="number"
-                min="1"
-                max="4000"
-                value={config.maxTokens}
-                onChange={(e) =>
-                  handleInputChange("maxTokens", parseInt(e.target.value))
-                }
-                className="setting-input"
-              />
+            <div className="setting-hint">
+              推理模型: Qwen/QwQ-32B, deepseek-ai/DeepSeek-R1 | 普通模型: deepseek-ai/DeepSeek-V3
             </div>
           </div>
+
+          <details className="advanced-settings">
+            <summary>高级设置</summary>
+            <div className="advanced-content">
+              <div className="setting-group">
+                <label>API地址</label>
+                <input
+                  type="text"
+                  value={config.baseURL}
+                  onChange={(e) => handleInputChange("baseURL", e.target.value)}
+                  placeholder="https://api.siliconflow.cn/v1/chat/completions"
+                  className="setting-input"
+                />
+              </div>
+              
+              <div className="setting-row">
+                <div className="setting-group">
+                  <label>温度 (0-2)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value={config.temperature}
+                    onChange={(e) =>
+                      handleInputChange("temperature", parseFloat(e.target.value))
+                    }
+                    className="setting-input"
+                  />
+                </div>
+
+                <div className="setting-group">
+                  <label>最大令牌数</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="8000"
+                    value={config.maxTokens}
+                    onChange={(e) =>
+                      handleInputChange("maxTokens", parseInt(e.target.value))
+                    }
+                    className="setting-input"
+                  />
+                </div>
+              </div>
+            </div>
+          </details>
 
           {saveMessage && (
             <div

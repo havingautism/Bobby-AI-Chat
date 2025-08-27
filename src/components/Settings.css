@@ -91,23 +91,143 @@
 .setting-input {
   width: 100%;
   padding: 12px 16px;
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 8px;
-  color: var(--text-primary);
+  color: var(--text-primary) !important;
   font-size: 14px;
   transition: all 0.15s ease;
   font-family: inherit;
 }
 
+/* 确保明亮模式下有明显边框 */
+[data-theme="light"] .setting-input {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .setting-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 暗色模式下的样式 */
+[data-theme="dark"] .setting-input {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
 .setting-input:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none !important;
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+[data-theme="dark"] .setting-input:focus {
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+.setting-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* 高级设置折叠区域 */
+.advanced-settings {
+  margin-top: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.advanced-settings summary {
+  padding: 16px;
+  background-color: var(--bg-secondary);
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.advanced-settings summary:hover {
+  background-color: var(--bg-hover);
+}
+
+.advanced-settings summary::marker {
+  display: none;
+}
+
+.advanced-settings summary::before {
+  content: '▶';
+  transition: transform 0.15s ease;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.advanced-settings[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.advanced-content {
+  padding: 16px;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+}
+
+.advanced-content .setting-group {
+  margin-bottom: 16px;
+}
+
+.advanced-content .setting-group:last-child,
+.advanced-content .setting-row:last-child {
+  margin-bottom: 0;
+}
+
+/* 明亮模式下的高级设置样式 */
+[data-theme="light"] .advanced-settings {
+  border: 1px solid #e5e7eb;
+}
+
+[data-theme="light"] .advanced-settings summary {
+  background-color: #f9fafb;
+}
+
+[data-theme="light"] .advanced-settings summary:hover {
+  background-color: #f3f4f6;
+}
+
+[data-theme="light"] .advanced-content {
+  background-color: #ffffff;
+  border-top: 1px solid #e5e7eb;
 }
 
 .setting-input::placeholder {
-  color: var(--text-tertiary);
+  color: var(--text-tertiary) !important;
+}
+
+/* 特别处理密码输入框 */
+input[type="password"].setting-input {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+[data-theme="light"] input[type="password"].setting-input {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] input[type="password"].setting-input {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
 }
 
 .preset-buttons {
