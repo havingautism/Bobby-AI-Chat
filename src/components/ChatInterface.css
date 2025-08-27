@@ -158,14 +158,21 @@
   position: relative;
 }
 
-.message {
-  width: 100%;
-  border-bottom: 1px solid var(--border-color);
+[data-theme="dark"] .chat-messages {
+    flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-secondary);
+      padding: 0;
+      position: relative;
 }
 
-.message.user {
-  background-color: #f8f9fa;
+.message {
+  width: 100%;
+
 }
+
 
 .message.assistant {
   background-color: #ffffff;

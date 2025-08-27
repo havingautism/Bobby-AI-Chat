@@ -73,9 +73,9 @@
   /* 高级消息样式变量 - 暗夜模式 */
   --user-bg: transparent;
   --assistant-bg: #2f2f2f;
-  --user-message-bg: #0084ff;
+  --user-message-bg: #1c7ed6;
   --user-message-text: #ffffff;
-  --message-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --message-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   
   /* 头像样式变量 - 暗夜模式 */
   --avatar-bg: #3f3f3f;

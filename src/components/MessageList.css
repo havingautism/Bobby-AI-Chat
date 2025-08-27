@@ -209,6 +209,11 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
+/* 用户消息内容不使用flex: 1 */
+.message.user .message-content {
+  flex: none;
+}
+
 .message-content.error {
   color: var(--error-color);
 }
@@ -216,7 +221,7 @@
 .message-content pre {
   background-color: var(--code-bg);
   border: 1px solid var(--code-border);
-  border-radius: 12px;
+  /* border-radius: 12px; */
   padding: 12px;
   overflow-x: auto;
   margin: 12px 0;
@@ -337,10 +342,16 @@
   }
   
   .message.user .message-content {
-    max-width: 85%;
-    padding: 14px 16px;
+    max-width: 75% !important;
+    width: fit-content !important;
+    padding: 10px 14px;
     border-radius: 16px;
     font-size: 15px;
+    text-align: right;
+    display: inline-block !important;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    flex: none !important;
   }
   
   .message-content {
@@ -457,25 +468,29 @@
   border-left: 4px solid var(--error-color);
 }
 
-/* 用户消息样式 - GPT风格 */
-.message.user {
-  background: var(--user-bg);
-}
 
 .message.user .message-container {
   flex-direction: row-reverse;
-  justify-content: flex-start;
+  justify-content: flex-end;
+  align-items: flex-start;
 }
 
 .message.user .message-content {
   background: var(--user-message-bg);
   color: var(--user-message-text);
-  padding: 16px 20px;
+  padding: 12px 18px;
   border-radius: 18px;
-  max-width: 80%;
+  max-width: 70% !important;
+  width: fit-content !important;
   margin-left: auto;
-  font-weight: 400;
+  font-weight: 500;
   box-shadow: var(--message-shadow);
+  text-align: right;
+  display: inline-block !important;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: none !important;
+  line-height: 1.5;
 }
 
 /* 助手消息样式 - 现代化设计 */
@@ -489,7 +504,7 @@
   padding: 0;
 }
 
-.message.assistant::before {
+/* .message.assistant::before {
   content: '';
   position: absolute;
   left: 0;
@@ -498,7 +513,7 @@
   height: 1px;
   background: var(--border-color);
   opacity: 0.1;
-}
+} */
 
 .message.error .message-content {
   color: var(--error-color);
@@ -670,4 +685,73 @@
 [data-theme="dark"] .reasoning-badge {
   background: var(--accent-color);
   color: #ffffff;
+}
+
+/* 暗色模式下的用户消息优化 */
+[data-theme="dark"] .message.user .message-content {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.25);
+  border: 1px solid rgba(37, 99, 235, 0.4);
+  font-weight: 500;
+}
+
+[data-theme="dark"] .message.user .message-content:hover {
+  background: #1d4ed8;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* 暗色模式下的代码块优化 */
+[data-theme="dark"] .message-content pre {
+  background-color: #1e293b;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .message-content code {
+  background-color: #1e293b;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .message-content pre code {
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+}
+
+/* 暗色模式下的blockquote优化 */
+[data-theme="dark"] .message-content blockquote {
+  background-color: #334155;
+  color: #cbd5e1;
+  border-left-color: #3b82f6;
+  border: 1px solid #475569;
+      border-left: 4px solid var(--accent-color);
+}
+
+/* 暗色模式下的内联代码优化 */
+[data-theme="dark"] .message-content .inline-code {
+  background-color: #1e293b;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+}
+
+/* 暗色模式下的列表和标题优化 */
+[data-theme="dark"] .message-content h1,
+[data-theme="dark"] .message-content h2,
+[data-theme="dark"] .message-content h3,
+[data-theme="dark"] .message-content h4,
+[data-theme="dark"] .message-content h5,
+[data-theme="dark"] .message-content h6 {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .message-content p {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .message-content li {
+  color: #e2e8f0;
 }

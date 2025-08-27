@@ -115,9 +115,6 @@ button {
   background: var(--bg-primary);
 }
 
-.message.user {
-  background: var(--bg-secondary);
-}
 
 /* 欢迎界面主题 */
 .welcome-screen {
@@ -168,7 +165,7 @@ button {
 }
 
 [data-theme="dark"] .message.assistant {
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
 }
 
 [data-theme="dark"] .message.assistant.loading {

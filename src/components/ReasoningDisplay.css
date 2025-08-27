@@ -192,6 +192,14 @@
   border-top-color: var(--border-color);
 }
 
+[data-theme="dark"] .reasoning-content {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .reasoning-title {
+  color: var(--text-primary);
+}
+
 /* 响应式设计 */
 @media (max-width: 480px) {
   .reasoning-container {
