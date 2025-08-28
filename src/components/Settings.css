@@ -289,6 +289,12 @@ input[type="password"].setting-input {
   gap: 12px;
 }
 
+.test-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 .footer-buttons {
   display: flex;
   gap: 12px;

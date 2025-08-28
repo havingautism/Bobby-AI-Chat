@@ -224,40 +224,47 @@ const ChatInterface = ({
                   isTitleGenerating: true,
                 });
 
-                // 使用流式生成标题
-                await generateChatTitleStream(
-                  finalMessages,
-                  // onChunk - 实时更新标题
-                  (partialTitle) => {
-                    console.log("标题生成中:", partialTitle);
-                    onUpdateConversation(conversationId, {
-                      title: partialTitle || "正在生成标题...",
-                      isTitleGenerating: true,
-                    });
-                  },
-                  // onComplete - 完成生成
-                  (finalTitle) => {
-                    console.log("流式标题生成完成:", finalTitle);
-                    setIsTitleGenerating(false);
-                    setTitleGeneratingId(null);
-                    onUpdateConversation(conversationId, {
-                      title: finalTitle || finalMessages[0].content,
-                      isTitleGenerating: false,
-                    });
-                  },
-                  // onError - 生成失败
-                  (error) => {
-                    console.error("流式标题生成失败:", error);
-                    setIsTitleGenerating(false);
-                    setTitleGeneratingId(null);
-                    // 使用用户的第一条消息作为标题
-                    const fallbackTitle = finalMessages[0].content;
-                    onUpdateConversation(conversationId, {
-                      title: fallbackTitle,
-                      isTitleGenerating: false,
-                    });
-                  }
-                );
+                // 使用流式生成标题，失败时自动回退到简单标题
+                try {
+                  await generateChatTitleStream(
+                    finalMessages,
+                    // onChunk - 实时更新标题
+                    (partialTitle) => {
+                      console.log("标题生成中:", partialTitle);
+                      onUpdateConversation(conversationId, {
+                        title: partialTitle || "正在生成标题...",
+                        isTitleGenerating: true,
+                      });
+                    },
+                    // onComplete - 完成生成
+                    (finalTitle) => {
+                      console.log("流式标题生成完成:", finalTitle);
+                      setIsTitleGenerating(false);
+                      setTitleGeneratingId(null);
+                      onUpdateConversation(conversationId, {
+                        title: finalTitle || finalMessages[0].content,
+                        isTitleGenerating: false,
+                      });
+                    },
+                    // onError - 生成失败时的处理
+                    (error) => {
+                      console.error("流式标题生成失败，尝试回退:", error);
+                      // 不在这里处理，让外层catch处理
+                    }
+                  );
+                } catch (error) {
+                  console.error("流式标题生成完全失败，使用备用方案:", error);
+                  setIsTitleGenerating(false);
+                  setTitleGeneratingId(null);
+                  // 使用用户的第一条消息作为标题
+                  const userMessage = finalMessages.find(m => m.role === "user");
+                  const fallbackTitle = userMessage?.content?.slice(0, 30) + 
+                                      (userMessage?.content?.length > 30 ? "..." : "") || "新对话";
+                  onUpdateConversation(conversationId, {
+                    title: fallbackTitle,
+                    isTitleGenerating: false,
+                  });
+                }
                 
               } catch (error) {
                 console.error("自动生成标题失败:", error);
@@ -318,7 +325,8 @@ const ChatInterface = ({
     }
   };
   
-  // 带重试功能的消息发送（保留非流式版本）
+  // 带重试功能的消息发送（保留非流式版本作为备用）
+  // eslint-disable-next-line no-unused-vars
   const sendMessageWithRetry = async (messages, options, conversationId) => {
     // 不再需要设置加载状态，使用流式输出的内联指示器
     // setLoadingConversations((prev) => new Set([...prev, conversationId]));
@@ -399,6 +407,12 @@ const ChatInterface = ({
 
     const { messages, options, conversationId } = errorMessage.retryData;
 
+    // 如果当前正在进行流式输出，不要中断
+    if (isStreaming && streamingConversationId === conversationId) {
+      console.log("正在进行流式输出，跳过重试");
+      return;
+    }
+
     // 移除错误消息
     const messagesWithoutError = conversation.messages.filter(
       (msg) => msg.id !== errorMessage.id
@@ -408,8 +422,8 @@ const ChatInterface = ({
       messages: messagesWithoutError,
     });
 
-    // 重新发送消息
-    await sendMessageWithRetry(messages, options, conversationId);
+    // 使用流式版本重新发送消息，而不是非流式版本
+    await sendMessageWithStream(messages, options, conversationId);
   };
 
   // 如果没有消息，显示欢迎界面
@@ -462,33 +476,40 @@ const ChatInterface = ({
                   isTitleGenerating: true 
                 });
 
-                await generateChatTitleStream(
-                  conversation.messages,
-                  (partialTitle) => {
-                    onUpdateConversation(conversation.id, {
-                      title: partialTitle || "正在生成标题...",
-                      isTitleGenerating: true,
-                    });
-                  },
-                  (finalTitle) => {
-                    setIsTitleGenerating(false);
-                    setTitleGeneratingId(null);
-                    onUpdateConversation(conversation.id, {
-                      title: finalTitle || conversation.messages[0]?.content || "新对话",
-                      isTitleGenerating: false,
-                    });
-                  },
-                  (error) => {
-                    console.error("手动流式标题生成失败:", error);
-                    setIsTitleGenerating(false);
-                    setTitleGeneratingId(null);
-                    const fallbackTitle = conversation.messages.find(m => m.role === "user")?.content || "新对话";
-                    onUpdateConversation(conversation.id, {
-                      title: fallbackTitle,
-                      isTitleGenerating: false,
-                    });
-                  }
-                );
+                try {
+                  await generateChatTitleStream(
+                    conversation.messages,
+                    (partialTitle) => {
+                      onUpdateConversation(conversation.id, {
+                        title: partialTitle || "正在生成标题...",
+                        isTitleGenerating: true,
+                      });
+                    },
+                    (finalTitle) => {
+                      setIsTitleGenerating(false);
+                      setTitleGeneratingId(null);
+                      onUpdateConversation(conversation.id, {
+                        title: finalTitle || conversation.messages[0]?.content || "新对话",
+                        isTitleGenerating: false,
+                      });
+                    },
+                    (error) => {
+                      console.error("手动流式标题生成失败:", error);
+                      // 不在这里处理，让外层catch处理
+                    }
+                  );
+                } catch (error) {
+                  console.error("手动标题生成完全失败，使用备用方案:", error);
+                  setIsTitleGenerating(false);
+                  setTitleGeneratingId(null);
+                  const userMessage = conversation.messages.find(m => m.role === "user");
+                  const fallbackTitle = userMessage?.content?.slice(0, 30) + 
+                                      (userMessage?.content?.length > 30 ? "..." : "") || "新对话";
+                  onUpdateConversation(conversation.id, {
+                    title: fallbackTitle,
+                    isTitleGenerating: false,
+                  });
+                }
               } catch (error) {
                 console.error("手动生成标题失败:", error);
                 setIsTitleGenerating(false);
@@ -524,6 +545,7 @@ const ChatInterface = ({
           onOpenSettings={onOpenSettings}
           conversationRole={conversation.role}
           onRetryMessage={handleRetryMessage}
+          isStreaming={isStreaming && streamingConversationId === conversation.id}
         />
         {/* 移除独立的加载指示器，使用流式输出的内联指示器 */}
         <div ref={messagesEndRef} />

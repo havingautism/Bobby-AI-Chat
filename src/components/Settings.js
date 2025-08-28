@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getApiConfig, updateApiConfig } from "../utils/api";
+import { getApiConfig, updateApiConfig, testTitleGeneration } from "../utils/api";
 import { getCurrentLanguage } from "../utils/language";
 import "./Settings.css";
 
@@ -14,6 +14,8 @@ const Settings = ({ isOpen, onClose }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+  const [isTesting, setIsTesting] = useState(false);
+  const [testMessage, setTestMessage] = useState("");
 
   const presetConfigs = {
     siliconflow: {
@@ -123,6 +125,30 @@ const Settings = ({ isOpen, onClose }) => {
       setSaveMessage(`连接测试失败: ${error.message}`);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleTestTitleGeneration = async () => {
+    setIsTesting(true);
+    setTestMessage("正在测试标题生成...");
+
+    try {
+      // 临时更新配置进行测试
+      const tempConfig = { ...config };
+      updateApiConfig(tempConfig);
+
+      // 测试标题生成
+      const result = await testTitleGeneration();
+      
+      if (result.success) {
+        setTestMessage(`标题生成测试成功！生成的标题: "${result.title}"`);
+      } else {
+        setTestMessage(`标题生成测试失败: ${result.error}`);
+      }
+    } catch (error) {
+      setTestMessage(`标题生成测试失败: ${error.message}`);
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -243,20 +269,40 @@ const Settings = ({ isOpen, onClose }) => {
               {saveMessage}
             </div>
           )}
+          {testMessage && (
+            <div
+              className={`save-message ${
+                testMessage.includes("成功") ? "success" : "error"
+              }`}
+            >
+              {testMessage}
+            </div>
+          )}
         </div>
 
         <div className="settings-footer">
-          <button
-            className="test-button"
-            onClick={handleTestConnection}
-            disabled={
-              isSaving || !config.baseURL || !config.apiKey || !config.model
-            }
-          >
-            {isSaving && saveMessage.includes("测试")
-              ? "测试中..."
-              : "测试连接"}
-          </button>
+          <div className="test-buttons">
+            <button
+              className="test-button"
+              onClick={handleTestConnection}
+              disabled={
+                isSaving || !config.baseURL || !config.apiKey || !config.model
+              }
+            >
+              {isSaving && saveMessage.includes("测试")
+                ? "测试中..."
+                : "测试连接"}
+            </button>
+            <button
+              className="test-button"
+              onClick={handleTestTitleGeneration}
+              disabled={
+                isTesting || !config.baseURL || !config.apiKey || !config.model
+              }
+            >
+              {isTesting ? "测试中..." : "测试标题生成"}
+            </button>
+          </div>
           <div className="footer-buttons">
             <button className="cancel-button" onClick={onClose}>
               取消

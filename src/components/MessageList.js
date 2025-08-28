@@ -11,6 +11,7 @@ const MessageList = ({
   onOpenSettings,
   conversationRole,
   onRetryMessage,
+  isStreaming = false,
 }) => {
   // const formatTime = (timestamp) => {
   //   return new Date(timestamp).toLocaleTimeString("zh-CN", {
@@ -123,7 +124,8 @@ const MessageList = ({
                     <button
                       className="retry-button"
                       onClick={() => onRetryMessage(message)}
-                      title="重试发送消息"
+                      disabled={isStreaming}
+                      title={isStreaming ? "请等待当前流式输出完成" : "重试发送消息"}
                     >
                       <svg
                         width="16"
@@ -138,7 +140,7 @@ const MessageList = ({
                         <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
                         <path d="M3 21v-5h5" />
                       </svg>
-                      重试
+                      {isStreaming ? "等待中..." : "重试"}
                     </button>
                   </div>
                 )}

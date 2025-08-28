@@ -456,6 +456,18 @@
   box-shadow: var(--shadow-sm);
 }
 
+.retry-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #6b7280;
+}
+
+.retry-button:disabled:hover {
+  background: #6b7280;
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
 .retry-button svg {
   width: 16px;
   height: 16px;

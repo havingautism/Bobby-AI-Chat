@@ -459,9 +459,17 @@ const cleanMarkdown = (text) => {
 export const generateChatTitleStream = async (messages, onChunk = null, onComplete = null, onError = null) => {
   try {
     console.log("generateChatTitleStream 被调用，消息数量:", messages.length);
+    console.log("API配置检查:", {
+      hasApiKey: !!API_CONFIG.apiKey,
+      baseURL: API_CONFIG.baseURL,
+      model: API_CONFIG.model
+    });
     
     if (!API_CONFIG.apiKey) {
-      throw new Error("请先在设置中配置API密钥");
+      const error = new Error("请先在设置中配置API密钥");
+      console.error("API密钥未配置");
+      if (onError) onError(error);
+      throw error;
     }
 
     // 获取前几条消息用于生成标题
@@ -474,10 +482,25 @@ export const generateChatTitleStream = async (messages, onChunk = null, onComple
 
     const titlePrompt = {
       role: "system",
-      content: "根据对话生成简洁标题，不超过20字，直接输出标题内容：",
+      content: "你是一个专业的标题生成助手。请根据用户的问题生成一个简洁明了的中文标题，要求：1.不超过15个字 2.概括核心内容 3.直接输出标题，不要引号或其他格式 4.不要说根据对话等多余的话",
     };
 
-    console.log("发送流式标题生成请求...");
+    // 构建更明确的消息序列
+    const titleMessages = [
+      titlePrompt,
+      ...relevantMessages,
+      { role: "user", content: "请为上面的对话生成一个简洁的标题" }
+    ];
+
+    const requestBody = {
+      model: API_CONFIG.model,
+      messages: titleMessages,
+      temperature: 0.3, // 提高温度以获得更好的响应
+      max_tokens: 200, // 减少token数量，标题不需要太多
+      stream: true,
+    };
+
+    console.log("发送流式标题生成请求...", requestBody);
     
     const response = await fetch(API_CONFIG.baseURL, {
       method: 'POST',
@@ -485,17 +508,17 @@ export const generateChatTitleStream = async (messages, onChunk = null, onComple
         'Authorization': `Bearer ${API_CONFIG.apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: API_CONFIG.model,
-        messages: [titlePrompt, ...relevantMessages],
-        temperature: 0.1,
-        max_tokens: 30,
-        stream: true,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
+    console.log("API响应状态:", response.status, response.statusText);
+
     if (!response.ok) {
-      throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      const error = new Error(`API请求失败: ${response.status} ${response.statusText} - ${errorText}`);
+      console.error("API请求失败详情:", error);
+      if (onError) onError(error);
+      throw error;
     }
 
     const reader = response.body.getReader();
@@ -503,15 +526,19 @@ export const generateChatTitleStream = async (messages, onChunk = null, onComple
     
     let buffer = '';
     let fullTitle = '';
+    let hasReceivedData = false;
 
     try {
+      console.log("开始读取流式响应...");
       while (true) {
         const { done, value } = await reader.read();
         
         if (done) {
+          console.log("流式读取完成，最终标题:", fullTitle);
           break;
         }
 
+        hasReceivedData = true;
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop();
@@ -519,13 +546,34 @@ export const generateChatTitleStream = async (messages, onChunk = null, onComple
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6).trim();
+            console.log("收到流式数据:", data);
             
             if (data === '[DONE]') {
-              if (onComplete) {
-                const cleanTitle = cleanMarkdown(fullTitle.trim());
-                onComplete(cleanTitle);
+              console.log("流式数据结束，完整标题:", `"${fullTitle}"`);
+              let finalTitle = cleanMarkdown(fullTitle.trim());
+              
+              // 如果API返回空标题，尝试从用户消息中提取关键词
+              if (!finalTitle) {
+                console.log("API返回空标题，尝试从用户消息提取");
+                const userMessage = relevantMessages.find(msg => msg.role === "user");
+                if (userMessage) {
+                  // 简单提取前20个字符作为标题
+                  finalTitle = userMessage.content.slice(0, 20).trim();
+                  if (userMessage.content.length > 20) {
+                    finalTitle += "...";
+                  }
+                  console.log("从用户消息提取的标题:", `"${finalTitle}"`);
+                }
               }
-              return cleanMarkdown(fullTitle.trim());
+              
+              finalTitle = finalTitle || "新对话";
+              console.log("最终标题:", `"${finalTitle}"`);
+              
+              if (onComplete) {
+                console.log("调用onComplete，最终标题:", `"${finalTitle}"`);
+                onComplete(finalTitle);
+              }
+              return finalTitle;
             }
 
             try {
@@ -534,13 +582,14 @@ export const generateChatTitleStream = async (messages, onChunk = null, onComple
                 const content = parsed.choices[0].delta.content;
                 if (content) {
                   fullTitle += content;
+                  console.log("标题更新:", fullTitle);
                   if (onChunk) {
                     onChunk(fullTitle);
                   }
                 }
               }
             } catch (e) {
-              // 忽略解析错误
+              console.warn("解析流式数据失败:", e, "数据:", data);
             }
           }
         }
@@ -549,11 +598,40 @@ export const generateChatTitleStream = async (messages, onChunk = null, onComple
       reader.releaseLock();
     }
 
-    const cleanTitle = cleanMarkdown(fullTitle.trim());
-    return cleanTitle;
+    let finalTitle = cleanMarkdown(fullTitle.trim());
+    
+    // 如果没有收到有效标题，尝试从用户消息提取
+    if (!finalTitle) {
+      console.log("未收到有效标题，尝试从用户消息提取");
+      const userMessage = relevantMessages.find(msg => msg.role === "user");
+      if (userMessage) {
+        finalTitle = userMessage.content.slice(0, 20).trim();
+        if (userMessage.content.length > 20) {
+          finalTitle += "...";
+        }
+        console.log("从用户消息提取的标题:", `"${finalTitle}"`);
+      }
+    }
+    
+    finalTitle = finalTitle || "新对话";
+    console.log("流式标题生成完成，最终返回:", `"${finalTitle}"`);
+    
+    if (!hasReceivedData) {
+      const error = new Error("未收到任何流式数据，可能是API连接问题");
+      console.error(error);
+      if (onError) onError(error);
+      throw error;
+    }
+    
+    return finalTitle;
     
   } catch (error) {
     console.error("流式标题生成失败:", error);
+    console.error("错误详情:", {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
     if (onError) {
       onError(error);
     }
@@ -690,5 +768,71 @@ export const generateChatTitleOld = async (messages) => {
       }
     }
     return "新对话";
+  }
+};
+
+// 测试API连接和标题生成功能
+export const testTitleGeneration = async () => {
+  try {
+    console.log("=== 开始测试标题生成功能 ===");
+    console.log("API配置:", {
+      hasApiKey: !!API_CONFIG.apiKey,
+      baseURL: API_CONFIG.baseURL,
+      model: API_CONFIG.model,
+      apiKeyPrefix: API_CONFIG.apiKey ? API_CONFIG.apiKey.substring(0, 10) + "..." : "未配置"
+    });
+
+    if (!API_CONFIG.apiKey) {
+      throw new Error("API密钥未配置");
+    }
+
+    // 测试简单的API连接
+    const testMessages = [
+      { role: "user", content: "你好，请问今天天气如何？" }
+    ];
+
+    console.log("发送测试请求...");
+    
+    const response = await fetch(API_CONFIG.baseURL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${API_CONFIG.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: API_CONFIG.model,
+        messages: [
+          { role: "system", content: "你是一个专业的标题生成助手。请根据用户的问题生成一个简洁明了的中文标题，要求：1.不超过10个字 2.概括核心内容 3.直接输出标题，不要引号或其他格式" },
+          ...testMessages
+        ],
+        temperature: 0.3, // 提高一点温度
+        max_tokens: 30,
+        stream: false, // 先测试非流式
+      }),
+    });
+
+    console.log("API响应状态:", response.status, response.statusText);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API请求失败: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log("API响应数据:", data);
+    
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      const title = data.choices[0].message.content;
+      console.log("生成的标题:", title);
+      console.log("=== 标题生成测试成功 ===");
+      return { success: true, title };
+    } else {
+      throw new Error("API响应格式不正确");
+    }
+    
+  } catch (error) {
+    console.error("=== 标题生成测试失败 ===");
+    console.error("错误详情:", error);
+    return { success: false, error: error.message };
   }
 };
