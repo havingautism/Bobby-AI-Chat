@@ -121,36 +121,36 @@
   padding: 0 24px;
   display: flex;
   gap: 16px;
-  align-items: flex-start;
+  align-items: flex-start; /* 确保头像和文字顶部对齐 */
   position: relative;
 }
 
 .message-avatar {
-  width: 44px;
-  height: 44px;
+  width: 36px; /* 与侧边栏一致 */
+  height: 36px; /* 与侧边栏一致 */
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 24px;
+  font-size: 18px; /* 与侧边栏一致 */
   background: var(--bg-secondary);
-  border: none;
+  border: 1px solid rgba(0, 0, 0, 0.08); /* 添加边框 */
   border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); /* 与侧边栏一致 */
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  backdrop-filter: blur(8px);
+  margin-top: 0;
 }
 
 .user-avatar {
   background: rgba(99, 102, 241, 0.08);
   color: #6366f1;
-  width: 44px;
-  height: 44px;
+  width: 36px !important;  /* 与侧边栏一致 */
+  height: 36px !important; /* 与侧边栏一致 */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 18px !important; /* 与侧边栏一致 */
   border: 1px solid rgba(99, 102, 241, 0.12);
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -166,8 +166,8 @@
 }
 
 .bobby-avatar {
-  width: 44px;
-  height: 44px;
+  width: 36px !important;  /* 与侧边栏一致 */
+  height: 36px !important; /* 与侧边栏一致 */
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -190,8 +190,8 @@
 .bobby-logo {
   border-radius: 50%;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 28px;
-  height: 28px;
+  width: 18px !important;  /* 与侧边栏一致 */
+  height: 18px !important; /* 与侧边栏一致 */
   object-fit: cover;
 }
 
@@ -202,12 +202,12 @@
 .assistant-avatar {
   background: rgba(14, 165, 233, 0.08);
   color: #0ea5e9;
-  width: 44px;
-  height: 44px;
+  width: 36px !important;  /* 与侧边栏一致 */
+  height: 36px !important; /* 与侧边栏一致 */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 18px !important; /* 与侧边栏一致 */
   border: 1px solid rgba(14, 165, 233, 0.12);
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -223,20 +223,22 @@
 }
 
 .assistant-avatar svg {
-  width: 16px;
-  height: 16px;
+  width: 14px; /* 稍微减小以适配36px头像 */
+  height: 14px; /* 稍微减小以适配36px头像 */
 }
 
 .message-content {
   flex: 1;
-  line-height: 1.5;
+  line-height: 1.6; /* 稍微增加行间距，提升可读性 */
   font-size: 15px;
   word-wrap: break-word;
   overflow-wrap: break-word;
   min-width: 0;
   color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 400;
+  font-weight: 450; /* 增加字重，让AI回答更清晰 */
+  margin-top: 0;
+  padding-top: 0;
 }
 
 /* 用户消息内容不使用flex: 1 */
@@ -249,15 +251,13 @@
 }
 
 .message-content pre {
-  background-color: var(--code-bg);
-  border: 1px solid var(--code-border);
-  border-radius: 8px;
-  padding: 10px 12px;
+  
+  /* border-radius: 8px; */
   overflow-x: auto;
-  margin: 10px 0;
+  margin: 16px 0; /* 增加代码块上下间距 */
   font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  font-size: 13px;
-  line-height: 1.3;
+  font-size: 14px; /* 稍微增大代码字体 */
+  line-height: 1.5; /* 改善代码行间距 */
   color: var(--text-primary);
   max-width: 100%;
   box-sizing: border-box;
@@ -266,12 +266,12 @@
 }
 
 .message-content code {
-  background-color: var(--code-bg);
-  border: 1px solid var(--code-border);
+  background-color: var(--bg-tertiary); /* 与代码块背景一致 */
+  border: 1px solid var(--border-color); /* 与代码块边框一致 */
   border-radius: 4px;
-  padding: 2px 5px;
+  padding: 3px 6px; /* 稍微增加内边距 */
   font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  font-size: 12px;
+  font-size: 13px; /* 稍微增大行内代码字体 */
   color: var(--text-primary);
   word-break: break-all;
   white-space: pre-wrap;
@@ -289,48 +289,56 @@
 .message-content h4,
 .message-content h5,
 .message-content h6 {
-  margin: 16px 0 10px 0;
+  margin: 20px 0 12px 0; /* 增加标题上下间距 */
   font-weight: 600;
   line-height: 1.3;
+  color: var(--text-primary);
 }
 
 .message-content h1 {
-  font-size: 22px;
+  font-size: 24px; /* 稍微增大主标题 */
+  font-weight: 700;
 }
 
 .message-content h2 {
-  font-size: 18px;
+  font-size: 20px; /* 稍微增大二级标题 */
+  font-weight: 650;
 }
 
 .message-content h3 {
-  font-size: 16px;
+  font-size: 17px; /* 稍微增大三级标题 */
+  font-weight: 600;
 }
 
 .message-content p {
-  margin: 10px 0;
+  margin: 12px 0; /* 稍微增加段落间距 */
+  line-height: 1.6;
+  font-weight: 450; /* 增加段落字重 */
 }
 
 .message-content ul,
 .message-content ol {
-  margin: 12px 0;
-  padding-left: 20px;
+  margin: 14px 0; /* 增加列表上下间距 */
+  padding-left: 24px; /* 稍微增加缩进 */
 }
 
 .message-content li {
-  margin: 4px 0;
-  line-height: 1.4;
+  margin: 6px 0; /* 增加列表项间距 */
+  line-height: 1.5; /* 改善列表项行间距 */
+  font-weight: 450; /* 增加列表项字重 */
 }
 
 .message-content blockquote {
-  border-left: 3px solid var(--accent-color);
-  padding-left: 14px;
-  margin: 12px 0;
+  border-left: 4px solid var(--accent-color); /* 稍微加粗左边框 */
+  padding: 12px 16px; /* 增加内边距 */
+  margin: 16px 0; /* 增加上下间距 */
   color: var(--text-secondary);
   background-color: var(--bg-secondary);
-  padding: 10px 14px;
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 8px 8px 0; /* 稍微增大圆角 */
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.5; /* 改善行间距 */
+  font-weight: 450; /* 增加引用块字重 */
+  font-style: italic; /* 添加斜体强调 */
 }
 
 /* 移动端布局重构 */
@@ -358,11 +366,7 @@
   .message {
     width: 100vw;
     max-width: 100vw;
-    padding: 16px 0;
-  }
-  
-  .message {
-    padding: 24px 0;
+    padding: 12px 0; /* 移动端减少消息间距 */
   }
   
   .message-container {
@@ -370,24 +374,50 @@
     max-width: none;
     margin: 0;
     padding: 0 20px;
-    gap: 12px;
+    gap: 8px; /* 减少头像和文字之间的间距 */
     display: flex;
+    flex-direction: column; /* 移动端垂直布局：头像在上，文字在下 */
     align-items: flex-start;
   }
   
+
+  
+  .message-actions {
+    gap: 6px !important; /* 移动端按钮间距适中 */
+    margin-top: 8px !important; /* 移动端按钮上边距适中 */
+  }
+  
+  .action-button,
+  .copy-button,
+  .regenerate-button {
+    width: 28px !important;
+    height: 28px !important;
+    padding: 4px !important;
+    font-size: 11px !important;
+    margin: 0 !important; /* 移动端确保没有额外margin */
+  }
+  
+  .action-button svg,
+  .copy-button svg,
+  .regenerate-button svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  
   .message.user .message-content {
-    max-width: 75% !important;
-    width: fit-content !important;
-    padding: 10px 14px;
+    max-width: 100% !important; /* 移动端充分利用屏幕宽度 */
+    width: 100% !important; /* 移动端充分利用屏幕宽度 */
+    padding: 12px 16px;
     border-radius: 16px;
     font-size: 15px;
     text-align: left;
-    display: inline-block !important;
+    display: block !important; /* 移动端使用block布局 */
     word-wrap: break-word;
     overflow-wrap: break-word;
     flex: none !important;
     margin-left: 0;
-    margin-right: auto;
+    margin-right: 0; /* 移动端不需要右边距 */
+    margin-bottom: 0 !important;
   }
   
   .message-content {
@@ -396,17 +426,17 @@
   }
   
   .message-avatar {
-    width: 38px;
-    height: 38px;
+    width: 32px !important; /* 移动端稍微小一点 */
+    height: 32px !important;
     flex-shrink: 0;
   }
   
   .user-avatar,
   .assistant-avatar,
   .bobby-avatar {
-    width: 38px;
-    height: 38px;
-    font-size: 20px;
+    width: 32px !important;  /* 移动端稍微小一点 */
+    height: 32px !important;
+    font-size: 16px !important; /* 相应调整字体大小 */
   }
   
   .assistant-avatar svg {
@@ -414,12 +444,18 @@
     height: 14px;
   }
   
+  .bobby-logo {
+    width: 16px !important;  /* 适配32px头像 */
+    height: 16px !important;
+  }
+  
   .message-content {
     flex: 1;
     font-size: 15px;
     min-width: 0;
-    width: 100%;
+    width: 100%; /* 充分利用屏幕宽度 */
     max-width: none;
+    margin-left: 0; /* 移动端文字不需要左边距 */
   }
 }
 /* 角
@@ -472,45 +508,47 @@
 .retry-button {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--error-color);
-  color: #ffffff;
+  gap: 6px;
+  background: transparent;
+  color: var(--text-tertiary);
   border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 14px;
+  border-radius: 4px;
+  padding: 4px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: var(--shadow-sm);
+  width: auto;
+  height: 24px;
 }
 
 .retry-button:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  background: var(--bg-tertiary);
+  color: var(--error-color);
+  transform: scale(1.1);
 }
 
 .retry-button:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
+  transform: scale(1.05);
 }
 
 .retry-button:disabled {
-  opacity: 0.6;
+  opacity: 0.3;
   cursor: not-allowed;
-  background: #6b7280;
+  transform: none;
 }
 
 .retry-button:disabled:hover {
-  background: #6b7280;
+  background: transparent;
+  color: var(--text-tertiary);
   transform: none;
-  box-shadow: var(--shadow-sm);
 }
 
 .retry-button svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
   stroke-width: 2;
 }
 
@@ -521,10 +559,20 @@
 }
 
 
+/* 桌面端用户消息容器布局 */
 .message.user .message-container {
   flex-direction: row;
   justify-content: flex-start;
   align-items: flex-start;
+}
+
+/* 移动端覆盖：用户消息也使用垂直布局 */
+@media (max-width: 768px) {
+  .message.user .message-container {
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+  }
 }
 
 .message.user .message-content {
@@ -532,7 +580,7 @@
   color: var(--user-message-text);
   padding: 10px 16px;
   border-radius: 16px;
-  max-width: 70% !important;
+  /* max-width: 70% !important; */
   width: fit-content !important;
   margin-left: 0;
   margin-right: auto;
@@ -618,17 +666,123 @@
   font-style: italic;
 }
 
+/* 消息操作按钮 */
+.message-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  opacity: 1;
+  flex-wrap: wrap;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  width: 32px;
+  height: 32px;
+}
+
+.action-button svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  flex-shrink: 0;
+}
+
+.action-button:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.action-button:disabled:hover {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+  transform: none;
+  box-shadow: none;
+}
+
+/* 确保复制按钮和重新生成按钮完全一致 */
+.copy-button,
+.regenerate-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  color: var(--text-secondary) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  width: 32px !important;
+  height: 32px !important;
+  margin: 0 !important; /* 确保没有额外的margin */
+}
+
+.copy-button:hover {
+  color: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+  background: var(--bg-tertiary) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.copy-button.copied {
+  color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: #10b981 !important;
+}
+
+.regenerate-button:hover {
+  color: var(--warning-color) !important;
+  border-color: var(--warning-color) !important;
+  background: var(--bg-tertiary) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+
+
 /* 暗色模式下的错误样式 */
 [data-theme="dark"] .message.error {
   background: rgba(239, 68, 68, 0.1);
 }
 
 [data-theme="dark"] .retry-button {
-  background: #dc2626;
+  color: var(--text-tertiary);
 }
 
 [data-theme="dark"] .retry-button:hover {
-  background: #b91c1c;
+  color: var(--error-color);
+  background: var(--bg-tertiary);
 }
 
 /* 暗色模式下的头像样式 */
@@ -707,21 +861,26 @@
   }
   
   .message-avatar {
-    width: 34px;
-    height: 34px;
+    width: 28px !important; /* 超小屏幕更小 */
+    height: 28px !important;
   }
   
   .user-avatar,
   .assistant-avatar,
   .bobby-avatar {
-    width: 34px;
-    height: 34px;
-    font-size: 18px;
+    width: 28px !important;  /* 超小屏幕更小 */
+    height: 28px !important;
+    font-size: 14px !important; /* 相应调整字体大小 */
   }
   
   .assistant-avatar svg {
     width: 12px;
     height: 12px;
+  }
+  
+  .bobby-logo {
+    width: 14px !important;  /* 适配28px头像 */
+    height: 14px !important;
   }
   
   .message-content {
@@ -757,8 +916,9 @@
   }
   
   .retry-button {
-    padding: 6px 12px;
-    font-size: 13px;
+    padding: 4px;
+    font-size: 12px;
+    height: 24px;
   }
   
   .retry-button svg {

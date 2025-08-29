@@ -426,6 +426,47 @@ const ChatInterface = ({
     await sendMessageWithStream(messages, options, conversationId);
   };
 
+  // 重新生成消息
+  const handleRegenerateMessage = async (assistantMessage) => {
+    // 如果当前正在进行流式输出，不要中断
+    if (isStreaming) {
+      console.log("正在进行流式输出，跳过重新生成");
+      return;
+    }
+
+    // 找到这条助手消息在对话中的位置
+    const messageIndex = conversation.messages.findIndex(
+      (msg) => msg.id === assistantMessage.id
+    );
+
+    if (messageIndex === -1) return;
+
+    // 获取这条消息之前的所有消息（包括用户消息）
+    const messagesBeforeAssistant = conversation.messages.slice(0, messageIndex);
+    
+    // 移除这条助手消息及其之后的所有消息
+    const updatedMessages = messagesBeforeAssistant;
+
+    onUpdateConversation(conversation.id, {
+      messages: updatedMessages,
+    });
+
+    // 获取最后一条用户消息的选项
+    const lastUserMessage = messagesBeforeAssistant
+      .slice()
+      .reverse()
+      .find(msg => msg.role === "user");
+
+    if (lastUserMessage) {
+      // 重新生成回复
+      await sendMessageWithStream(
+        updatedMessages, 
+        lastUserMessage.options || {}, 
+        conversation.id
+      );
+    }
+  };
+
   // 如果没有消息，显示欢迎界面
   if (conversation.messages.length === 0) {
     return (
@@ -452,89 +493,20 @@ const ChatInterface = ({
           <button className="sidebar-toggle" onClick={onToggleSidebar}>
             ☰
           </button>
-          <div className="app-title">
-            <div className="bobby-logo">🐾</div>
-            <h1>{getRoleById(currentRole).name}</h1>
-            <div
-              className="bobby-status"
-              style={{ color: getRoleById(currentRole).color }}
+          <div className="conversation-header">
+            <h1 className="conversation-title">
+              {conversation.title || "新对话"}
+            </h1>
+            <button 
+              className="logo-button"
+              style={{ color: getRoleById(currentRole).color, display:'none' }}
+              title={getRoleById(currentRole).name}
             >
               {getRoleById(currentRole).avatar}
-            </div>
+            </button>
           </div>
         </div>
         <div className="header-actions">
-          <button 
-            onClick={async () => {
-              console.log("手动触发流式标题生成");
-              try {
-                setIsTitleGenerating(true);
-                setTitleGeneratingId(conversation.id);
-                
-                onUpdateConversation(conversation.id, { 
-                  title: "正在生成标题...",
-                  isTitleGenerating: true 
-                });
-
-                try {
-                  await generateChatTitleStream(
-                    conversation.messages,
-                    (partialTitle) => {
-                      onUpdateConversation(conversation.id, {
-                        title: partialTitle || "正在生成标题...",
-                        isTitleGenerating: true,
-                      });
-                    },
-                    (finalTitle) => {
-                      setIsTitleGenerating(false);
-                      setTitleGeneratingId(null);
-                      onUpdateConversation(conversation.id, {
-                        title: finalTitle || conversation.messages[0]?.content || "新对话",
-                        isTitleGenerating: false,
-                      });
-                    },
-                    (error) => {
-                      console.error("手动流式标题生成失败:", error);
-                      // 不在这里处理，让外层catch处理
-                    }
-                  );
-                } catch (error) {
-                  console.error("手动标题生成完全失败，使用备用方案:", error);
-                  setIsTitleGenerating(false);
-                  setTitleGeneratingId(null);
-                  const userMessage = conversation.messages.find(m => m.role === "user");
-                  const fallbackTitle = userMessage?.content?.slice(0, 30) + 
-                                      (userMessage?.content?.length > 30 ? "..." : "") || "新对话";
-                  onUpdateConversation(conversation.id, {
-                    title: fallbackTitle,
-                    isTitleGenerating: false,
-                  });
-                }
-              } catch (error) {
-                console.error("手动生成标题失败:", error);
-                setIsTitleGenerating(false);
-                setTitleGeneratingId(null);
-                const fallbackTitle = conversation.messages.find(m => m.role === "user")?.content || "新对话";
-                onUpdateConversation(conversation.id, { 
-                  title: fallbackTitle,
-                  isTitleGenerating: false 
-                });
-              }
-            }}
-            disabled={isTitleGenerating && titleGeneratingId === conversation.id}
-            style={{ 
-              padding: "4px 8px", 
-              fontSize: "12px", 
-              marginRight: "8px",
-              background: "var(--bg-primary)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "4px",
-              cursor: "pointer",
-              opacity: (isTitleGenerating && titleGeneratingId === conversation.id) ? 0.6 : 1
-            }}
-          >
-            生成标题
-          </button>
           <LanguageToggle />
         </div>
       </div>
@@ -545,6 +517,7 @@ const ChatInterface = ({
           onOpenSettings={onOpenSettings}
           conversationRole={conversation.role}
           onRetryMessage={handleRetryMessage}
+          onRegenerateMessage={handleRegenerateMessage}
           isStreaming={isStreaming && streamingConversationId === conversation.id}
         />
         {/* 移除独立的加载指示器，使用流式输出的内联指示器 */}

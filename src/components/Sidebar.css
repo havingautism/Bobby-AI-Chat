@@ -287,12 +287,15 @@
 
 .search-input {
   width: 100%;
-  padding: 8px 12px 8px 36px;
+  padding: 10px 14px 10px 38px; /* 增加内边距 */
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px; /* 增大圆角 */
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 15px; /* 与对话UI一致 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
+  font-weight: 400;
+  line-height: 1.4;
   transition: all 0.3s ease;
 }
 
@@ -350,13 +353,14 @@
 }
 
 .section-title {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px; /* 稍微增大字体 */
+  font-weight: 650; /* 增加字重 */
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  letter-spacing: 0.8px; /* 增加字母间距 */
+  margin-bottom: 10px; /* 增加下边距 */
   padding: 0 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
 }
 
 .conversation-item {
@@ -459,14 +463,20 @@
 }
 
 .no-results-text {
-  font-size: 14px;
+  font-size: 15px; /* 与对话UI一致 */
   color: var(--text-primary);
-  margin-bottom: 4px;
+  margin-bottom: 6px; /* 增加间距 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .no-results-hint {
-  font-size: 12px;
+  font-size: 13px; /* 稍微增大字体 */
   color: var(--text-tertiary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .search-highlight {
@@ -483,26 +493,29 @@
 }
 
 .conversation-title {
-  font-size: 14px;
+  font-size: 15px; /* 稍微增大字体，与对话UI一致 */
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: 400;
-  line-height: 1.2;
+  font-weight: 500; /* 增加字重，更现代化 */
+  line-height: 1.4; /* 改善行间距 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 与对话UI字体一致 */
 }
 
 .title-edit-input {
   background: var(--bg-primary);
   border: 1px solid var(--accent-color);
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 14px;
+  border-radius: 6px; /* 稍微增大圆角 */
+  padding: 4px 8px; /* 增加内边距 */
+  font-size: 15px; /* 与标题字体大小一致 */
   color: var(--text-primary);
   width: 100%;
   outline: none;
-  font-weight: 400;
-  line-height: 1.2;
+  font-weight: 500; /* 与标题字重一致 */
+  line-height: 1.4; /* 与标题行间距一致 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 与对话UI字体一致 */
+  transition: all 0.2s ease; /* 添加过渡效果 */
 }
 
 /* 标题生成加载动画 */
@@ -692,16 +705,20 @@
 }
 
 .user-name {
-  font-size: 14px;
+  font-size: 15px; /* 与对话标题一致 */
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 2px;
+  margin-bottom: 3px; /* 稍微增加间距 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
+  line-height: 1.3; /* 添加行间距 */
 }
 
 .user-status {
-  font-size: 12px;
+  font-size: 13px; /* 稍微增大字体 */
   color: var(--text-secondary);
   font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
+  line-height: 1.3; /* 添加行间距 */
 }
 
 .settings-icon {

@@ -47,10 +47,11 @@
   color: var(--text-primary);
 }
 
-.app-title {
+.conversation-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  flex: 1;
 }
 
 .header-actions {
@@ -64,21 +65,40 @@
   animation: pawPrint 2s ease-in-out infinite;
 }
 
-.chat-header h1 {
+.conversation-title {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
-  position: relative;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.3;
 }
 
-.chat-header h1::after {
-  content: "🐾";
-  position: absolute;
-  top: -2px;
-  right: -20px;
-  font-size: 12px;
-  opacity: 0.7;
+.logo-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.logo-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .bobby-status {

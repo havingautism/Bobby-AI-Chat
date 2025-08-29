@@ -53,6 +53,10 @@ export const translations = {
     sending: "发送中...",
     stop: "停止",
     retry: "重试",
+    copyReply: "复制回复",
+    copyQuestion: "复制问题",
+    regenerate: "重新生成",
+    copied: "已复制",
     
     // 设置页面
     settingsTitle: "设置",
@@ -96,6 +100,10 @@ export const translations = {
     sending: "Sending...",
     stop: "Stop",
     retry: "Retry",
+    copyReply: "Copy Reply",
+    copyQuestion: "Copy Question",
+    regenerate: "Regenerate",
+    copied: "Copied",
     
     // 设置页面
     settingsTitle: "Settings",
