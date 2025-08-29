@@ -1,4 +1,4 @@
-node_modules
+﻿node_modules
 
 # Chat history and development notes (exclude all .md files except README.md)
 *.md
