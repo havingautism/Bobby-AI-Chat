@@ -196,12 +196,26 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
                 rows={1}
                 className="welcome-textarea-clean"
                 style={{
+                  height: "auto",
+                  minHeight: "24px",
+                  maxHeight: "128px",
                   outline: "none",
                   border: "none",
                   boxShadow: "none",
                   WebkitAppearance: "none",
                   MozAppearance: "none",
                   appearance: "none",
+                }}
+                onInput={(e) => {
+                  e.target.style.height = "auto";
+                  e.target.style.height =
+                    Math.min(e.target.scrollHeight, 128) + "px";
+                  
+                  // 在欢迎页面中，始终向下展开
+                  const container = e.target.closest('.welcome-input-wrapper-clean');
+                  if (container) {
+                    container.classList.add('expand-downward');
+                  }
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {

@@ -64,6 +64,31 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
               e.target.style.height = "auto";
               e.target.style.height =
                 Math.min(e.target.scrollHeight, 128) + "px";
+              
+              // 自动调整输入框容器的展开方向（对话页面中向上展开）
+              const container = e.target.closest('.message-input-container');
+              if (container) {
+                const rect = container.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                const spaceBelow = viewportHeight - rect.bottom;
+                const spaceAbove = rect.top;
+                
+                // 在对话页面中，优先向上展开
+                const chatInterface = container.closest('.chat-interface');
+                const hasMessages = chatInterface && chatInterface.querySelector('.chat-messages .message');
+                
+                if (hasMessages) {
+                  // 对话页面：优先向上展开，除非上方空间不足
+                  if (spaceAbove < 100 && spaceBelow > spaceAbove) {
+                    container.classList.remove('expand-upward');
+                  } else {
+                    container.classList.add('expand-upward');
+                  }
+                } else {
+                  // 非对话页面：默认向下展开
+                  container.classList.remove('expand-upward');
+                }
+              }
             }}
           />
           {isStreaming ? (

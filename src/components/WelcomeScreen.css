@@ -312,6 +312,24 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+/* 欢迎页面输入框展开动画 */
+.welcome-input-wrapper-clean.expand-downward {
+  animation: expandDownwardWelcome 0.2s ease-out;
+}
+
+@keyframes expandDownwardWelcome {
+  from {
+    transform: scaleY(0.8);
+    transform-origin: top center;
+    opacity: 0.8;
+  }
+  to {
+    transform: scaleY(1);
+    transform-origin: top center;
+    opacity: 1;
+  }
+}
+
 .welcome-input-wrapper-clean:focus-within {
   border-color: var(--accent-color);
   box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.3), 0 2px 12px rgba(99, 179, 237, 0.2);
