@@ -972,8 +972,8 @@
 
 /* 暗色模式下的代码块优化 */
 [data-theme="dark"] .message-content pre {
-  background-color: #1e293b;
-  border: 1px solid #475569;
+  /* background-color: #1e293b;
+  border: 1px solid #475569; */
   color: #e2e8f0;
 }
 
