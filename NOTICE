@@ -1,0 +1,11 @@
+Bobby - AI Chat Application
+Copyright 2024 Bobby Project Contributors
+
+This product includes software developed by the Bobby Project Contributors.
+
+Third-party libraries and dependencies:
+- React (https://reactjs.org/) - Copyright (c) Meta Platforms, Inc.
+- Tailwind CSS (https://tailwindcss.com/) - Copyright (c) Tailwind Labs, Inc.
+- Vite (https://vitejs.dev/) - Copyright (c) Evan You
+
+For more information about third-party licenses, please refer to the respective project documentation.
