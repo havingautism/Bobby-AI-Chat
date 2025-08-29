@@ -1,10 +1,10 @@
 import axios from "axios";
 
-// 默认API配置
+// 默认API配置 - 硅基流动
 const DEFAULT_CONFIG = {
   baseURL: "https://api.siliconflow.cn/v1/chat/completions",
   apiKey: "",
-  model: "deepseek-ai/DeepSeek-V3",
+  model: "deepseek-ai/DeepSeek-V3.1", // 默认最新对话模型
   temperature: 0.7,
   maxTokens: 2000,
 };
