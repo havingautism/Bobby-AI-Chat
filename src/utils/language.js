@@ -90,6 +90,10 @@ export const translations = {
     // 推理过程
     displayThinking: "显示思路",
     analysis: "分析",
+    
+    // 时间轴
+    timeline: "时间轴",
+    questions: "个问题",
   },
   en: {
     // 应用标题
@@ -142,6 +146,10 @@ export const translations = {
     // 推理过程
     displayThinking: "Display Thinking",
     analysis: "Analysis",
+    
+    // 时间轴
+    timeline: "Timeline",
+    questions: "questions",
   },
 };
 

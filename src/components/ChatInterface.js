@@ -3,6 +3,7 @@ import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import WelcomeScreen from "./WelcomeScreen";
 import ModelSelector from "./ModelSelector";
+import ConversationTimeline from "./ConversationTimeline";
 import { sendMessage, sendMessageStream, isApiConfigured, generateChatTitleStream } from "../utils/api";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
 
@@ -25,6 +26,7 @@ const ChatInterface = ({
   const [abortController, setAbortController] = useState(null);
   const [isTitleGenerating, setIsTitleGenerating] = useState(false);
   const [titleGeneratingId, setTitleGeneratingId] = useState(null);
+  const [currentMessageId, setCurrentMessageId] = useState(null);
 
   const messagesEndRef = useRef(null);
   
@@ -44,6 +46,19 @@ const ChatInterface = ({
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // 处理跳转到指定消息
+  const handleJumpToMessage = (messageId) => {
+    setCurrentMessageId(messageId);
+    const messageElement = document.getElementById(`message-${messageId}`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      // 3秒后清除高亮
+      setTimeout(() => {
+        setCurrentMessageId(null);
+      }, 3000);
+    }
   };
 
   useEffect(() => {
@@ -481,6 +496,11 @@ const ChatInterface = ({
         </div>
         </div>
         <WelcomeScreen onSendMessage={handleSendMessage} disabled={isStreaming} />
+        <ConversationTimeline
+          messages={conversation.messages}
+          onJumpToMessage={handleJumpToMessage}
+          currentMessageId={currentMessageId}
+        />
       </div>
     );
   }
@@ -525,6 +545,7 @@ const ChatInterface = ({
           onRetryMessage={handleRetryMessage}
           onRegenerateMessage={handleRegenerateMessage}
           isStreaming={isStreaming && streamingConversationId === conversation.id}
+          currentMessageId={currentMessageId}
         />
         {/* 移除独立的加载指示器，使用流式输出的内联指示器 */}
         <div ref={messagesEndRef} />
@@ -535,6 +556,11 @@ const ChatInterface = ({
           disabled={isStreaming && streamingConversationId === conversation.id}
           isStreaming={isStreaming && streamingConversationId === conversation.id}
           onStopStreaming={stopStreaming}
+        />
+        <ConversationTimeline
+          messages={conversation.messages}
+          onJumpToMessage={handleJumpToMessage}
+          currentMessageId={currentMessageId}
         />
     </div>
   );
