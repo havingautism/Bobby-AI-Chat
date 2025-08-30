@@ -4,6 +4,7 @@ import Sidebar from "./components/Sidebar";
 import Settings from "./components/Settings";
 import { loadChatHistory, saveChatHistory } from "./utils/storage";
 import { initTheme } from "./utils/theme";
+import { getApiConfig } from "./utils/api";
 import { v4 as uuidv4 } from "uuid";
 import "./App.css";
 import "./styles/theme.css";
@@ -15,10 +16,15 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [defaultModel, setDefaultModel] = useState("deepseek-ai/DeepSeek-V3.1");
 
   useEffect(() => {
     // 初始化主题
     initTheme();
+
+    // 获取默认模型配置
+    const apiConfig = getApiConfig();
+    setDefaultModel(apiConfig.model || "deepseek-ai/DeepSeek-V3.1");
 
     const savedConversations = loadChatHistory();
     console.log("加载的对话历史:", savedConversations);
@@ -35,6 +41,7 @@ function App() {
         messages: [],
         createdAt: new Date().toISOString(),
         role: null, // 初始对话没有角色
+        model: apiConfig.model || "deepseek-ai/DeepSeek-V3.1", // 使用配置的默认模型
       };
       setConversations([initialConversation]);
       setCurrentConversationId(initialConversation.id);
@@ -72,6 +79,7 @@ function App() {
         messages: [],
         createdAt: new Date().toISOString(),
         role: null, // 新对话没有角色
+        model: defaultModel, // 使用当前配置的默认模型
       };
       setConversations([newConversation, ...conversationsWithMessages]);
       setCurrentConversationId(newConversation.id);
@@ -105,6 +113,7 @@ function App() {
             messages: [],
             createdAt: new Date().toISOString(),
             role: null,
+            model: defaultModel, // 使用当前配置的默认模型
           };
           setCurrentConversationId(newConversation.id);
           return [newConversation];
@@ -119,6 +128,7 @@ function App() {
           messages: [],
           createdAt: new Date().toISOString(),
           role: null,
+          model: defaultModel, // 使用当前配置的默认模型
         };
         return [newConversation, ...filtered];
       }
@@ -167,7 +177,13 @@ function App() {
         )}
       </div>
 
-      <Settings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <Settings 
+        isOpen={settingsOpen} 
+        onClose={() => setSettingsOpen(false)}
+        onModelChange={(newModel) => {
+          setDefaultModel(newModel);
+        }}
+      />
     </div>
   );
 }

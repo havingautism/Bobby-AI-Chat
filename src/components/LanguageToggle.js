@@ -35,21 +35,43 @@ const LanguageToggle = () => {
         onClick={() => setIsOpen(!isOpen)}
         title="切换语言 / Switch Language"
       >
-        <span className="language-flag">{currentLanguage.flag}</span>
-        <span className="language-code">{currentLanguage.code.toUpperCase()}</span>
-        <span className={`dropdown-arrow ${isOpen ? "open" : ""}`}>▼</span>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2 12h20" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
       </button>
       
       {isOpen && (
         <div className="language-dropdown">
-          {otherLanguages.map((lang) => (
+          {Object.values(LANGUAGES).map((lang) => (
             <button
               key={lang.code}
-              className="language-option"
+              className={`language-option ${lang.code === currentLang ? "selected" : ""}`}
               onClick={() => handleLanguageSelect(lang.code)}
             >
               <span className="language-flag">{lang.flag}</span>
               <span className="language-name">{lang.name}</span>
+              {lang.code === currentLang && (
+                <svg
+                  className="check-icon"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
+              )}
             </button>
           ))}
         </div>

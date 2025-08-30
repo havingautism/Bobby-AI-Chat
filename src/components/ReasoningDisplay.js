@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import MarkdownRenderer from "./MarkdownRenderer";
+import { getCurrentLanguage, t } from "../utils/language";
 import "./ReasoningDisplay.css";
 
 const ReasoningDisplay = ({ reasoning, isStreaming = false }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [currentLanguage] = useState(() => getCurrentLanguage());
   
   // 流式输出时自动展开，结束后自动收起
   React.useEffect(() => {
@@ -37,11 +39,10 @@ const ReasoningDisplay = ({ reasoning, isStreaming = false }) => {
               stroke="currentColor"
               strokeWidth="2"
             >
-              <path d="M9 12l2 2 4-4" />
-              <path d="M21 12c0 1.66-.5 3.22-1.4 4.51a9 9 0 1 1 0-9.02C20.5 8.78 21 10.34 21 12z" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
             </svg>
           </div>
-          <span className="reasoning-title">推理过程</span>
+          <span className="reasoning-title">{t('displayThinking', currentLanguage)}</span>
           <div className={`reasoning-chevron ${isExpanded ? "expanded" : ""}`}>
             <svg
               width="16"

@@ -60,6 +60,10 @@
   gap: 8px;
 }
 
+.header-model-selector {
+  margin-right: 8px;
+}
+
 .bobby-logo {
   font-size: 20px;
   animation: pawPrint 2s ease-in-out infinite;
@@ -269,6 +273,35 @@
     position: sticky;
     top: 0;
     z-index: 100;
+    padding: 8px 12px;
+    min-height: 56px;
+  }
+  
+  .header-left {
+    gap: 8px;
+    min-width: 0;
+  }
+  
+  .conversation-header {
+    gap: 8px;
+    min-width: 0;
+  }
+  
+  .conversation-title {
+    font-size: 16px;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .header-actions {
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  
+  .header-model-selector {
+    margin-right: 0;
   }
   
   .chat-messages {
@@ -282,6 +315,9 @@
   
   .sidebar-toggle {
     display: block;
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
   }
 }
 

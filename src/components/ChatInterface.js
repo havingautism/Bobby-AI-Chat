@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import WelcomeScreen from "./WelcomeScreen";
-import LanguageToggle from "./LanguageToggle";
+import ModelSelector from "./ModelSelector";
 import { sendMessage, sendMessageStream, isApiConfigured, generateChatTitleStream } from "../utils/api";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
 
@@ -102,8 +102,8 @@ const ChatInterface = ({
 
     onUpdateConversation(currentConversationId, updates);
 
-    // 使用流式输出
-    await sendMessageWithStream(updatedMessages, options, currentConversationId);
+    // 使用流式输出，传递对话的模型信息
+    await sendMessageWithStream(updatedMessages, { ...options, model: conversation.model }, currentConversationId);
   };
 
   // 流式消息发送
@@ -422,8 +422,8 @@ const ChatInterface = ({
       messages: messagesWithoutError,
     });
 
-    // 使用流式版本重新发送消息，而不是非流式版本
-    await sendMessageWithStream(messages, options, conversationId);
+    // 使用流式版本重新发送消息，而不是非流式版本，传递对话的模型信息
+    await sendMessageWithStream(messages, { ...options, model: conversation.model }, conversationId);
   };
 
   // 重新生成消息
@@ -458,10 +458,10 @@ const ChatInterface = ({
       .find(msg => msg.role === "user");
 
     if (lastUserMessage) {
-      // 重新生成回复
+      // 重新生成回复，传递对话的模型信息
       await sendMessageWithStream(
         updatedMessages, 
-        lastUserMessage.options || {}, 
+        { ...lastUserMessage.options, model: conversation.model }, 
         conversation.id
       );
     }
@@ -477,9 +477,8 @@ const ChatInterface = ({
               ☰
             </button>
           </div>
-          <div className="header-actions">
-            <LanguageToggle />
-          </div>
+                  <div className="header-actions">
+        </div>
         </div>
         <WelcomeScreen onSendMessage={handleSendMessage} disabled={isStreaming} />
       </div>
@@ -507,7 +506,14 @@ const ChatInterface = ({
           </div>
         </div>
         <div className="header-actions">
-          <LanguageToggle />
+          <ModelSelector
+            currentModel={conversation.model || "deepseek-ai/DeepSeek-V3.1"}
+            onModelChange={(model) => {
+              onUpdateConversation(conversation.id, { model });
+            }}
+            disabled={isStreaming && streamingConversationId === conversation.id}
+            className="header-model-selector"
+          />
         </div>
       </div>
 
