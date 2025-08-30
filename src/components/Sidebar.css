@@ -255,11 +255,18 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
+/* 对话角色行 */
+.conversation-role-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 /* 对话角色标签 */
 .conversation-role {
   font-size: 9px;
   font-weight: 600;
-  margin-top: 3px;
   opacity: 0.85;
   padding: 2px 5px;
   border-radius: 6px;
@@ -271,6 +278,7 @@
   letter-spacing: 0.3px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .conversation-item:hover .conversation-role {
@@ -411,6 +419,17 @@
   border-radius: 8px;
 }
 
+/* PC端hover时显示完整标题 */
+@media (min-width: 769px) {
+  .conversation-item:hover .title-text {
+    overflow: visible;
+    white-space: normal;
+    word-break: break-word;
+    position: relative;
+    z-index: 10;
+  }
+}
+
 .conversation-item.active {
   background-color: var(--bg-tertiary);
   border-left: 3px solid var(--accent-color);
@@ -494,7 +513,7 @@
 }
 
 .conversation-title {
-  font-size: 15px; /* 稍微增大字体，与对话UI一致 */
+  font-size: 13px; /* 字体小一号 */
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -502,6 +521,7 @@
   font-weight: 500; /* 增加字重，更现代化 */
   line-height: 1.4; /* 改善行间距 */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 与对话UI字体一致 */
+  margin-bottom: 3px;
 }
 
 .title-edit-input {
@@ -555,7 +575,6 @@
 }
 
 .title-text {
-  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -566,6 +585,12 @@
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.conversation-item:hover .conversation-actions {
+  opacity: 1;
 }
 
 .edit-btn,
@@ -576,19 +601,13 @@
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
-  opacity: 0;
   transition: all 0.15s ease;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
-
-.conversation-item:hover .edit-btn,
-.conversation-item:hover .delete-btn {
-  opacity: 1;
 }
 
 .edit-btn:hover {
@@ -598,7 +617,62 @@
 
 .delete-btn:hover {
   background-color: var(--error-color);
-  color: var(--bg-primary);
+  color: white;
+}
+
+/* 删除确认按钮样式 */
+.delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  animation: fadeIn 0.2s ease;
+}
+
+.confirm-btn,
+.cancel-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.confirm-btn {
+  color: var(--success-color);
+}
+
+.confirm-btn:hover {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.cancel-btn {
+  color: var(--error-color);
+}
+
+.cancel-btn:hover {
+  background-color: var(--error-color);
+  color: white;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (max-width: 768px) {
@@ -612,6 +686,25 @@
     left: 0;
     height: 100vh;
     z-index: 999;
+  }
+  
+  /* 移动端常驻显示操作按钮 */
+  .conversation-actions {
+    opacity: 1;
+  }
+  
+  /* 移动端标题显示更多内容 */
+  .conversation-title {
+    font-size: 12px;
+  }
+  
+  .title-text {
+    max-width: 120px;
+  }
+  
+  /* 移动端角色行优化 */
+  .conversation-role-row {
+    gap: 4px;
   }
 }
 

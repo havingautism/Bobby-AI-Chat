@@ -1022,3 +1022,23 @@
 [data-theme="dark"] .message-content li {
   color: #e2e8f0;
 }
+
+/* 跳转消息高亮效果 */
+.message.jump-highlight {
+  animation: jumpHighlight 3s ease-in-out;
+}
+
+@keyframes jumpHighlight {
+  0%, 100% {
+    background: transparent;
+    transform: scale(1);
+  }
+  20%, 80% {
+    background: rgba(99, 102, 241, 0.1);
+    transform: scale(1.02);
+  }
+  50% {
+    background: rgba(99, 102, 241, 0.15);
+    transform: scale(1.01);
+  }
+}

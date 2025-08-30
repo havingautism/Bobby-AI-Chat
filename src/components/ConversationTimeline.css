@@ -1,0 +1,374 @@
+/* 对话时间轴样式 */
+.conversation-timeline {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+/* PC端常驻显示 */
+.conversation-timeline.desktop .timeline-content {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0) scale(1);
+}
+
+/* 移动端默认隐藏 */
+.conversation-timeline.mobile .timeline-content {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(20px) scale(0.95);
+}
+
+.conversation-timeline.mobile.visible .timeline-content {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0) scale(1);
+}
+
+/* 切换按钮 - 仅移动端显示 */
+.timeline-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  position: relative;
+  z-index: 1002;
+}
+
+/* PC端隐藏切换按钮 */
+.conversation-timeline.desktop .timeline-toggle {
+  display: none;
+}
+
+.timeline-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  background: var(--bg-hover);
+}
+
+.timeline-toggle:active {
+  transform: scale(0.95);
+}
+
+/* 时间轴内容 */
+.timeline-content {
+  position: absolute;
+  right: 50px;
+  top: 0;
+  width: 280px;
+  max-height: 400px;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  transform-origin: right center;
+  will-change: transform, opacity;
+}
+
+/* PC端常驻显示时使用更轻的阴影 */
+.conversation-timeline.desktop .timeline-content {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* PC端切换按钮也使用更轻的阴影 */
+.conversation-timeline.desktop .timeline-toggle {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 时间轴头部 */
+.timeline-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.timeline-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
+/* 时间轴项目容器 */
+.timeline-items {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px 0;
+  margin: 0 -8px;
+}
+
+.timeline-items::-webkit-scrollbar {
+  width: 4px;
+}
+
+.timeline-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline-items::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+.timeline-items::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* 时间轴项目 */
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  border-radius: 8px;
+  margin: 0 8px;
+}
+
+.timeline-item:hover {
+  background: var(--bg-hover);
+  transform: translateX(-2px);
+}
+
+.timeline-item.active {
+  background: var(--accent-color);
+  color: white;
+  transform: translateX(-2px);
+}
+
+.timeline-item.active .timeline-time,
+.timeline-item.active .timeline-preview {
+  color: white;
+}
+
+.timeline-item.active .timeline-dot {
+  background: white;
+}
+
+.timeline-item.active .dot-inner {
+  background: var(--accent-color);
+}
+
+/* 时间轴圆点 */
+.timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  margin-right: 12px;
+  margin-top: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dot-inner {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 时间轴内容包装器 */
+.timeline-content-wrapper {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+/* 时间显示 */
+.timeline-time {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+/* 消息预览 */
+.timeline-preview {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  font-weight: 450;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .conversation-timeline {
+    right: 12px;
+    top: auto;
+    bottom: 80px;
+    transform: none;
+  }
+
+  .timeline-content {
+    right: 50px;
+    top: auto;
+    bottom: 0;
+    width: 240px;
+    max-height: 300px;
+    transform-origin: right bottom;
+  }
+
+  .timeline-items {
+    margin: 0 -4px;
+  }
+
+  .timeline-toggle {
+    width: 36px;
+    height: 36px;
+  }
+
+  .timeline-toggle svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .timeline-header {
+    padding: 12px 16px;
+  }
+
+  .timeline-header h3 {
+    font-size: 13px;
+    max-width: 100px;
+  }
+
+  .message-count {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  .timeline-item {
+    padding: 10px 16px;
+    margin: 0 4px;
+  }
+
+  .timeline-dot {
+    width: 6px;
+    height: 6px;
+    margin-right: 10px;
+    margin-top: 5px;
+  }
+
+  .dot-inner {
+    width: 3px;
+    height: 3px;
+  }
+
+  .timeline-time {
+    font-size: 10px;
+  }
+
+  .timeline-preview {
+    font-size: 12px;
+  }
+}
+
+/* 平板适配 */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .timeline-content {
+    width: 260px;
+  }
+}
+
+/* 小屏幕适配 */
+@media (max-width: 480px) {
+  .conversation-timeline {
+    right: 8px;
+  }
+  
+  .timeline-content {
+    width: 220px;
+    right: 45px;
+  }
+  
+  .timeline-toggle {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .timeline-toggle svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .timeline-header h3 {
+    max-width: 80px;
+  }
+}
+
+/* 暗色模式优化 */
+@media (prefers-color-scheme: dark) {
+  .timeline-toggle {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .timeline-toggle:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .timeline-content {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* 移动端动画效果 */
+@keyframes timelineSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.conversation-timeline.mobile.visible .timeline-content {
+  animation: timelineSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

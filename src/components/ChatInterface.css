@@ -187,6 +187,7 @@
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);
@@ -197,6 +198,7 @@
 [data-theme="dark"] .chat-messages {
     flex: 1;
       overflow-y: auto;
+      overflow-x: hidden;
       display: flex;
       flex-direction: column;
       background: var(--bg-secondary);

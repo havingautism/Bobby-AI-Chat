@@ -14,6 +14,7 @@ const MessageList = ({
   onRetryMessage,
   onRegenerateMessage,
   isStreaming = false,
+  currentMessageId = null,
 }) => {
   // const formatTime = (timestamp) => {
   //   return new Date(timestamp).toLocaleTimeString("zh-CN", {
@@ -92,11 +93,12 @@ const MessageList = ({
         messages.map((message) => (
           <div
             key={message.id}
+            id={`message-${message.id}`}
             className={`message ${message.role} ${
               message.isError ? "error" : ""
             } ${
               message.isStreaming ? "streaming" : ""
-            }`}
+            } ${currentMessageId === message.id ? "jump-highlight" : ""}`}
           >
             <div className="message-container">
               <div className="message-avatar">
