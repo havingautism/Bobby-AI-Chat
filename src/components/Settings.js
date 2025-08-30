@@ -3,7 +3,7 @@ import { getApiConfig, updateApiConfig, testTitleGeneration } from "../utils/api
 import { getCurrentLanguage } from "../utils/language";
 import "./Settings.css";
 
-const Settings = ({ isOpen, onClose }) => {
+const Settings = ({ isOpen, onClose, onModelChange }) => {
   const [config, setConfig] = useState({
     baseURL: "",
     apiKey: "",
@@ -156,6 +156,10 @@ const Settings = ({ isOpen, onClose }) => {
   const handleModelChange = (modelId) => {
     handleInputChange("model", modelId);
     setShowModelDropdown(false);
+    // 通知父组件模型已改变
+    if (onModelChange) {
+      onModelChange(modelId);
+    }
   };
 
   const toggleModelDropdown = () => {
@@ -291,7 +295,7 @@ const Settings = ({ isOpen, onClose }) => {
           </div>
 
           <div className="setting-group">
-            <label>模型选择 *</label>
+            <label>默认模型选择 *</label>
             <div className="model-dropdown-container" ref={modelDropdownRef}>
                               <button
                   type="button"
@@ -307,9 +311,14 @@ const Settings = ({ isOpen, onClose }) => {
                             const selectedModel = Object.values(siliconFlowModels)
                               .flatMap(category => category.models)
                               .find(model => model.id === config.model);
-                            return selectedModel ? 
-                              `${selectedModel.isPro ? "Pro/" : ""}${selectedModel.name}` : 
-                              "请选择模型";
+                            return selectedModel ? (
+                              <>
+                                {selectedModel.name}
+                                {selectedModel.isPro && <span className="pro-badge">Pro</span>}
+                              </>
+                            ) : (
+                              "请选择模型"
+                            );
                           })()}
                         </div>
                         <div className="model-description">
@@ -360,9 +369,10 @@ const Settings = ({ isOpen, onClose }) => {
                           onClick={() => handleModelChange(model.id)}
                         >
                           <div className="model-option-info">
-                            <div className="model-option-name">
-                              {model.isPro ? "Pro/" : ""}{model.name}
-                            </div>
+                                                      <div className="model-option-name">
+                            {model.name}
+                            {model.isPro && <span className="pro-badge">Pro</span>}
+                          </div>
                             <div className="model-option-description">
                               {model.description}
                             </div>

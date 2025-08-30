@@ -85,6 +85,11 @@ export const translations = {
     delete: "删除",
     edit: "编辑",
     close: "关闭",
+    switchModel: "切换模型",
+    
+    // 推理过程
+    displayThinking: "显示思路",
+    analysis: "分析",
   },
   en: {
     // 应用标题
@@ -132,6 +137,11 @@ export const translations = {
     delete: "Delete",
     edit: "Edit",
     close: "Close",
+    switchModel: "Switch Model",
+    
+    // 推理过程
+    displayThinking: "Display Thinking",
+    analysis: "Analysis",
   },
 };
 

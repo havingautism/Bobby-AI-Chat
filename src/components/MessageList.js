@@ -126,7 +126,7 @@ const MessageList = ({
               <div className="message-content">
                 {message.role === "assistant" ? (
                   <>
-                    {message.hasReasoning && (
+                    {/* {message.hasReasoning && (
                       <div className="reasoning-badge">
                         <svg
                           width="12"
@@ -141,7 +141,7 @@ const MessageList = ({
                         </svg>
                         推理模型
                       </div>
-                    )}
+                    )} */}
                     {message.hasReasoning && message.reasoning && (
                       <ReasoningDisplay 
                         reasoning={message.reasoning} 

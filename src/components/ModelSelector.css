@@ -1,0 +1,259 @@
+.model-selector {
+  position: relative;
+  display: inline-block;
+}
+
+.model-selector-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 200px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.model-selector-trigger:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--accent-color);
+}
+
+.model-selector-trigger.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.model-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+.model-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.model-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.dropdown-arrow {
+  margin-left: 8px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.model-selector-trigger:hover .dropdown-arrow {
+  color: var(--accent-color);
+}
+
+.model-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.model-dropdown.top {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+.model-category {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.model-category:last-child {
+  border-bottom: none;
+}
+
+.category-header {
+  padding: 12px 16px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--bg-secondary);
+}
+
+.category-models {
+  padding: 4px 0;
+}
+
+.model-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: left;
+}
+
+.model-option:hover {
+  background: var(--bg-hover);
+}
+
+.model-option.selected {
+  background: linear-gradient(135deg, var(--accent-color) 0%, #6366f1 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(99, 179, 237, 0.3);
+}
+
+.model-option.selected .model-option-name,
+.model-option.selected .model-option-description {
+  color: white;
+}
+
+.model-option.selected .pro-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.model-option-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+.model-option-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.model-option-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.selected-indicator {
+  margin-left: 8px;
+  font-weight: bold;
+  color: inherit;
+}
+
+.pro-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .model-selector-trigger {
+    min-width: 120px;
+    padding: 6px 8px;
+  }
+  
+  .model-description {
+    display: none;
+  }
+  
+  .model-dropdown {
+    max-height: 300px;
+    min-width: 280px;
+    left: auto;
+    right: 0;
+  }
+  
+  .model-option {
+    padding: 10px 16px;
+  }
+  
+  .model-option-description {
+    display: block;
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  
+  .model-option-name {
+    font-size: 13px;
+  }
+}
+
+/* 滚动条样式 */
+.model-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.model-dropdown::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 3px;
+}
+
+.model-dropdown::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.model-dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* 暗色模式下的模型选择按钮使用暗色背景 */
+[data-theme="dark"] .model-selector-trigger {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .model-selector-trigger:hover:not(.disabled) {
+  background: var(--bg-hover);
+}
+
+[data-theme="dark"] .model-selector-trigger .model-name {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .model-selector-trigger .model-description {
+  color: var(--text-secondary);
+}

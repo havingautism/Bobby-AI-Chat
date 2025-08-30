@@ -54,15 +54,18 @@ export const sendMessageStream = async (messages, options = {}, onChunk = null, 
       });
     }
 
+    // 使用对话级别的模型或默认模型
+    const modelToUse = options.model || API_CONFIG.model;
+
     // 检查是否为推理模型（支持DeepSeek-R1和Qwen/QwQ系列）
-    const isReasoningModel = API_CONFIG.model?.includes('R1') || 
-                            API_CONFIG.model?.includes('r1') ||
-                            API_CONFIG.model?.includes('QwQ') ||
-                            API_CONFIG.model?.includes('qwq');
+    const isReasoningModel = modelToUse?.includes('R1') || 
+                            modelToUse?.includes('r1') ||
+                            modelToUse?.includes('QwQ') ||
+                            modelToUse?.includes('qwq');
     
     // 构建请求体
     const requestBody = {
-      model: API_CONFIG.model,
+      model: modelToUse,
       messages: apiMessages,
       temperature: options.temperature !== undefined ? options.temperature : API_CONFIG.temperature || 0.7,
       max_tokens: API_CONFIG.maxTokens || 2000,
@@ -80,7 +83,7 @@ export const sendMessageStream = async (messages, options = {}, onChunk = null, 
     }
 
     console.log('API Request (Stream):', {
-      model: API_CONFIG.model,
+      model: modelToUse,
       isReasoningModel,
       maxTokens: requestBody.max_tokens,
       temperature: requestBody.temperature,
@@ -104,10 +107,10 @@ export const sendMessageStream = async (messages, options = {}, onChunk = null, 
       const message = errorData?.error?.message || response.statusText;
 
       // 特殊处理推理模型相关错误
-      if (API_CONFIG.model?.includes('R1') || API_CONFIG.model?.includes('r1') ||
-          API_CONFIG.model?.includes('QwQ') || API_CONFIG.model?.includes('qwq')) {
+      if (modelToUse?.includes('R1') || modelToUse?.includes('r1') ||
+          modelToUse?.includes('QwQ') || modelToUse?.includes('qwq')) {
         if (status === 400 && (message?.includes('model') || message?.includes('不支持'))) {
-          throw new Error(`推理模型 ${API_CONFIG.model} 可能不被硅基流动平台支持，请尝试使用 Qwen/QwQ-32B 或 deepseek-ai/DeepSeek-R1`);
+          throw new Error(`推理模型 ${modelToUse} 可能不被硅基流动平台支持，请尝试使用 Qwen/QwQ-32B 或 deepseek-ai/DeepSeek-R1`);
         }
       }
 
@@ -117,7 +120,7 @@ export const sendMessageStream = async (messages, options = {}, onChunk = null, 
         case 401:
           throw new Error("API密钥无效，请检查您的配置");
         case 404:
-          throw new Error(`模型 ${API_CONFIG.model} 不存在或不可用，请检查模型名称`);
+          throw new Error(`模型 ${modelToUse} 不存在或不可用，请检查模型名称`);
         case 429:
           throw new Error("请求过于频繁，请稍后再试");
         case 500:
@@ -268,6 +271,9 @@ export const sendMessage = async (messages, options = {}) => {
       });
     }
 
+    // 使用对话级别的模型或默认模型
+    const modelToUse = options.model || API_CONFIG.model;
+
     // 使用传入的温度参数或默认值
     const temperature =
       options.temperature !== undefined
@@ -275,11 +281,11 @@ export const sendMessage = async (messages, options = {}) => {
         : API_CONFIG.temperature || 0.7;
 
     // 检查是否为推理模型
-    const isReasoningModel = API_CONFIG.model?.includes('R1') || API_CONFIG.model?.includes('r1');
+    const isReasoningModel = modelToUse?.includes('R1') || modelToUse?.includes('r1');
     
     // 构建请求体
     const requestBody = {
-      model: API_CONFIG.model,
+      model: modelToUse,
       messages: apiMessages,
       temperature: temperature,
       max_tokens: API_CONFIG.maxTokens || 2000,
