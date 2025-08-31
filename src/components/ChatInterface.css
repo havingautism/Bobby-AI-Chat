@@ -403,8 +403,5 @@
     display: none;
   }
   
-  /* PC端为时间线留出空间 */
-  .chat-messages {
-    padding-right: 320px; /* 为时间线留出空间 */
-  }
+
 }

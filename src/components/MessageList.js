@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { isApiConfigured } from "../utils/api";
 import { getRoleById } from "../utils/roles";
 import { getCurrentLanguage, t } from "../utils/language";
-import MarkdownRenderer from "./MarkdownRenderer";
+import StreamdownRenderer from "./StreamdownRenderer";
 import ReasoningDisplay from "./ReasoningDisplay";
 import "./MessageList.css";
 import bobbyLogo from "../imgs/bobby_logo.png";
@@ -150,7 +150,7 @@ const MessageList = ({
                         isStreaming={message.isStreaming || false}
                       />
                     )}
-                    <MarkdownRenderer>{message.content}</MarkdownRenderer>
+                    <StreamdownRenderer>{message.content}</StreamdownRenderer>
                     {message.isStreaming && (
                       <div className="streaming-indicator">
                         <span className="streaming-text">正在生成回复...</span>
