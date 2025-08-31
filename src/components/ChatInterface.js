@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import MessageList from "./MessageList";
-import MessageInput from "./MessageInput";
+import ChatInput from "./ChatInput";
 import WelcomeScreen from "./WelcomeScreen";
 import ModelSelector from "./ModelSelector";
 import ConversationTimeline from "./ConversationTimeline";
@@ -616,11 +616,23 @@ const ChatInterface = ({
         <div ref={messagesEndRef} />
       </div>
 
-      <MessageInput
+      <ChatInput
         onSendMessage={handleSendMessage}
         disabled={isStreaming && streamingConversationId === conversation.id}
         isStreaming={isStreaming && streamingConversationId === conversation.id}
         onStopStreaming={stopStreaming}
+        showBottomToolbar={true}
+        showFileUpload={true}
+        expandDirection="up"
+        className="chat-interface-input"
+        onNewChat={() => {
+          // 新建对话的逻辑
+          console.log('新建对话');
+        }}
+        onAddTab={() => {
+          // 添加新标签页的逻辑
+          console.log('添加新标签页');
+        }}
       />
       <ConversationTimeline
         messages={conversation.messages}

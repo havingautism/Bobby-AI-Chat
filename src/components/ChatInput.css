@@ -1,0 +1,529 @@
+.chat-input-container {
+  padding-bottom: 24px;
+  background: var(--bg-primary);
+  /* border-top: 1px solid var(--border-color); */
+  position: relative;
+  z-index: 1000;
+  overflow: visible;
+}
+
+/* 暗色模式下的输入框容器背景 */
+[data-theme="dark"] .chat-input-container {
+  background: var(--bg-secondary);
+  border-top-color: var(--border-color);
+}
+
+[data-theme="dark"] .input-wrapper-clean {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+.chat-input-form {
+  max-width: 768px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.input-wrapper-clean {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-md);
+  overflow: visible;
+  position: relative;
+}
+
+.input-main-area {
+  display: flex;
+  align-items: flex-end;
+  padding: 12px 16px;
+  gap: 12px;
+}
+
+.input-wrapper-clean:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.3), var(--shadow-lg);
+}
+
+.message-textarea-clean {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.5;
+  resize: none;
+  font-family: inherit;
+  padding: 6px 0; /* 减小基础内边距 */
+  min-height: 24px;
+  max-height: 120px;
+  box-shadow: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+.message-textarea-clean:focus,
+.message-textarea-clean:focus-visible,
+.message-textarea-clean:active {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+.message-textarea-clean::placeholder {
+  color: var(--text-tertiary);
+}
+
+.message-textarea-clean:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 底部工具栏样式 */
+.bottom-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  margin-top: 0;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  position: relative;
+  overflow: visible;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.quick-response-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  user-select: none;
+  background: none;
+  border: none;
+}
+
+.quick-response-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.quick-response-btn svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
+}
+
+.quick-response-btn.open svg {
+  transform: rotate(180deg);
+}
+
+.plus-button-container {
+  position: relative;
+}
+
+.plus-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.plus-button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* 下拉菜单样式 */
+.dropdown-menu {
+  position: fixed;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  z-index: 99999;
+  overflow: hidden;
+  /* 确保下拉菜单可见 */
+  pointer-events: auto;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  font-size: 14px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+/* 移动端样式 */
+@media (max-width: 768px) {
+  .dropdown-item {
+    padding: 12px 16px;
+    font-size: 16px;
+    min-height: 44px;
+  }
+  
+  .dropdown-item svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.dropdown-item:hover {
+  background: var(--bg-hover);
+}
+
+.dropdown-item svg {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+/* 发送按钮样式 */
+.send-button {
+  background: var(--text-primary);
+  border: none;
+  border-radius: 12px;
+  color: var(--bg-primary);
+  cursor: pointer;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.send-button:hover:not(:disabled) {
+  background: var(--text-secondary);
+  transform: scale(1.05);
+}
+
+.send-button:disabled {
+  background: var(--bg-tertiary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.send-button:disabled svg {
+  color: var(--text-tertiary);
+}
+
+/* 停止按钮样式 */
+.stop-button {
+  background: var(--error-color, #ef4444);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.stop-button:hover {
+  background: var(--error-hover, #dc2626);
+  transform: scale(1.05);
+}
+
+/* 文件预览样式 */
+.file-preview-container {
+  margin: 8px 16px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+.image-preview {
+  position: relative;
+  display: inline-block;
+}
+
+.preview-image {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.remove-file-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.file-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.remove-file-btn:hover {
+  background: var(--error-color, #ef4444);
+  color: white;
+  border-color: var(--error-color, #ef4444);
+  transform: scale(1.1);
+}
+
+/* 文件信息中的删除按钮样式 */
+.file-info .remove-file-btn {
+  position: static;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  box-shadow: none;
+  z-index: auto;
+}
+
+.file-info .remove-file-btn:hover {
+  background: var(--bg-hover);
+  color: var(--error-color, #ef4444);
+  border-color: transparent;
+  transform: none;
+}
+
+/* 输入提示样式 */
+.input-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 8px;
+  padding: 0 16px;
+}
+
+/* 展开动画 */
+.chat-input-container.expand-upward .input-wrapper-clean {
+  animation: expandUpward 0.2s ease-out;
+}
+
+.chat-input-container.expand-downward .input-wrapper-clean {
+  animation: expandDownward 0.2s ease-out;
+}
+
+@keyframes expandUpward {
+  from {
+    transform: scaleY(0.8);
+    transform-origin: bottom center;
+    opacity: 0.8;
+  }
+  to {
+    transform: scaleY(1);
+    transform-origin: bottom center;
+    opacity: 1;
+  }
+}
+
+@keyframes expandDownward {
+  from {
+    transform: scaleY(0.8);
+    transform-origin: top center;
+    opacity: 0.8;
+  }
+  to {
+    transform: scaleY(1);
+    transform-origin: top center;
+    opacity: 1;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .chat-input-container {
+    padding-bottom: 16px;
+  }
+  
+  .input-main-area {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  
+  .send-button,
+  .stop-button {
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+  }
+  
+  .send-button svg,
+  .stop-button svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .bottom-toolbar {
+    padding: 6px 12px;
+  }
+  
+  .quick-response-btn {
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+  
+  .plus-button {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .dropdown-menu {
+    min-width: 140px;
+  }
+  
+  .dropdown-item {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  
+  .file-preview-container {
+    margin: 6px 12px;
+    padding: 10px;
+  }
+  
+  .preview-image {
+    max-width: 150px;
+    max-height: 120px;
+  }
+  
+  .file-name {
+    font-size: 13px;
+  }
+  
+  .file-size {
+    font-size: 11px;
+  }
+}
+
+/* 小屏幕适配 */
+@media (max-width: 480px) {
+  .input-main-area {
+    padding: 8px 10px;
+  }
+  
+  .send-button,
+  .stop-button {
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+  }
+  
+  .send-button svg,
+  .stop-button svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .bottom-toolbar {
+    padding: 4px 10px;
+  }
+  
+  .quick-response-btn {
+    font-size: 11px;
+    padding: 3px 5px;
+  }
+  
+  .plus-button {
+    width: 22px;
+    height: 22px;
+  }
+  
+  .dropdown-menu {
+    min-width: 120px;
+  }
+  
+  .dropdown-item {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  
+  .file-preview-container {
+    margin: 4px 10px;
+    padding: 8px;
+  }
+  
+  .preview-image {
+    max-width: 120px;
+    max-height: 100px;
+  }
+}

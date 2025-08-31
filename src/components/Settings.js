@@ -1,42 +1,120 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { getApiConfig, updateApiConfig } from "../utils/api";
 import { getCurrentLanguage, t } from "../utils/language";
 import { getStorageInfo, clearChatHistory } from "../utils/storage";
 import "./Settings.css";
 
-const Settings = ({ isOpen, onClose }) => {
+const Settings = ({ isOpen, onClose, onModelChange }) => {
+  const [config, setConfig] = useState({
+    baseURL: "",
+    apiKey: "",
+    model: "",
+    temperature: 0.7,
+    maxTokens: 2000,
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+  const [isTesting, setIsTesting] = useState(false);
+  const [testMessage, setTestMessage] = useState("");
+  const [testSuccess, setTestSuccess] = useState(false);
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [storageInfo, setStorageInfo] = useState(null);
 
+  // 硅基流动模型列表，按类型排序
+  const siliconFlowModels = {
+    latest: {
+      name: currentLanguage === "zh" ? "最新模型" : "Latest Models",
+      models: [
+        { id: "deepseek-ai/DeepSeek-V3.1", name: "DeepSeek-V3.1", description: "最新对话模型", isPro: false },
+        { id: "Pro/deepseek-ai/DeepSeek-V3.1", name: "DeepSeek-V3.1", description: "最新对话模型", isPro: true },
+        { id: "deepseek-ai/Step-3", name: "Step-3", description: "阶跃模型", isPro: false },
+        { id: "Pro/deepseek-ai/Step-3", name: "Step-3", description: "阶跃模型", isPro: true },
+        { id: "deepseek-ai/DeepSeek-R1", name: "DeepSeek-R1", description: "推理模型", isPro: false },
+        { id: "Pro/deepseek-ai/DeepSeek-R1", name: "DeepSeek-R1", description: "推理模型", isPro: true },
+      ]
+    },
+    qwen: {
+      name: currentLanguage === "zh" ? "通义千问系列" : "Qwen Series",
+      models: [
+        { id: "Qwen/Qwen3.5-110B-Instruct", name: "Qwen3.5-110B-Instruct", description: "大型模型", isPro: false },
+        { id: "Pro/Qwen/Qwen3.5-110B-Instruct", name: "Qwen3.5-110B-Instruct", description: "大型模型", isPro: true },
+        { id: "Qwen/Qwen3.5-32B-Instruct", name: "Qwen3.5-32B-Instruct", description: "中型模型", isPro: false },
+        { id: "Pro/Qwen/Qwen3.5-32B-Instruct", name: "Qwen3.5-32B-Instruct", description: "中型模型", isPro: true },
+        { id: "Qwen/Qwen3.5-14B-Instruct", name: "Qwen3.5-14B-Instruct", description: "小型模型", isPro: false },
+        { id: "Pro/Qwen/Qwen3.5-14B-Instruct", name: "Qwen3.5-14B-Instruct", description: "小型模型", isPro: true },
+        { id: "Qwen/Qwen3.5-7B-Instruct", name: "Qwen3.5-7B-Instruct", description: "轻量模型", isPro: false },
+        { id: "Pro/Qwen/Qwen3.5-7B-Instruct", name: "Qwen3.5-7B-Instruct", description: "轻量模型", isPro: true },
+        { id: "Qwen/Qwen3.5-Coder-32B-Instruct", name: "Qwen3.5-Coder-32B-Instruct", description: "编程模型", isPro: false },
+        { id: "Pro/Qwen/Qwen3.5-Coder-32B-Instruct", name: "Qwen3.5-Coder-32B-Instruct", description: "编程模型", isPro: true },
+        { id: "Qwen/Qwen3.5-Coder-7B-Instruct", name: "Qwen3.5-Coder-7B-Instruct", description: "轻量编程模型", isPro: false },
+        { id: "Pro/Qwen/Qwen3.5-Coder-7B-Instruct", name: "Qwen3.5-Coder-7B-Instruct", description: "轻量编程模型", isPro: true },
+      ]
+    },
+    others: {
+      name: currentLanguage === "zh" ? "其他模型" : "Other Models",
+      models: [
+        { id: "Tongyi-Zhiwen/QwenLong-L1-32B", name: "QwenLong-L1-32B", description: "长文本模型", isPro: false },
+        { id: "THUDM/GLM-4-32B-0414", name: "GLM-4-32B-0414", description: "智谱GLM-4", isPro: false },
+        { id: "THUDM/GLM-4-9B-0414", name: "GLM-4-9B-0414", description: "智谱GLM-4小型", isPro: false },
+        { id: "TeleAI/TeleChat2", name: "TeleChat2", description: "电信天翼模型", isPro: false },
+        { id: "THUDM/glm-4-9b-chat", name: "GLM-4-9B-Chat", description: "智谱聊天模型", isPro: false },
+        { id: "Pro/THUDM/glm-4-9b-chat", name: "GLM-4-9B-Chat", description: "智谱聊天模型", isPro: true },
+        { id: "internlm/internlm2_5-7b-chat", name: "InternLM2.5-7B-Chat", description: "书生浦语模型", isPro: false },
+      ]
+    },
+    qwen25: {
+      name: currentLanguage === "zh" ? "通义千问2.5系列" : "Qwen2.5 Series",
+      models: [
+        { id: "Qwen/Qwen2.5-72B-Instruct-128K", name: "Qwen2.5-72B-Instruct-128K", description: "长上下文模型", isPro: false },
+        { id: "Qwen/Qwen2.5-72B-Instruct", name: "Qwen2.5-72B-Instruct", description: "大型模型", isPro: false },
+        { id: "Qwen/Qwen2.5-32B-Instruct", name: "Qwen2.5-32B-Instruct", description: "中型模型", isPro: false },
+        { id: "Qwen/Qwen2.5-14B-Instruct", name: "Qwen2.5-14B-Instruct", description: "小型模型", isPro: false },
+        { id: "Qwen/Qwen2.5-7B-Instruct", name: "Qwen2.5-7B-Instruct", description: "轻量模型", isPro: false },
+        { id: "Pro/Qwen/Qwen2.5-7B-Instruct", name: "Qwen2.5-7B-Instruct", description: "轻量模型", isPro: true },
+        { id: "Qwen/Qwen2.5-Coder-32B-Instruct", name: "Qwen2.5-Coder-32B-Instruct", description: "编程模型", isPro: false },
+        { id: "Qwen/Qwen2.5-Coder-7B-Instruct", name: "Qwen2.5-Coder-7B-Instruct", description: "轻量编程模型", isPro: false },
+        { id: "Qwen/Qwen2-7B-Instruct", name: "Qwen2-7B-Instruct", description: "通义千问2代", isPro: false },
+        { id: "Pro/Qwen/Qwen2-7B-Instruct", name: "Qwen2-7B-Instruct", description: "通义千问2代", isPro: true },
+        { id: "Vendor-A/Qwen/Qwen2.5-72B-Instruct", name: "Qwen2.5-72B-Instruct (Vendor-A)", description: "第三方部署", isPro: false },
+      ]
+    }
+  };
+
   useEffect(() => {
-    const loadStorageInfo = async () => {
-      const info = await getStorageInfo();
-      setStorageInfo(info);
-    };
-    
     if (isOpen) {
-      loadStorageInfo();
+      const loadData = async () => {
+        const currentConfig = getApiConfig();
+        setConfig(currentConfig);
+        
+        // 加载存储信息
+        const info = await getStorageInfo();
+        setStorageInfo(info);
+        
+        // 自动初始化为硅基流动配置
+        if (!currentConfig.baseURL) {
+          setConfig((prev) => ({
+            ...prev,
+            baseURL: "https://api.siliconflow.cn/v1",
+            model: prev.model || "deepseek-ai/DeepSeek-V3.1",
+          }));
+        }
+      };
+      loadData();
     }
   }, [isOpen]);
 
-  const handleLanguageChange = (language) => {
-    setCurrentLanguage(language);
-    localStorage.setItem("language", language);
-    
-    // 触发自定义事件
-    window.dispatchEvent(
-      new CustomEvent("languageChanged", { detail: language })
-    );
-  };
+  // 监听语言变化
+  useEffect(() => {
+    const handleLanguageChange = (event) => {
+      setCurrentLanguage(event.detail);
+    };
 
-  const handleThemeChange = (theme) => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-    
-    // 触发自定义事件
-    window.dispatchEvent(
-      new CustomEvent("themeChanged", { detail: theme })
-    );
-  };
+    window.addEventListener("languageChanged", handleLanguageChange);
+    return () => {
+      window.removeEventListener("languageChanged", handleLanguageChange);
+    };
+  }, []);
 
   const handleClearHistory = async () => {
     if (window.confirm("确定要清除所有聊天历史吗？此操作不可撤销。")) {
@@ -45,6 +123,118 @@ const Settings = ({ isOpen, onClose }) => {
       const info = await getStorageInfo();
       setStorageInfo(info);
       alert("聊天历史已清除");
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    setConfig((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleModelChange = (modelId) => {
+    handleInputChange("model", modelId);
+    setShowModelDropdown(false);
+    // 通知父组件模型已改变
+    if (onModelChange) {
+      onModelChange(modelId);
+    }
+  };
+
+  const toggleModelDropdown = () => {
+    const newShowState = !showModelDropdown;
+    setShowModelDropdown(newShowState);
+    
+    if (newShowState) {
+      // 延迟设置位置，确保DOM已更新
+      setTimeout(() => {
+        const trigger = document.querySelector('.dropdown-trigger');
+        const dropdown = document.querySelector('.dropdown-menu');
+        
+        if (trigger && dropdown) {
+          const rect = trigger.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          const spaceBelow = viewportHeight - rect.bottom;
+          
+          // 设置宽度和位置
+          dropdown.style.width = `${rect.width}px`;
+          dropdown.style.left = `${rect.left}px`;
+          
+          if (spaceBelow < 300) {
+            // 向上显示
+            dropdown.style.top = 'auto';
+            dropdown.style.bottom = `${viewportHeight - rect.top + 4}px`;
+          } else {
+            // 向下显示
+            dropdown.style.top = `${rect.bottom + 4}px`;
+            dropdown.style.bottom = 'auto';
+          }
+        }
+      }, 0);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveMessage("");
+
+    try {
+      // 验证必填字段
+      if (!config.baseURL || !config.apiKey || !config.model) {
+        throw new Error("请填写所有必填字段");
+      }
+
+      // 更新API配置
+      updateApiConfig(config);
+
+      setSaveMessage("设置保存成功！");
+      setTimeout(() => {
+        setSaveMessage("");
+        onClose();
+      }, 1500);
+    } catch (error) {
+      setSaveMessage(`保存失败: ${error.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    setTestSuccess(false);
+    setTestMessage("");
+
+    try {
+      // 使用当前配置进行测试
+      const testConfig = { ...config };
+      updateApiConfig(testConfig);
+
+      // 发送测试消息
+      const { sendMessage } = await import("../utils/api");
+      const testMessages = [
+        { role: "user", content: "你好，这是一个连接测试。" },
+      ];
+
+      await sendMessage(testMessages);
+      setTestSuccess(true);
+      setTestMessage("连接测试成功！");
+      
+      // 3秒后重置状态
+      setTimeout(() => {
+        setTestSuccess(false);
+        setTestMessage("");
+      }, 3000);
+    } catch (error) {
+      setTestSuccess(false);
+      setTestMessage(`连接测试失败: ${error.message}`);
+      
+      // 5秒后清除错误消息
+      setTimeout(() => {
+        setTestMessage("");
+      }, 5000);
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -63,47 +253,197 @@ const Settings = ({ isOpen, onClose }) => {
         </div>
 
         <div className="settings-content">
-          {/* 语言设置 */}
-          <div className="settings-section">
-            <h3>{t("language", currentLanguage)}</h3>
-            <div className="settings-options">
-              <button
-                className={`option-button ${currentLanguage === "zh" ? "active" : ""}`}
-                onClick={() => handleLanguageChange("zh")}
-              >
-                中文
-              </button>
-              <button
-                className={`option-button ${currentLanguage === "en" ? "active" : ""}`}
-                onClick={() => handleLanguageChange("en")}
-              >
-                English
-              </button>
+          {/* API服务商 */}
+          <div className="setting-group">
+            <label>API服务商</label>
+            <div className="provider-card">
+              <div className="provider-logo">
+                <svg height="1em" style={{flex:'none',lineHeight:1}} viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><title>SiliconCloud</title><path clip-rule="evenodd" d="M22.956 6.521H12.522c-.577 0-1.044.468-1.044 1.044v3.13c0 .577-.466 1.044-1.043 1.044H1.044c-.577 0-1.044.467-1.044 1.044v4.174C0 17.533.467 18 1.044 18h10.434c.577 0 1.044-.467 1.044-1.043v-3.13c0-.578.466-1.044 1.043-1.044h9.391c.577 0 1.044-.467 1.044-1.044V7.565c0-.576-.467-1.044-1.044-1.044z" fill="#6E29F6" fill-rule="evenodd"></path></svg>
+              </div>
+              <div className="provider-info">
+                <div className="provider-name">硅基流动</div>
+                <div className="provider-english">SiliconFlow</div>
+              </div>
             </div>
           </div>
 
-          {/* 主题设置 */}
-          <div className="settings-section">
-            <h3>{t("theme", currentLanguage)}</h3>
-            <div className="settings-options">
+          {/* API密钥 */}
+          <div className="setting-group">
+            <label>API密钥 *</label>
+            <input
+              type="password"
+              value={config.apiKey}
+              onChange={(e) => handleInputChange("apiKey", e.target.value)}
+              placeholder="请输入硅基流动API密钥"
+              className="setting-input"
+            />
+          </div>
+
+          {/* 模型选择 */}
+          <div className="setting-group">
+            <label>默认模型选择 *</label>
+            <div className="simple-dropdown">
               <button
-                className={`option-button ${document.documentElement.getAttribute("data-theme") === "light" ? "active" : ""}`}
-                onClick={() => handleThemeChange("light")}
+                type="button"
+                className="dropdown-trigger"
+                onClick={toggleModelDropdown}
               >
-                {t("lightMode", currentLanguage)}
+                <div className="dropdown-display">
+                  {config.model ? (
+                    <>
+                      <div className="dropdown-info">
+                        <div className="dropdown-name">
+                          {(() => {
+                            const selectedModel = Object.values(siliconFlowModels)
+                              .flatMap(category => category.models)
+                              .find(model => model.id === config.model);
+                            return selectedModel ? (
+                              <>
+                                {selectedModel.name}
+                                {selectedModel.isPro && <span className="pro-badge">Pro</span>}
+                              </>
+                            ) : (
+                              "请选择模型"
+                            );
+                          })()}
+                        </div>
+                        <div className="dropdown-description">
+                          {(() => {
+                            const selectedModel = Object.values(siliconFlowModels)
+                              .flatMap(category => category.models)
+                              .find(model => model.id === config.model);
+                            return selectedModel ? selectedModel.description : "";
+                          })()}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="dropdown-info">
+                        <div className="dropdown-name">请选择模型</div>
+                        <div className="dropdown-description">选择适合的AI模型</div>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <svg
+                  className={`dropdown-arrow ${showModelDropdown ? "open" : ""}`}
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
               </button>
-              <button
-                className={`option-button ${document.documentElement.getAttribute("data-theme") === "dark" ? "active" : ""}`}
-                onClick={() => handleThemeChange("dark")}
-              >
-                {t("darkMode", currentLanguage)}
-              </button>
+
+              {showModelDropdown && (
+                <div className="dropdown-menu">
+                  {Object.entries(siliconFlowModels).map(([categoryKey, category]) => (
+                    <div key={categoryKey} className="dropdown-category">
+                      <div className="dropdown-category-header">{category.name}</div>
+                      {category.models.map((model) => (
+                        <button
+                          key={model.id}
+                          className={`dropdown-option ${
+                            config.model === model.id ? "selected" : ""
+                          }`}
+                          onClick={() => handleModelChange(model.id)}
+                        >
+                          <div className="dropdown-option-info">
+                            <div className="dropdown-option-name">
+                              {model.name}
+                              {model.isPro && <span className="pro-badge">Pro</span>}
+                            </div>
+                            <div className="dropdown-option-description">
+                              {model.description}
+                            </div>
+                          </div>
+                          {config.model === model.id && (
+                            <svg
+                              className="check-icon"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="m9 12 2 2 4-4" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="setting-hint">
+              推荐: DeepSeek-V3.1 (最新) | DeepSeek-R1 (推理) | Qwen3系列 (编程) | Pro版本性能更强
             </div>
           </div>
+
+          {/* 高级设置 */}
+          <details className="advanced-settings">
+            <summary>高级设置</summary>
+            <div className="advanced-content">
+              <div className="setting-group">
+                <label>API地址</label>
+                <input
+                  type="text"
+                  value={config.baseURL}
+                  onChange={(e) => handleInputChange("baseURL", e.target.value)}
+                  placeholder="https://api.siliconflow.cn/v1"
+                  className="setting-input"
+                />
+                <div className="setting-hint">
+                  硅基流动API地址
+                </div>
+              </div>
+              
+              <div className="setting-row">
+                <div className="setting-group">
+                  <label>温度 (0-2)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value={config.temperature}
+                    onChange={(e) =>
+                      handleInputChange("temperature", parseFloat(e.target.value))
+                    }
+                    className="setting-input"
+                  />
+                </div>
+
+                <div className="setting-group">
+                  <label>最大令牌数</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="8000"
+                    value={config.maxTokens}
+                    onChange={(e) =>
+                      handleInputChange("maxTokens", parseInt(e.target.value))
+                    }
+                    className="setting-input"
+                  />
+                </div>
+              </div>
+            </div>
+          </details>
 
           {/* 存储信息 */}
-          <div className="settings-section">
-            <h3>存储信息</h3>
+          <div className="setting-group">
+            <label>存储信息</label>
             {storageInfo ? (
               <div className="storage-info">
                 <p>对话数量: {storageInfo.conversationCount}</p>
@@ -111,15 +451,6 @@ const Settings = ({ isOpen, onClose }) => {
                 <button 
                   className="danger-button" 
                   onClick={handleClearHistory}
-                  style={{
-                    background: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    marginTop: '8px'
-                  }}
                 >
                   清除所有聊天历史
                 </button>
@@ -127,6 +458,65 @@ const Settings = ({ isOpen, onClose }) => {
             ) : (
               <p>加载中...</p>
             )}
+          </div>
+          
+          {/* 保存消息 */}
+          {saveMessage && (
+            <div
+              className={`save-message ${
+                saveMessage.includes("失败") || saveMessage.includes("错误")
+                  ? "error"
+                  : "success"
+              }`}
+            >
+              {saveMessage}
+            </div>
+          )}
+          {testMessage && (
+            <div
+              className={`save-message ${
+                testMessage.includes("成功") ? "success" : "error"
+              }`}
+            >
+              {testMessage}
+            </div>
+          )}
+        </div>
+
+        <div className="settings-footer">
+          <div className="test-buttons">
+            <button
+              className={`test-button ${testSuccess ? 'success' : ''}`}
+              onClick={handleTestConnection}
+              disabled={
+                isTesting || 
+                !config.baseURL || 
+                !config.apiKey || 
+                !config.model ||
+                testSuccess
+              }
+            >
+              {isTesting ? "测试中..." : testSuccess ? "连接成功 ✓" : "测试连接"}
+            </button>
+            {testMessage && !testSuccess && (
+              <div className="save-message error">
+                {testMessage}
+              </div>
+            )}
+          </div>
+          <div className="footer-buttons">
+            <button className="cancel-button" onClick={onClose}>
+              取消
+            </button>
+            <button
+              className="save-button"
+              onClick={handleSave}
+              disabled={
+                isSaving || !config.baseURL || !config.apiKey || !config.model
+              }
+            >
+              {isSaving && !saveMessage.includes("测试") ? "保存中..." : "保存"}
+            </button>
           </div>
         </div>
       </div>

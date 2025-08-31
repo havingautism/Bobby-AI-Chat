@@ -4,7 +4,7 @@
   right: 20px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 100; /* 降低z-index，让模型选择器下拉菜单能够遮挡 */
+  z-index: 99; /* 降低z-index，确保侧边栏能够遮挡 */
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -286,7 +286,7 @@
     right: 12px;
     top: 60px; /* 调整到header下方 */
     transform: none;
-    z-index: 1000;
+    z-index: 99; /* 降低z-index，确保侧边栏能够遮挡 */
   }
 
   .timeline-content {

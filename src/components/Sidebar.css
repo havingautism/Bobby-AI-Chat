@@ -15,7 +15,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  z-index: 999;
+  z-index: 1001;
   transform: translateX(-100%);
   transition: all 0.3s ease;
   border-right: 1px solid var(--border-color);
@@ -261,6 +261,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  min-height: 20px; /* 确保空对话也有足够高度 */
+}
+
+/* 空对话时的角色行样式 */
+.conversation-role-row:has(.conversation-actions:only-child) {
+  justify-content: flex-end; /* 空对话时操作按钮靠右 */
 }
 
 /* 对话角色标签 */
@@ -590,6 +596,11 @@
 }
 
 .conversation-item:hover .conversation-actions {
+  opacity: 1;
+}
+
+/* 空对话时确保操作按钮可见 */
+.conversation-item:not(.has-role):hover .conversation-actions {
   opacity: 1;
 }
 

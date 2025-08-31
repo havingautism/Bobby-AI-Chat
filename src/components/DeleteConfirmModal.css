@@ -1,0 +1,235 @@
+/* 删除确认Modal样式 */
+.delete-confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.delete-confirm-modal {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+  max-width: 380px;
+  width: 95%;
+  overflow: hidden;
+  animation: slideIn 0.2s ease-out;
+  position: relative;
+}
+
+/* 暗色模式优化 */
+[data-theme="dark"] .delete-confirm-modal {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.delete-confirm-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.delete-confirm-modal-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--error-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.delete-confirm-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.delete-confirm-modal-content {
+  padding: 16px 20px;
+}
+
+.delete-confirm-modal-message {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.delete-confirm-modal-warning {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.delete-confirm-modal-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.delete-confirm-modal-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px; /* 适中的点击区域 */
+}
+
+.delete-confirm-modal-btn.cancel-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.delete-confirm-modal-btn.cancel-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+}
+
+.delete-confirm-modal-btn.confirm-btn {
+  background: var(--error-color);
+  color: white;
+  border: 1px solid var(--error-color);
+}
+
+.delete-confirm-modal-btn.confirm-btn:hover {
+  background: var(--error-hover, #dc2626);
+  border-color: var(--error-hover, #dc2626);
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .delete-confirm-modal {
+    width: 90%;
+    max-width: 340px;
+    margin: 16px;
+  }
+
+  .delete-confirm-modal-header {
+    padding: 14px 16px;
+  }
+
+  .delete-confirm-modal-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .delete-confirm-modal-title {
+    font-size: 15px;
+  }
+
+  .delete-confirm-modal-content {
+    padding: 14px 16px;
+  }
+
+  .delete-confirm-modal-message {
+    font-size: 13px;
+  }
+
+  .delete-confirm-modal-warning {
+    font-size: 12px;
+  }
+
+  .delete-confirm-modal-actions {
+    padding: 10px 16px 16px;
+    gap: 6px;
+  }
+
+  .delete-confirm-modal-btn {
+    padding: 12px 10px;
+    font-size: 14px;
+    min-height: 44px; /* 适中的点击区域 */
+  }
+}
+
+/* 小屏幕适配 */
+@media (max-width: 480px) {
+  .delete-confirm-modal {
+    width: 92%;
+    max-width: 320px;
+    margin: 12px;
+  }
+
+  .delete-confirm-modal-header {
+    padding: 12px 14px;
+  }
+
+  .delete-confirm-modal-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .delete-confirm-modal-title {
+    font-size: 14px;
+  }
+
+  .delete-confirm-modal-content {
+    padding: 12px 14px;
+  }
+
+  .delete-confirm-modal-message {
+    font-size: 12px;
+  }
+
+  .delete-confirm-modal-warning {
+    font-size: 11px;
+  }
+
+  .delete-confirm-modal-actions {
+    padding: 8px 14px 14px;
+    gap: 4px;
+  }
+
+  .delete-confirm-modal-btn {
+    padding: 10px 8px;
+    font-size: 13px;
+    min-height: 40px;
+  }
+}
+
+

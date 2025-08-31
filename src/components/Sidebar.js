@@ -3,6 +3,7 @@ import { AI_ROLES, getRoleById } from "../utils/roles";
 import { getCurrentTheme, toggleTheme } from "../utils/theme";
 import { getCurrentLanguage, t } from "../utils/language";
 import LanguageToggle from "./LanguageToggle";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 import "./Sidebar.css";
 
 const Sidebar = ({
@@ -23,6 +24,8 @@ const Sidebar = ({
   const [showRoleFilter, setShowRoleFilter] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(() => getCurrentTheme());
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState(null);
   const roleFilterRef = useRef(null);
 
   // 点击外部关闭角色筛选下拉菜单
@@ -71,6 +74,27 @@ const Sidebar = ({
     toggleTheme();
   };
 
+  // 处理删除确认
+  const handleDeleteConfirm = (conversation) => {
+    setConversationToDelete(conversation);
+    setDeleteModalOpen(true);
+  };
+
+  // 确认删除
+  const confirmDelete = () => {
+    if (conversationToDelete) {
+      onDeleteConversation(conversationToDelete.id);
+    }
+    setDeleteModalOpen(false);
+    setConversationToDelete(null);
+  };
+
+  // 取消删除
+  const cancelDelete = () => {
+    setDeleteModalOpen(false);
+    setConversationToDelete(null);
+  };
+
   // 过滤对话
   const filteredConversations = useMemo(() => {
     let filtered = conversations;
@@ -106,12 +130,12 @@ const Sidebar = ({
     const todayConversations = filteredConversations.filter((conv) => {
       const date = new Date(conv.createdAt);
       return date.toDateString() === todayStr;
-    });
+    }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // 按创建时间倒序排列
 
     const previousConversations = filteredConversations.filter((conv) => {
       const date = new Date(conv.createdAt);
       return date.toDateString() !== todayStr;
-    });
+    }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // 按创建时间倒序排列
 
     return { today: todayConversations, previous: previousConversations };
   }, [filteredConversations]);
@@ -361,7 +385,7 @@ const Sidebar = ({
                       conversation={conversation}
                       isActive={currentConversationId === conversation.id}
                       onSelect={onSelectConversation}
-                      onDelete={onDeleteConversation}
+                      onDelete={handleDeleteConfirm}
                       onUpdateTitle={(id, title) => onUpdateConversation(id, { title })}
                       searchQuery={searchQuery}
                       currentLanguage={currentLanguage}
@@ -384,7 +408,7 @@ const Sidebar = ({
                       conversation={conversation}
                       isActive={currentConversationId === conversation.id}
                       onSelect={onSelectConversation}
-                      onDelete={onDeleteConversation}
+                      onDelete={handleDeleteConfirm}
                       onUpdateTitle={(id, title) => onUpdateConversation(id, { title })}
                       searchQuery={searchQuery}
                       currentLanguage={currentLanguage}
@@ -477,6 +501,15 @@ const Sidebar = ({
           </button>
         </div>
       </div>
+
+      {/* 删除确认Modal */}
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        title={conversationToDelete?.title}
+        currentLanguage={currentLanguage}
+      />
     </>
   );
 };
@@ -493,7 +526,6 @@ const ConversationItem = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(conversation.title);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const inputRef = useRef(null);
   const menuRef = useRef(null);
@@ -522,20 +554,12 @@ const ConversationItem = ({
   // 处理删除确认
   const handleDeleteClick = (e) => {
     e.stopPropagation();
-    if (showDeleteConfirm) {
-      onDelete(conversation.id);
-      setShowDeleteConfirm(false);
-    } else {
-      setShowDeleteConfirm(true);
-      // 3秒后自动取消确认状态
-      setTimeout(() => setShowDeleteConfirm(false), 3000);
-    }
+    onDelete(conversation);
   };
 
   // 取消删除确认
   const cancelDelete = (e) => {
     e.stopPropagation();
-    setShowDeleteConfirm(false);
   };
 
   // 处理菜单点击
@@ -652,35 +676,37 @@ const ConversationItem = ({
             </span>
           )}
         </div>
-        {conversation.role && (
-          <div className="conversation-role-row">
+        <div className="conversation-role-row">
+          {conversation.role && (
             <div
               className="conversation-role"
               style={{ color: getRoleById(conversation.role).color }}
             >
               {getRoleById(conversation.role).name}
             </div>
-            <div className="conversation-actions">
-              <button
-                className="menu-btn"
-                onClick={handleMenuClick}
-                title={currentLanguage === "zh" ? "更多操作" : "More Options"}
-                ref={menuRef}
+          )}
+          <div className="conversation-actions">
+            <button
+              className="menu-btn"
+              onClick={handleMenuClick}
+              title={currentLanguage === "zh" ? "更多操作" : "More Options"}
+              ref={menuRef}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="1" />
-                  <circle cx="19" cy="12" r="1" />
-                  <circle cx="5" cy="12" r="1" />
-                </svg>
-                {showMenu && (
-                  <div className="conversation-menu">
+                <circle cx="12" cy="12" r="1" />
+                <circle cx="19" cy="12" r="1" />
+                <circle cx="5" cy="12" r="1" />
+              </svg>
+              {showMenu && (
+                <div className="conversation-menu">
+                  {conversation.role && (
                     <button
                       className="menu-item"
                       onClick={handleRename}
@@ -698,46 +724,28 @@ const ConversationItem = ({
                       </svg>
                       <span>{currentLanguage === "zh" ? "重命名对话" : "Rename conversation"}</span>
                     </button>
-                    <button
-                      className="menu-item"
-                      onClick={handleDelete}
+                  )}
+                  <button
+                    className="menu-item"
+                    onClick={handleDelete}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
                     >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                      <span>{currentLanguage === "zh" ? "删除对话" : "Delete conversation"}</span>
-                    </button>
-                  </div>
-                )}
-              </button>
-              {showDeleteConfirm && (
-                <div className="delete-confirm">
-                  <button
-                    className="confirm-btn"
-                    onClick={handleDeleteClick}
-                    title={currentLanguage === "zh" ? "确认删除" : "Confirm Delete"}
-                  >
-                    ✓
-                  </button>
-                  <button
-                    className="cancel-btn"
-                    onClick={cancelDelete}
-                    title={currentLanguage === "zh" ? "取消" : "Cancel"}
-                  >
-                    ✕
+                      <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                    <span>{currentLanguage === "zh" ? "删除对话" : "Delete conversation"}</span>
                   </button>
                 </div>
               )}
-            </div>
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

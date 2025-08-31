@@ -20,18 +20,48 @@ body {
   letter-spacing: -0.01em;
   font-weight: 400;
   font-size: 14px;
-  /* 禁用移动端双击缩放 */
+  /* 禁用移动端双击缩放和点击高亮 */
   touch-action: manipulation;
   -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #root {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  /* 禁用移动端双击缩放 */
+  /* 禁用移动端双击缩放和点击高亮 */
   touch-action: manipulation;
   -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 全局禁用移动端点击高亮 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 按钮和可点击元素的移动端优化 */
+button, 
+[role="button"], 
+.clickable,
+.prompt-card,
+.role-dropdown-trigger,
+.role-option,
+.menu-btn,
+.send-button,
+.stop-button,
+.quick-response-btn,
+.plus-button,
+.timeline-toggle,
+.settings-btn,
+.theme-toggle-btn {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 /* 紧凑清晰的字体系统 */

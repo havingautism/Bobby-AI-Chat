@@ -173,7 +173,7 @@ button {
 }
 
 [data-theme="dark"] .welcome-screen {
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
 }
 
 [data-theme="dark"] .new-chat-btn {

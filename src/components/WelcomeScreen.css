@@ -3,7 +3,7 @@
   justify-content: center;
   align-items: flex-start;
   min-height: 100vh;
-  padding: 40px 20px;
+  padding: 40px 20px 120px 20px; /* 增加底部内边距，为对话框留出空间 */
   background: var(--bg-primary);
   overflow-y: auto;
 }
@@ -171,7 +171,7 @@
   border: 1px solid var(--border-color);
   border-radius: 12px;
   box-shadow: var(--shadow-lg);
-  z-index: 1000;
+  z-index: 1001; /* 确保在对话框之上 */
   margin-top: 4px;
   max-height: 300px;
   overflow-y: auto;
@@ -220,100 +220,18 @@
   margin-bottom: 8px;
 }
 
-.welcome-input-form {
-  width: 100%;
+/* 欢迎页面ChatInput样式调整 */
+.welcome-chat-input {
+  max-width: 768px;
+  margin: 0 auto;
 }
 
-.welcome-input-wrapper {
-  display: flex;
-  align-items: flex-end;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 16px;
-  gap: 12px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.welcome-input-wrapper:focus-within {
-  border-color: var(--accent-color);
-  box-shadow: 0 2px 12px rgba(99, 179, 237, 0.2);
-}
-
-.welcome-textarea {
-  flex: 1;
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  font-size: 16px;
-  line-height: 1.5;
-  resize: none;
-  outline: none;
-  font-family: inherit;
-  min-height: 24px;
-  max-height: 120px;
-  overflow-y: auto;
-  padding: 12px 0;
-  display: flex;
-  align-items: center;
-}
-
-.welcome-textarea::placeholder {
-  color: var(--text-tertiary);
-}
-
-.welcome-textarea:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.welcome-send-button {
-  background: var(--text-primary);
-  border: none;
-  border-radius: 12px;
-  color: var(--bg-primary);
-  cursor: pointer;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-}
-
-.welcome-send-button:hover:not(:disabled) {
-  background: var(--text-secondary);
-  transform: scale(1.05);
-}
-
-.welcome-send-button:disabled {
-  background: var(--bg-tertiary);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.welcome-send-button:disabled svg {
-  color: var(--text-tertiary);
-}
-
-/* 无边框输入框样式 */
-.welcome-input-wrapper-clean {
-  display: flex;
-  align-items: flex-end;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 16px;
-  gap: 12px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+.welcome-chat-input .chat-input-container {
+  padding-bottom: 16px;
 }
 
 /* 欢迎页面输入框展开动画 */
-.welcome-input-wrapper-clean.expand-downward {
+.welcome-chat-input.expand-downward .input-wrapper-clean {
   animation: expandDownwardWelcome 0.2s ease-out;
 }
 
@@ -328,52 +246,6 @@
     transform-origin: top center;
     opacity: 1;
   }
-}
-
-.welcome-input-wrapper-clean:focus-within {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.3), 0 2px 12px rgba(99, 179, 237, 0.2);
-}
-
-.welcome-textarea-clean {
-  flex: 1;
-  background: transparent !important;
-  border: none !important;
-  outline: none !important;
-  color: var(--text-primary);
-  font-size: 16px;
-  line-height: 1.5;
-  resize: none;
-  font-family: inherit;
-  min-height: 24px;
-  max-height: 120px;
-  overflow-y: auto;
-  padding: 12px 0;
-  display: flex;
-  align-items: center;
-  box-shadow: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  appearance: none !important;
-}
-
-.welcome-textarea-clean:focus,
-.welcome-textarea-clean:focus-visible,
-.welcome-textarea-clean:active {
-  outline: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  -webkit-box-shadow: none !important;
-  -moz-box-shadow: none !important;
-}
-
-.welcome-textarea-clean::placeholder {
-  color: var(--text-tertiary);
-}
-
-.welcome-textarea-clean:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* 快速提示 */
@@ -414,7 +286,7 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .welcome-screen {
-    padding: 20px 16px;
+    padding: 20px 16px 100px 16px; /* 移动端也增加底部内边距 */
   }
   
   .welcome-content {
@@ -466,19 +338,8 @@
     grid-template-columns: 1fr;
   }
   
-  .welcome-input-wrapper {
-    padding: 12px;
-  }
-  
-  .welcome-send-button {
-    width: 40px;
-    height: 40px;
-    padding: 8px;
-  }
-  
-  .welcome-send-button svg {
-    width: 18px;
-    height: 18px;
+  .welcome-chat-input .chat-input-container {
+    padding-bottom: 12px;
   }
 }
 
