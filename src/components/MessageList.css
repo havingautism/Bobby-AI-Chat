@@ -373,7 +373,7 @@
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 0 20px;
+    padding: 0 24px;
     gap: 8px; /* 减少头像和文字之间的间距 */
     display: flex;
     flex-direction: column; /* 移动端垂直布局：头像在上，文字在下 */
@@ -409,7 +409,7 @@
     width: 100% !important; /* 移动端充分利用屏幕宽度 */
     padding: 12px 16px;
     border-radius: 16px;
-    font-size: 15px;
+    font-size: 15px; /* 与AI回答保持一致 */
     text-align: left;
     display: block !important; /* 移动端使用block布局 */
     word-wrap: break-word;
@@ -423,6 +423,7 @@
   .message-content {
     font-size: 15px;
     line-height: 1.6;
+    padding: 0 24px; /* 为回答内容添加两侧padding */
   }
   
   .message-avatar {
@@ -456,6 +457,7 @@
     width: 100%; /* 充分利用屏幕宽度 */
     max-width: none;
     margin-left: 0; /* 移动端文字不需要左边距 */
+    padding: 0 24px; /* 为回答内容添加两侧padding */
   }
 }
 /* 角
@@ -856,7 +858,7 @@
 /* 超小屏幕优化 */
 @media (max-width: 480px) {
   .message-container {
-    padding: 0 12px;
+    padding: 0 24px;
     gap: 10px;
   }
   
@@ -885,6 +887,11 @@
   
   .message-content {
     font-size: 15px;
+    padding: 0 24px; /* 超小屏幕两侧padding */
+  }
+  
+  .message.user .message-content {
+    padding: 12px 16px; /* 超小屏幕用户消息两侧padding */
   }
   
   .message-content pre {

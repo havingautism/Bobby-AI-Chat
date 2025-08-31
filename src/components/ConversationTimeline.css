@@ -4,7 +4,7 @@
   right: 20px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 1000;
+  z-index: 100; /* 降低z-index，让模型选择器下拉菜单能够遮挡 */
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -12,27 +12,45 @@
   will-change: transform;
 }
 
+/* PC端常驻在右上角 */
+.conversation-timeline.desktop {
+  right: 20px;
+  top: 120px; /* 距离顶部120px，回到右上角位置 */
+  transform: none;
+  transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 添加平滑过渡动画 */
+}
+
+/* PC端下拉框打开时，时间轴移动到下拉框下方 */
+.conversation-timeline.desktop.dropdown-open {
+  top: 500px; /* 下拉框打开时，时间轴移动到更下方，确保不被遮挡 */
+}
+
 /* PC端常驻显示 */
 .conversation-timeline.desktop .timeline-content {
   opacity: 1;
   visibility: visible;
   transform: translateX(0) scale(1);
+  position: relative;
+  right: 0;
+  top: 0;
+  display: block;
 }
 
 /* 移动端默认隐藏 */
 .conversation-timeline.mobile .timeline-content {
   opacity: 0;
   visibility: hidden;
-  transform: translateX(20px) scale(0.95);
+  transform: translateY(-10px) scale(0.95);
 }
 
-.conversation-timeline.mobile.visible .timeline-content {
+.conversation-timeline.mobile.visible .timeline-content,
+.conversation-timeline.timeline-visible .timeline-content {
   opacity: 1;
   visibility: visible;
-  transform: translateX(0) scale(1);
+  transform: translateY(0) scale(1);
 }
 
-/* 切换按钮 - 仅移动端显示 */
+/* 切换按钮样式 - 仅用于header中的按钮 */
 .timeline-toggle {
   width: 40px;
   height: 40px;
@@ -50,11 +68,6 @@
   border: 1px solid var(--border-color);
   position: relative;
   z-index: 1002;
-}
-
-/* PC端隐藏切换按钮 */
-.conversation-timeline.desktop .timeline-toggle {
-  display: none;
 }
 
 .timeline-toggle:hover {
@@ -83,6 +96,15 @@
   overflow: hidden;
   transform-origin: right center;
   will-change: transform, opacity;
+}
+
+/* PC端时间轴内容样式调整 */
+.conversation-timeline.desktop .timeline-content {
+  position: relative;
+  right: 0;
+  top: 0;
+  width: 280px;
+  max-height: 500px; /* PC端可以稍微高一点 */
 }
 
 /* PC端常驻显示时使用更轻的阴影 */
@@ -146,6 +168,18 @@
 
 .timeline-items::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
+}
+
+/* 移动端隐藏滚动条 */
+@media (max-width: 768px) {
+  .timeline-items {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  .timeline-items::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* 时间轴项目 */
@@ -240,34 +274,27 @@
 /* 移动端适配 */
 @media (max-width: 768px) {
   .conversation-timeline {
+    position: fixed;
     right: 12px;
-    top: auto;
-    bottom: 80px;
+    top: 60px; /* 调整到header下方 */
     transform: none;
+    z-index: 1000;
   }
 
   .timeline-content {
-    right: 50px;
-    top: auto;
-    bottom: 0;
+    position: relative;
+    right: 0;
+    top: 0;
     width: 240px;
     max-height: 300px;
-    transform-origin: right bottom;
+    transform-origin: right top;
   }
 
   .timeline-items {
     margin: 0 -4px;
   }
 
-  .timeline-toggle {
-    width: 36px;
-    height: 36px;
-  }
 
-  .timeline-toggle svg {
-    width: 14px;
-    height: 14px;
-  }
 
   .timeline-header {
     padding: 12px 16px;
@@ -320,22 +347,15 @@
 @media (max-width: 480px) {
   .conversation-timeline {
     right: 8px;
+    top: 60px;
   }
   
   .timeline-content {
     width: 220px;
-    right: 45px;
+    right: 0;
   }
   
-  .timeline-toggle {
-    width: 32px;
-    height: 32px;
-  }
-  
-  .timeline-toggle svg {
-    width: 12px;
-    height: 12px;
-  }
+
   
   .timeline-header h3 {
     max-width: 80px;
@@ -361,14 +381,30 @@
 @keyframes timelineSlideIn {
   from {
     opacity: 0;
-    transform: translateX(20px) scale(0.95);
+    transform: translateY(-10px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
 .conversation-timeline.mobile.visible .timeline-content {
   animation: timelineSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 移动端时间轴显示控制 */
+.conversation-timeline.timeline-visible .timeline-content {
+  animation: timelineSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 桌面端隐藏移动端按钮 */
+.desktop-only {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none;
+  }
 }

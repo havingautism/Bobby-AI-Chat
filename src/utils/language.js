@@ -94,6 +94,13 @@ export const translations = {
     // 时间轴
     timeline: "时间轴",
     questions: "个问题",
+    
+    // 对话框工具
+    quickResponse: "快速响应",
+    moreOptions: "更多选项",
+    upload: "上传",
+    addTab: "添加选项卡",
+    newChat: "新建对话",
   },
   en: {
     // 应用标题
@@ -150,6 +157,13 @@ export const translations = {
     // 时间轴
     timeline: "Timeline",
     questions: "questions",
+    
+    // 对话框工具
+    quickResponse: "Quick Response",
+    moreOptions: "More Options",
+    upload: "Upload",
+    addTab: "Add Tab",
+    newChat: "New Chat",
   },
 };
 

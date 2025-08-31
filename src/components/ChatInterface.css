@@ -195,6 +195,8 @@
   position: relative;
 }
 
+
+
 [data-theme="dark"] .chat-messages {
     flex: 1;
       overflow-y: auto;
@@ -278,15 +280,68 @@
     padding: 8px 12px;
     min-height: 56px;
   }
+
+  /* 移动端时间线按钮 */
+  .timeline-toggle.mobile-only {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 36px;
+    height: 36px;
+    margin-left: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .timeline-toggle.mobile-only:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .timeline-toggle.mobile-only:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .timeline-toggle.mobile-only svg {
+    width: 16px;
+    height: 16px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .timeline-toggle.mobile-only:hover svg {
+    transform: scale(1.1);
+  }
+
+  /* 移动端header布局调整 */
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
   
   .header-left {
     gap: 8px;
     min-width: 0;
+    display: flex;
+    align-items: center;
+    height: 100%;
   }
   
   .conversation-header {
     gap: 8px;
     min-width: 0;
+    display: flex;
+    align-items: center;
+    height: 100%;
   }
   
   .conversation-title {
@@ -295,6 +350,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    line-height: 1.2;
   }
   
   .header-actions {
@@ -310,10 +369,21 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 0 0 120px 0; /* 底部留出输入框空间 */
+    padding: 0 0 140px 0; /* 增加底部间距，避免被输入框遮挡 */
     width: 100%;
     -webkit-overflow-scrolling: touch;
+    
+    /* 移动端隐藏滚动条 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
   }
+  
+  /* Webkit浏览器隐藏滚动条 */
+  .chat-messages::-webkit-scrollbar {
+    display: none;
+  }
+  
+
   
   .sidebar-toggle {
     display: block;
@@ -326,5 +396,15 @@
 @media (min-width: 769px) {
   .sidebar-toggle {
     display: none;
+  }
+  
+  /* 桌面端隐藏移动端时间线按钮 */
+  .timeline-toggle.mobile-only {
+    display: none;
+  }
+  
+  /* PC端为时间线留出空间 */
+  .chat-messages {
+    padding-right: 320px; /* 为时间线留出空间 */
   }
 }

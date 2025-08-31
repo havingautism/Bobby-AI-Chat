@@ -146,6 +146,8 @@ const CodeBlock = ({ children, language = "text" }) => {
             overflowX: "auto",
             whiteSpace: "pre",
             wordWrap: "normal",
+            border: "none",
+            borderRadius: "0",
           }}
           codeTagProps={{
             style: {

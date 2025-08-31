@@ -79,15 +79,30 @@ const ConversationTimeline = ({ messages, onJumpToMessage, currentMessageId }) =
     setIsVisible(!isVisible);
   };
 
-  // 点击外部关闭时间轴
+  // 点击外部关闭时间轴（仅移动端）
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isMobile && isVisible && timelineRef.current && !timelineRef.current.contains(event.target)) {
-        setIsVisible(false);
+      // 仅移动端需要点击外部关闭功能
+      if (!isMobile) return;
+      
+      // 检查是否点击了header中的时间线按钮
+      const timelineButton = document.querySelector('.timeline-toggle.mobile-only');
+      if (timelineButton && timelineButton.contains(event.target)) {
+        return; // 如果点击的是header中的时间线按钮，不关闭
+      }
+      
+      // 检查时间轴是否可见
+      const timeline = document.querySelector('.conversation-timeline');
+      if (timeline && timeline.classList.contains('timeline-visible')) {
+        // 检查是否点击了时间轴外部
+        if (!timeline.contains(event.target)) {
+          timeline.classList.remove('timeline-visible');
+          setIsVisible(false);
+        }
       }
     };
 
-    // 总是添加事件监听器，但在回调中检查条件
+    // 总是添加事件监听器
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('touchstart', handleClickOutside);
 
@@ -97,6 +112,32 @@ const ConversationTimeline = ({ messages, onJumpToMessage, currentMessageId }) =
     };
   }, [isMobile, isVisible]);
 
+  // 监听模型选择下拉框状态变化（仅PC端）
+  useEffect(() => {
+    if (isMobile) return; // 仅PC端需要此功能
+
+    const handleModelDropdownToggle = (event) => {
+      const { isOpen } = event.detail;
+      const timeline = document.querySelector('.conversation-timeline');
+      
+      if (timeline) {
+        if (isOpen) {
+          // 下拉框打开时，将时间轴移动到下拉框下方
+          timeline.classList.add('dropdown-open');
+        } else {
+          // 下拉框关闭时，恢复时间轴原始位置
+          timeline.classList.remove('dropdown-open');
+        }
+      }
+    };
+
+    window.addEventListener('modelDropdownToggle', handleModelDropdownToggle);
+    
+    return () => {
+      window.removeEventListener('modelDropdownToggle', handleModelDropdownToggle);
+    };
+  }, [isMobile]);
+
   // 如果用户消息少于2条，不显示时间轴
   if (userMessages.length < 2) {
     return null;
@@ -104,19 +145,6 @@ const ConversationTimeline = ({ messages, onJumpToMessage, currentMessageId }) =
 
   return (
     <div className={`conversation-timeline ${isVisible ? 'visible' : ''} ${isMobile ? 'mobile' : 'desktop'}`} ref={timelineRef}>
-      {/* 移动端切换按钮 */}
-      {isMobile && (
-        <button 
-          className="timeline-toggle"
-          onClick={toggleVisibility}
-          title={t('timeline')}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-          </svg>
-        </button>
-      )}
-
       {/* 时间轴内容 */}
       <div className="timeline-content">
         <div className="timeline-header">

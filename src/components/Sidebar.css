@@ -593,7 +593,66 @@
   opacity: 1;
 }
 
-.edit-btn,
+.menu-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.menu-btn:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.conversation-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  min-width: 160px;
+  padding: 4px;
+  margin-top: 4px;
+  animation: fadeIn 0.2s ease;
+}
+
+.menu-item {
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  font-size: 13px;
+}
+
+.menu-item:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.menu-item svg {
+  flex-shrink: 0;
+}
+
 .delete-btn {
   background: none;
   border: none;
@@ -608,11 +667,6 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
-
-.edit-btn:hover {
-  background-color: var(--accent-color);
-  color: var(--bg-primary);
 }
 
 .delete-btn:hover {

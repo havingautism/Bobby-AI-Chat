@@ -494,7 +494,9 @@ const ConversationItem = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(conversation.title);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const inputRef = useRef(null);
+  const menuRef = useRef(null);
 
   // 开始编辑
   const startEdit = (e) => {
@@ -536,6 +538,26 @@ const ConversationItem = ({
     setShowDeleteConfirm(false);
   };
 
+  // 处理菜单点击
+  const handleMenuClick = (e) => {
+    e.stopPropagation();
+    setShowMenu(!showMenu);
+  };
+
+  // 处理重命名
+  const handleRename = (e) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    startEdit(e);
+  };
+
+  // 处理删除
+  const handleDelete = (e) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    handleDeleteClick(e);
+  };
+
   // 处理键盘事件
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -552,6 +574,20 @@ const ConversationItem = ({
       inputRef.current.select();
     }
   }, [isEditing]);
+
+  // 点击外部关闭菜单
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // 高亮搜索关键词
   const highlightText = (text, query) => {
@@ -625,26 +661,63 @@ const ConversationItem = ({
               {getRoleById(conversation.role).name}
             </div>
             <div className="conversation-actions">
-              {!isEditing && (
-                <button
-                  className="edit-btn"
-                  onClick={startEdit}
-                  title={currentLanguage === "zh" ? "编辑标题" : "Edit Title"}
+              <button
+                className="menu-btn"
+                onClick={handleMenuClick}
+                title={currentLanguage === "zh" ? "更多操作" : "More Options"}
+                ref={menuRef}
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
                 >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                </button>
-              )}
-              {showDeleteConfirm ? (
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="19" cy="12" r="1" />
+                  <circle cx="5" cy="12" r="1" />
+                </svg>
+                {showMenu && (
+                  <div className="conversation-menu">
+                    <button
+                      className="menu-item"
+                      onClick={handleRename}
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      <span>{currentLanguage === "zh" ? "重命名对话" : "Rename conversation"}</span>
+                    </button>
+                    <button
+                      className="menu-item"
+                      onClick={handleDelete}
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
+                      <span>{currentLanguage === "zh" ? "删除对话" : "Delete conversation"}</span>
+                    </button>
+                  </div>
+                )}
+              </button>
+              {showDeleteConfirm && (
                 <div className="delete-confirm">
                   <button
                     className="confirm-btn"
@@ -661,23 +734,6 @@ const ConversationItem = ({
                     ✕
                   </button>
                 </div>
-              ) : (
-                <button
-                  className="delete-btn"
-                  onClick={handleDeleteClick}
-                  title={currentLanguage === "zh" ? "删除对话" : "Delete Chat"}
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  </svg>
-                </button>
               )}
             </div>
           </div>

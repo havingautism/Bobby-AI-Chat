@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: white;
+  background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 8px 12px;
@@ -18,9 +18,38 @@
   color: var(--text-primary);
 }
 
+/* 移动端简化模式 */
+.model-selector-trigger.mobile-mode {
+  min-width: auto;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.model-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.model-selector-trigger.mobile-mode .dropdown-arrow {
+  display: none;
+}
+
 .model-selector-trigger:hover:not(.disabled) {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--bg-tertiary);
   border-color: var(--accent-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.model-selector-trigger:active:not(.disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .model-selector-trigger.disabled {
@@ -78,6 +107,10 @@
   max-height: 400px;
   overflow-y: auto;
   margin-top: 4px;
+  
+  /* 移动端隐藏滚动条 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
 .model-dropdown.top {
@@ -238,6 +271,13 @@
 
 .model-dropdown::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
+}
+
+/* 移动端隐藏滚动条 */
+@media (max-width: 768px) {
+  .model-dropdown::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* 暗色模式下的模型选择按钮使用暗色背景 */
