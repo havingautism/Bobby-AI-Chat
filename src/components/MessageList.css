@@ -1049,3 +1049,40 @@
     transform: scale(1.01);
   }
 }
+
+/* 简洁文本块样式 - 用于简单的文本内容 */
+.simple-text-block {
+  display: inline-block;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin: 2px 4px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.simple-text-block:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.simple-text-content {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+/* 移动端简洁文本块样式 */
+@media (max-width: 768px) {
+  .simple-text-block {
+    padding: 3px 6px;
+    font-size: 12px;
+    margin: 1px 2px;
+  }
+}
