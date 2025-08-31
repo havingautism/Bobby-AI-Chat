@@ -21,39 +21,60 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [storageInfo, setStorageInfo] = useState(null);
 
-  // 硅基流动模型列表，按类型排序
+  // 硅基流动模型列表，按类型排序（与ModelSelector保持一致）
   const siliconFlowModels = {
     latest: {
       name: currentLanguage === "zh" ? "最新模型" : "Latest Models",
       models: [
         { id: "deepseek-ai/DeepSeek-V3.1", name: "DeepSeek-V3.1", description: "最新对话模型", isPro: false },
         { id: "Pro/deepseek-ai/DeepSeek-V3.1", name: "DeepSeek-V3.1", description: "最新对话模型", isPro: true },
-        { id: "deepseek-ai/Step-3", name: "Step-3", description: "阶跃模型", isPro: false },
-        { id: "Pro/deepseek-ai/Step-3", name: "Step-3", description: "阶跃模型", isPro: true },
-        { id: "deepseek-ai/DeepSeek-R1", name: "DeepSeek-R1", description: "推理模型", isPro: false },
-        { id: "Pro/deepseek-ai/DeepSeek-R1", name: "DeepSeek-R1", description: "推理模型", isPro: true },
+        { id: "stepfun-ai/step3", name: "Step-3", description: "阶跃模型", isPro: false },
       ]
     },
-    qwen: {
-      name: currentLanguage === "zh" ? "通义千问系列" : "Qwen Series",
+    qwen3: {
+      name: currentLanguage === "zh" ? "通义千问3系列" : "Qwen3 Series",
       models: [
-        { id: "Qwen/Qwen3.5-110B-Instruct", name: "Qwen3.5-110B-Instruct", description: "大型模型", isPro: false },
-        { id: "Pro/Qwen/Qwen3.5-110B-Instruct", name: "Qwen3.5-110B-Instruct", description: "大型模型", isPro: true },
-        { id: "Qwen/Qwen3.5-32B-Instruct", name: "Qwen3.5-32B-Instruct", description: "中型模型", isPro: false },
-        { id: "Pro/Qwen/Qwen3.5-32B-Instruct", name: "Qwen3.5-32B-Instruct", description: "中型模型", isPro: true },
-        { id: "Qwen/Qwen3.5-14B-Instruct", name: "Qwen3.5-14B-Instruct", description: "小型模型", isPro: false },
-        { id: "Pro/Qwen/Qwen3.5-14B-Instruct", name: "Qwen3.5-14B-Instruct", description: "小型模型", isPro: true },
-        { id: "Qwen/Qwen3.5-7B-Instruct", name: "Qwen3.5-7B-Instruct", description: "轻量模型", isPro: false },
-        { id: "Pro/Qwen/Qwen3.5-7B-Instruct", name: "Qwen3.5-7B-Instruct", description: "轻量模型", isPro: true },
-        { id: "Qwen/Qwen3.5-Coder-32B-Instruct", name: "Qwen3.5-Coder-32B-Instruct", description: "编程模型", isPro: false },
-        { id: "Pro/Qwen/Qwen3.5-Coder-32B-Instruct", name: "Qwen3.5-Coder-32B-Instruct", description: "编程模型", isPro: true },
-        { id: "Qwen/Qwen3.5-Coder-7B-Instruct", name: "Qwen3.5-Coder-7B-Instruct", description: "轻量编程模型", isPro: false },
-        { id: "Pro/Qwen/Qwen3.5-Coder-7B-Instruct", name: "Qwen3.5-Coder-7B-Instruct", description: "轻量编程模型", isPro: true },
+        { id: "Qwen/Qwen3-Coder-30B-A3B-Instruct", name: "Qwen3-Coder-30B-A3B-Instruct", description: "编程专用模型", isPro: false },
+        { id: "Qwen/Qwen3-Coder-480B-A35B-Instruct", name: "Qwen3-Coder-480B-A35B-Instruct", description: "超大编程模型", isPro: false },
+        { id: "Qwen/Qwen3-30B-A3B-Thinking-2507", name: "Qwen3-30B-A3B-Thinking-2507", description: "思维链模型", isPro: false },
+        { id: "Qwen/Qwen3-30B-A3B-Instruct-2507", name: "Qwen3-30B-A3B-Instruct-2507", description: "指令调优模型", isPro: false },
+        { id: "Qwen/Qwen3-235B-A22B-Thinking-2507", name: "Qwen3-235B-A22B-Thinking-2507", description: "超大思维模型", isPro: false },
+        { id: "Qwen/Qwen3-235B-A22B-Instruct-2507", name: "Qwen3-235B-A22B-Instruct-2507", description: "超大指令模型", isPro: false },
+        { id: "Qwen/Qwen3-30B-A3B", name: "Qwen3-30B-A3B", description: "基础模型", isPro: false },
+        { id: "Qwen/Qwen3-32B", name: "Qwen3-32B", description: "中型模型", isPro: false },
+        { id: "Qwen/Qwen3-14B", name: "Qwen3-14B", description: "小型模型", isPro: false },
+        { id: "Qwen/Qwen3-8B", name: "Qwen3-8B", description: "轻量模型", isPro: false },
+        { id: "Qwen/Qwen3-235B-A22B", name: "Qwen3-235B-A22B", description: "超大基础模型", isPro: false },
       ]
     },
-    others: {
-      name: currentLanguage === "zh" ? "其他模型" : "Other Models",
+    reasoning: {
+      name: currentLanguage === "zh" ? "推理模型" : "Reasoning Models",
       models: [
+        { id: "Pro/deepseek-ai/DeepSeek-R1", name: "DeepSeek-R1", description: "高级推理模型", isPro: true },
+        { id: "deepseek-ai/DeepSeek-R1", name: "DeepSeek-R1", description: "高级推理模型", isPro: false },
+        { id: "Qwen/QwQ-32B", name: "QwQ-32B", description: "通义推理模型", isPro: false },
+        { id: "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B", name: "DeepSeek-R1-0528-Qwen3-8B", description: "R1+Qwen3混合", isPro: false },
+        { id: "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B", name: "DeepSeek-R1-Distill-Qwen-32B", description: "蒸馏推理模型", isPro: false },
+        { id: "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B", name: "DeepSeek-R1-Distill-Qwen-14B", description: "中型蒸馏模型", isPro: false },
+        { id: "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B", name: "DeepSeek-R1-Distill-Qwen-7B", description: "轻量蒸馏模型", isPro: false },
+        { id: "Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B", name: "DeepSeek-R1-Distill-Qwen-7B", description: "轻量蒸馏模型", isPro: true },
+        { id: "THUDM/GLM-Z1-32B-0414", name: "GLM-Z1-32B-0414", description: "智谱推理模型", isPro: false },
+        { id: "THUDM/GLM-Z1-Rumination-32B-0414", name: "GLM-Z1-Rumination-32B-0414", description: "深度思考模型", isPro: false },
+      ]
+    },
+    chat: {
+      name: currentLanguage === "zh" ? "对话模型" : "Chat Models",
+      models: [
+        { id: "Pro/deepseek-ai/DeepSeek-V3", name: "DeepSeek-V3", description: "对话模型", isPro: true },
+        { id: "deepseek-ai/DeepSeek-V3", name: "DeepSeek-V3", description: "对话模型", isPro: false },
+        { id: "deepseek-ai/DeepSeek-V2.5", name: "DeepSeek-V2.5", description: "对话模型V2.5", isPro: false },
+        { id: "zai-org/GLM-4.5-Air", name: "GLM-4.5-Air", description: "智谱轻量模型", isPro: false },
+        { id: "zai-org/GLM-4.5", name: "GLM-4.5", description: "智谱对话模型", isPro: false },
+        { id: "baidu/ERNIE-4.5-300B-A47B", name: "ERNIE-4.5-300B-A47B", description: "百度文心模型", isPro: false },
+        { id: "moonshotai/Kimi-K2-Instruct", name: "Kimi-K2-Instruct", description: "月之暗面模型", isPro: false },
+        { id: "ascend-tribe/pangu-pro-moe", name: "PanGu-Pro-MoE", description: "华为盘古模型", isPro: false },
+        { id: "tencent/Hunyuan-A13B-Instruct", name: "Hunyuan-A13B-Instruct", description: "腾讯混元模型", isPro: false },
+        { id: "MiniMaxAI/MiniMax-M1-80k", name: "MiniMax-M1-80k", description: "海螺模型", isPro: false },
         { id: "Tongyi-Zhiwen/QwenLong-L1-32B", name: "QwenLong-L1-32B", description: "长文本模型", isPro: false },
         { id: "THUDM/GLM-4-32B-0414", name: "GLM-4-32B-0414", description: "智谱GLM-4", isPro: false },
         { id: "THUDM/GLM-4-9B-0414", name: "GLM-4-9B-0414", description: "智谱GLM-4小型", isPro: false },
@@ -85,7 +106,14 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
     if (isOpen) {
       const loadData = async () => {
         const currentConfig = getApiConfig();
-        setConfig(currentConfig);
+        
+        // 使用全局默认模型，而不是当前对话的模型
+        const modelToUse = currentConfig.model || "deepseek-ai/DeepSeek-V3.1";
+        
+        setConfig({
+          ...currentConfig,
+          model: modelToUse
+        });
         
         // 加载存储信息
         const info = await getStorageInfo();
@@ -187,6 +215,11 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
 
       // 更新API配置
       updateApiConfig(config);
+
+      // 通知父组件模型已改变
+      if (onModelChange) {
+        onModelChange(config.model);
+      }
 
       setSaveMessage("设置保存成功！");
       setTimeout(() => {

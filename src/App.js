@@ -18,6 +18,12 @@ function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [defaultModel, setDefaultModel] = useState("deepseek-ai/DeepSeek-V3.1");
 
+  // 同步默认模型与API配置
+  useEffect(() => {
+    const apiConfig = getApiConfig();
+    setDefaultModel(apiConfig.model || "deepseek-ai/DeepSeek-V3.1");
+  }, []);
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -213,6 +219,8 @@ function App() {
         onClose={() => setSettingsOpen(false)}
         onModelChange={(newModel) => {
           setDefaultModel(newModel);
+          // 只更新默认模型，不更新当前对话的模型
+          // 当前对话的模型应该保持用户手动选择的状态
         }}
       />
     </div>

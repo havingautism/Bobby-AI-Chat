@@ -319,10 +319,18 @@ const ChatInterface = ({
                   console.error("流式标题生成完全失败，使用备用方案:", error);
                   setIsTitleGenerating(false);
                   setTitleGeneratingId(null);
-                  // 使用用户的第一条消息作为标题
+                  // 使用用户的第一条消息作为标题，但过滤掉图片数据
                   const userMessage = finalMessages.find(m => m.role === "user");
-                  const fallbackTitle = userMessage?.content?.slice(0, 30) +
-                    (userMessage?.content?.length > 30 ? "..." : "") || "新对话";
+                  let fallbackTitle = "新对话";
+                  
+                  if (userMessage?.content) {
+                    // 过滤掉base64图片数据，只保留纯文本内容
+                    const textContent = userMessage.content.replace(/data:image\/[^;]+;base64,[^\s]+/g, '').trim();
+                    if (textContent) {
+                      fallbackTitle = textContent.slice(0, 30) + (textContent.length > 30 ? "..." : "");
+                    }
+                  }
+                  
                   onUpdateConversation(conversationId, {
                     title: fallbackTitle,
                     isTitleGenerating: false,
@@ -333,8 +341,17 @@ const ChatInterface = ({
                 console.error("自动生成标题失败:", error);
                 setIsTitleGenerating(false);
                 setTitleGeneratingId(null);
-                // 使用用户的第一条消息作为标题
-                const fallbackTitle = finalMessages[0].content;
+                // 使用用户的第一条消息作为标题，但过滤掉图片数据
+                let fallbackTitle = "新对话";
+                
+                if (finalMessages[0]?.content) {
+                  // 过滤掉base64图片数据，只保留纯文本内容
+                  const textContent = finalMessages[0].content.replace(/data:image\/[^;]+;base64,[^\s]+/g, '').trim();
+                  if (textContent) {
+                    fallbackTitle = textContent.slice(0, 30) + (textContent.length > 30 ? "..." : "");
+                  }
+                }
+                
                 onUpdateConversation(conversationId, {
                   title: fallbackTitle,
                   isTitleGenerating: false,

@@ -362,9 +362,13 @@ export class SiliconFlowProvider extends BaseApiProvider {
                 if (!finalTitle) {
                   const userMessage = relevantMessages.find(msg => msg.role === "user");
                   if (userMessage) {
-                    finalTitle = userMessage.content.slice(0, 20).trim();
-                    if (userMessage.content.length > 20) {
-                      finalTitle += "...";
+                    // 过滤掉base64图片数据，只保留纯文本内容
+                    const textContent = userMessage.content.replace(/data:image\/[^;]+;base64,[^\s]+/g, '').trim();
+                    if (textContent) {
+                      finalTitle = textContent.slice(0, 20).trim();
+                      if (textContent.length > 20) {
+                        finalTitle += "...";
+                      }
                     }
                   }
                 }
@@ -389,9 +393,13 @@ export class SiliconFlowProvider extends BaseApiProvider {
       if (!finalTitle) {
         const userMessage = relevantMessages.find(msg => msg.role === "user");
         if (userMessage) {
-          finalTitle = userMessage.content.slice(0, 20).trim();
-          if (userMessage.content.length > 20) {
-            finalTitle += "...";
+          // 过滤掉base64图片数据，只保留纯文本内容
+          const textContent = userMessage.content.replace(/data:image\/[^;]+;base64,[^\s]+/g, '').trim();
+          if (textContent) {
+            finalTitle = textContent.slice(0, 20).trim();
+            if (textContent.length > 20) {
+              finalTitle += "...";
+            }
           }
         }
       }
@@ -400,11 +408,15 @@ export class SiliconFlowProvider extends BaseApiProvider {
       
     } catch (error) {
       console.error("硅基流动标题生成失败:", error);
-      // 如果生成失败，返回基于第一条消息的简单标题
+      // 如果生成失败，返回基于第一条消息的简单标题，但过滤掉图片数据
       if (messages.length > 0) {
         const firstMessage = messages.find(msg => msg.role === "user");
         if (firstMessage) {
-          return firstMessage.content.slice(0, 20) + (firstMessage.content.length > 20 ? "..." : "");
+          // 过滤掉base64图片数据，只保留纯文本内容
+          const textContent = firstMessage.content.replace(/data:image\/[^;]+;base64,[^\s]+/g, '').trim();
+          if (textContent) {
+            return textContent.slice(0, 20) + (textContent.length > 20 ? "..." : "");
+          }
         }
       }
       return "新对话";
