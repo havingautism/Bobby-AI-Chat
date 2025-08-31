@@ -97,8 +97,8 @@ const ChatInterface = ({
 
 
 
-  const handleSendMessage = async (content, options = {}) => {
-    if (!content.trim() || isStreaming) return;
+  const handleSendMessage = async (content, uploadedFile = null, options = {}) => {
+    if ((!content.trim() && !uploadedFile) || isStreaming) return;
 
     // 检查API是否配置
     if (!isApiConfigured()) {
@@ -109,12 +109,46 @@ const ChatInterface = ({
     // 保存当前对话ID，防止在异步操作过程中ID发生变化
     const currentConversationId = conversation.id;
 
+    // 处理文件内容
+    let fileContent = "";
+    let imageData = null;
+    if (uploadedFile && uploadedFile.type) {
+      if (uploadedFile.type.startsWith('image/')) {
+        // 图片文件，保存base64数据用于多模态消息
+        const reader = new FileReader();
+        imageData = await new Promise((resolve) => {
+          reader.onload = (e) => {
+            resolve(e.target.result);
+          };
+          reader.readAsDataURL(uploadedFile);
+        });
+        // 图片数据将用于多模态消息，不添加文本描述
+      } else {
+        // 文本文件，读取内容
+        const reader = new FileReader();
+        fileContent = await new Promise((resolve) => {
+          reader.onload = (e) => {
+            resolve(`[文件: ${uploadedFile.name}]\n${e.target.result}`);
+          };
+          reader.readAsText(uploadedFile);
+        });
+      }
+    }
+
+    // 组合消息内容
+    const fullContent = content.trim() + (fileContent ? `\n\n${fileContent}` : "") + (imageData ? `\n${imageData}` : "");
+
     const userMessage = {
       id: Date.now().toString(),
       role: "user",
-      content: content.trim(),
+      content: fullContent,
       timestamp: new Date().toISOString(),
       options, // 保存模式和个性选择
+      uploadedFile: uploadedFile ? {
+        name: uploadedFile.name,
+        type: uploadedFile.type,
+        size: uploadedFile.size
+      } : null
     };
 
     // 添加用户消息

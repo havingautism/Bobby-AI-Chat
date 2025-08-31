@@ -40,11 +40,46 @@ export const sendMessageStream = async (messages, options = {}, onChunk = null, 
       throw new Error("请先在设置中配置 API 密钥");
     }
 
-    // 转换消息格式为API所需格式
-    const apiMessages = messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+    // 转换消息格式为API所需格式，支持多模态
+    const apiMessages = messages.map((msg) => {
+      if (msg.role === "user" && msg.uploadedFile && msg.uploadedFile.type && msg.uploadedFile.type.startsWith('image/')) {
+        // 多模态消息：图片 + 文本
+        const content = [];
+        
+        // 添加图片
+        if (msg.content.includes('data:image')) {
+          const imageData = msg.content.split('\n').find(line => line.startsWith('data:image'));
+          if (imageData) {
+            content.push({
+              type: "image_url",
+              image_url: {
+                url: imageData
+              }
+            });
+          }
+        }
+        
+        // 添加文本（排除base64数据）
+        const textContent = msg.content.split('\n').filter(line => !line.startsWith('data:image')).join('\n').trim();
+        if (textContent) {
+          content.push({
+            type: "text",
+            text: textContent
+          });
+        }
+        
+        return {
+          role: msg.role,
+          content: content
+        };
+      } else {
+        // 普通文本消息
+        return {
+          role: msg.role,
+          content: msg.content,
+        };
+      }
+    });
 
     // 如果有系统提示词，添加到消息开头
     if (options.systemPrompt) {
@@ -62,6 +97,12 @@ export const sendMessageStream = async (messages, options = {}, onChunk = null, 
                             modelToUse?.includes('r1') ||
                             modelToUse?.includes('QwQ') ||
                             modelToUse?.includes('qwq');
+    
+    // 检查是否为多模态模型
+    const isMultimodalModel = modelToUse?.includes('vl') || 
+                             modelToUse?.includes('VL') ||
+                             modelToUse?.includes('vision') ||
+                             modelToUse?.includes('Vision');
     
     // 构建请求体
     const requestBody = {
@@ -82,9 +123,15 @@ export const sendMessageStream = async (messages, options = {}, onChunk = null, 
       requestBody.top_p = 0.8;
     }
 
+    // 多模态模型可能需要调整参数
+    if (isMultimodalModel) {
+      requestBody.max_tokens = Math.max(requestBody.max_tokens, 1024);
+    }
+
     console.log('API Request (Stream):', {
       model: modelToUse,
       isReasoningModel,
+      isMultimodalModel,
       maxTokens: requestBody.max_tokens,
       temperature: requestBody.temperature,
       stream: true
@@ -257,11 +304,46 @@ export const sendMessage = async (messages, options = {}) => {
       throw new Error("请先在设置中配置API密钥");
     }
 
-    // 转换消息格式为API所需格式
-    const apiMessages = messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+    // 转换消息格式为API所需格式，支持多模态
+    const apiMessages = messages.map((msg) => {
+      if (msg.role === "user" && msg.uploadedFile && msg.uploadedFile.type && msg.uploadedFile.type.startsWith('image/')) {
+        // 多模态消息：图片 + 文本
+        const content = [];
+        
+        // 添加图片
+        if (msg.content.includes('data:image')) {
+          const imageData = msg.content.split('\n').find(line => line.startsWith('data:image'));
+          if (imageData) {
+            content.push({
+              type: "image_url",
+              image_url: {
+                url: imageData
+              }
+            });
+          }
+        }
+        
+        // 添加文本（排除base64数据）
+        const textContent = msg.content.split('\n').filter(line => !line.startsWith('data:image')).join('\n').trim();
+        if (textContent) {
+          content.push({
+            type: "text",
+            text: textContent
+          });
+        }
+        
+        return {
+          role: msg.role,
+          content: content
+        };
+      } else {
+        // 普通文本消息
+        return {
+          role: msg.role,
+          content: msg.content,
+        };
+      }
+    });
 
     // 如果有系统提示词，添加到消息开头
     if (options.systemPrompt) {
@@ -841,4 +923,31 @@ export const testTitleGeneration = async () => {
     console.error("错误详情:", error);
     return { success: false, error: error.message };
   }
+};
+
+// 多模态模型列表
+export const MULTIMODAL_MODELS = [
+  "deepseek-ai/deepseek-vl2",
+  "deepseek-ai/deepseek-vl",
+  "qwen/Qwen-VL-Chat",
+  "qwen/Qwen-VL-Plus",
+  "qwen/Qwen-VL-Max",
+  "openai/gpt-4-vision-preview",
+  "openai/gpt-4o",
+  "openai/gpt-4o-mini"
+];
+
+// 检查模型是否支持多模态
+export const isMultimodalModel = (modelName) => {
+  if (!modelName) return false;
+  return MULTIMODAL_MODELS.some(model => 
+    modelName.toLowerCase().includes(model.toLowerCase().split('/')[1])
+  ) || 
+  modelName.toLowerCase().includes('vl') ||
+  modelName.toLowerCase().includes('vision');
+};
+
+// 获取推荐的多模态模型
+export const getRecommendedMultimodalModel = () => {
+  return "deepseek-ai/deepseek-vl2"; // 默认推荐
 };

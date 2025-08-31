@@ -38,7 +38,7 @@
 .input-main-area {
   display: flex;
   align-items: flex-end;
-  padding: 16px;
+  padding: 12px 16px;
   gap: 12px;
 }
 
@@ -57,7 +57,9 @@
   line-height: 1.5;
   resize: none;
   font-family: inherit;
-  padding: 8px 0; /* 减小基础内边距 */
+  padding: 6px 0; /* 减小基础内边距 */
+  min-height: 24px;
+  max-height: 120px;
   box-shadow: none !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
@@ -178,6 +180,11 @@
   z-index: 2000;
   animation: dropdownFadeIn 0.2s ease-out;
   transform: translateY(0);
+  position: absolute;
+  pointer-events: auto;
+  bottom: calc(100% + 8px);
+  right: 0;
+  top: auto;
 }
 
 [data-theme="dark"] .dropdown-menu {
@@ -581,5 +588,178 @@
     padding: 8px 10px;
     font-size: 12px;
     gap: 8px;
+  }
+}
+
+/* 文件预览容器 */
+.file-preview-container {
+  margin: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+/* 图片预览 */
+.image-preview {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-image {
+  max-width: 300px;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* 文件信息 */
+.file-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.file-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-details svg {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.file-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.file-size {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+/* 删除文件按钮 */
+.remove-file-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.remove-file-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: scale(1.1);
+}
+
+.remove-file-btn:active {
+  transform: scale(0.95);
+}
+
+/* 图片预览中的删除按钮 */
+.image-preview .remove-file-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.image-preview .remove-file-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .file-preview-container {
+    margin: 6px;
+    padding: 10px;
+    border-radius: 10px;
+  }
+  
+  .preview-image {
+    max-width: 100%;
+    max-height: 150px;
+  }
+  
+  .file-info {
+    padding: 8px 12px;
+  }
+  
+  .file-name {
+    max-width: 150px;
+    font-size: 13px;
+  }
+  
+  .file-size {
+    font-size: 11px;
+  }
+  
+  .remove-file-btn {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .image-preview .remove-file-btn {
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* 移动端输入框适配 */
+@media (max-width: 768px) {
+  .input-main-area {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+  
+  .message-textarea-clean {
+    font-size: 16px; /* 防止iOS缩放 */
+    padding: 4px 0;
+    min-height: 20px;
+    max-height: 100px;
+  }
+  
+  .bottom-toolbar {
+    padding: 6px 14px;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+  }
+  
+  .input-wrapper-clean {
+    border-radius: 14px;
   }
 }

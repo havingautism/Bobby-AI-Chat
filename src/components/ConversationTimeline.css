@@ -203,6 +203,11 @@
   background: var(--accent-color);
   color: white;
   transform: translateX(-2px);
+  /* 优化选中状态的padding，让内容更紧凑 */
+  padding: 10px 18px;
+  margin: 2px 6px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .timeline-item.active .timeline-time,
@@ -212,10 +217,13 @@
 
 .timeline-item.active .timeline-dot {
   background: white;
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
 .timeline-item.active .dot-inner {
   background: var(--accent-color);
+  transform: scale(1.1);
 }
 
 /* 时间轴圆点 */
@@ -315,6 +323,25 @@
     margin: 0 4px;
   }
 
+  .timeline-item.active {
+    /* 移动端选中状态优化 */
+    padding: 8px 14px;
+    margin: 2px 2px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .timeline-item.active .timeline-dot {
+    /* 移动端选中状态圆点优化 - 增强视觉效果 */
+    transform: scale(1.3);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+  }
+
+  .timeline-item.active .dot-inner {
+    /* 移动端选中状态内圆点优化 */
+    transform: scale(1.2);
+  }
+
   .timeline-dot {
     width: 6px;
     height: 6px;
@@ -354,8 +381,20 @@
     width: 220px;
     right: 0;
   }
-  
 
+  .timeline-item.active {
+    /* 小屏幕选中状态进一步优化 */
+    padding: 6px 12px;
+    margin: 1px 1px;
+    border-radius: 6px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  .timeline-item.active .timeline-dot {
+    /* 小屏幕选中状态圆点优化 */
+    transform: scale(1.4);
+    box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.5);
+  }
   
   .timeline-header h3 {
     max-width: 80px;

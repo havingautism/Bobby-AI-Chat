@@ -101,6 +101,7 @@ export const translations = {
     upload: "上传",
     addTab: "添加选项卡",
     newChat: "新建对话",
+    typeMessageWithFile: "输入消息或直接发送文件...",
   },
   en: {
     // 应用标题
@@ -164,6 +165,7 @@ export const translations = {
     upload: "Upload",
     addTab: "Add Tab",
     newChat: "New Chat",
+    typeMessageWithFile: "Type a message or send file directly...",
   },
 };
 

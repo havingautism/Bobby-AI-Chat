@@ -77,7 +77,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
   const handleQuickPrompt = (prompt) => {
     const selectedRoleData = roles.find((role) => role.id === selectedRole);
-    onSendMessage(prompt, {
+    onSendMessage(prompt, null, {
       role: selectedRole,
       temperature: selectedRoleData.temperature,
       systemPrompt: selectedRoleData.systemPrompt,

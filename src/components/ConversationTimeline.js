@@ -65,7 +65,22 @@ const ConversationTimeline = ({ messages, onJumpToMessage, currentMessageId }) =
   // 截取消息预览
   const getMessagePreview = (content, maxLength = 30) => {
     if (!content) return "";
-    const text = content.replace(/[#*`]/g, "").trim();
+    
+    // 过滤掉base64图片数据
+    let text = content.split('\n').filter(line => !line.startsWith('data:image')).join('\n');
+    
+    // 过滤掉文件信息文本（如 [图片文件: xxx] 或 [文件: xxx]）
+    text = text.replace(/\[图片文件:[^\]]*\]/g, '');
+    text = text.replace(/\[文件:[^\]]*\]/g, '');
+    
+    // 移除markdown格式
+    text = text.replace(/[#*`]/g, "").trim();
+    
+    // 如果过滤后没有内容，返回默认文本
+    if (!text) {
+      return "图片消息";
+    }
+    
     return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
   };
 

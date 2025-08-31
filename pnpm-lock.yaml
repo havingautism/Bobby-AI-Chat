@@ -26,6 +26,9 @@ importers:
       daisyui:
         specifier: ^5.0.51
         version: 5.0.51
+      idb:
+        specifier: ^8.0.3
+        version: 8.0.3
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
@@ -3547,6 +3550,9 @@ packages:
 
   idb@7.1.1:
     resolution: {integrity: sha512-gchesWBzyvGHRO9W8tzUWFDycow5gwjvFKfyV9FF32Y7F50yZMp7mP+T2mJIWFx49zicqyC4uefHM17o6xKIVQ==}
+
+  idb@8.0.3:
+    resolution: {integrity: sha512-LtwtVyVYO5BqRvcsKuB2iUMnHwPVByPCXFXOpuU96IZPPoPN6xjOGxZQ74pgSVVLQWtUOYgyeL4GE98BY5D3wg==}
 
   identity-obj-proxy@3.0.0:
     resolution: {integrity: sha512-00n6YnVHKrinT9t0d9+5yZC6UBNJANpYEQvL2LlX6Ab9lnmxzIRcEmTPuyGScvl1+jKuCICX1Z0Ab1pPKKdikA==}
@@ -11092,6 +11098,8 @@ snapshots:
       postcss: 8.5.6
 
   idb@7.1.1: {}
+
+  idb@8.0.3: {}
 
   identity-obj-proxy@3.0.0:
     dependencies:

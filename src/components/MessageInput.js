@@ -7,13 +7,18 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
   const [message, setMessage] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
   const dropdownRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (message.trim() && !disabled) {
-      onSendMessage(message);
+    if ((message.trim() || uploadedFile) && !disabled) {
+      onSendMessage(message, uploadedFile);
       setMessage("");
+      setUploadedFile(null);
+      setFilePreview(null);
     }
   };
 
@@ -23,20 +28,6 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
       handleSubmit(e);
     }
   };
-
-  // 点击外部关闭下拉菜单
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   // 监听语言变化
   useEffect(() => {
@@ -50,46 +41,121 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
     };
   }, []);
 
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showDropdown]);
+
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
   };
 
-  // 智能定位下拉菜单
-  const getDropdownPosition = () => {
-    if (!dropdownRef.current) return {};
-    
-    const rect = dropdownRef.current.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const dropdownHeight = 120; // 预估下拉菜单高度
-    const safeMargin = 30; // 增加安全边距
-    
-    // 如果上方空间不足，则向下显示
-    if (rect.top < (dropdownHeight + safeMargin)) {
-      return { 
-        position: 'absolute',
-        bottom: 'auto', 
-        top: '100%', 
-        right: '0',
-        marginTop: '16px',
-        marginBottom: '0'
-      };
+  // 处理文件上传
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setUploadedFile(file);
+      
+      // 如果是图片文件，创建预览
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setFilePreview(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setFilePreview(null);
+      }
+      
+      setShowDropdown(false);
     }
-    
-    // 默认向上显示，确保有足够间距
-    return { 
-      position: 'absolute',
-      bottom: 'calc(100% + 20px)', 
-      top: 'auto',
-      right: '0',
-      marginTop: '0',
-      marginBottom: '0'
-    };
+  };
+
+  // 删除上传的文件
+  const removeFile = () => {
+    setUploadedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // 触发文件选择
+  const triggerFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // 处理新建对话
+  const handleNewChat = () => {
+    console.log('新建对话');
+    setShowDropdown(false);
+  };
+
+  // 处理添加选项卡
+  const handleAddTab = () => {
+    console.log('添加选项卡');
+    setShowDropdown(false);
   };
 
   return (
     <div className="message-input-container">
       <form onSubmit={handleSubmit} className="message-input-form">
         <div className="input-wrapper-clean">
+          {/* 文件预览区域 */}
+          {uploadedFile && (
+            <div className="file-preview-container">
+              {filePreview ? (
+                <div className="image-preview">
+                  <img src={filePreview} alt="预览" className="preview-image" />
+                  <button
+                    type="button"
+                    className="remove-file-btn"
+                    onClick={removeFile}
+                    title="删除文件"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="file-info">
+                  <div className="file-details">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                      <polyline points="14,2 14,8 20,8" />
+                    </svg>
+                    <span className="file-name">{uploadedFile.name}</span>
+                    <span className="file-size">({(uploadedFile.size / 1024).toFixed(1)} KB)</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="remove-file-btn"
+                    onClick={removeFile}
+                    title="删除文件"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 主要输入区域 */}
           <div className="input-main-area">
             {/* 消息输入框 */}
@@ -97,7 +163,7 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={t("typeMessage", currentLanguage)}
+              placeholder={uploadedFile ? t("typeMessageWithFile", currentLanguage) : t("typeMessage", currentLanguage)}
               disabled={disabled}
               rows={1}
               className="message-textarea-clean"
@@ -171,7 +237,7 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
             ) : (
               <button
                 type="submit"
-                disabled={!message.trim() || disabled}
+                disabled={(!message.trim() && !uploadedFile) || disabled}
                 className="send-button"
                 title={t("send", currentLanguage)}
               >
@@ -192,7 +258,7 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
             )}
           </div>
 
-          {/* 底部工具栏 - 在对话框内部 */}
+          {/* 底部工具栏 */}
           <div className="bottom-toolbar">
             {/* 快速响应按钮 */}
             <button 
@@ -208,27 +274,23 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
             </button>
 
             {/* 加号按钮和下拉菜单 */}
-            <div className="plus-button-container">
+            <div className="plus-button-container" ref={dropdownRef}>
               <button
                 type="button"
                 className="plus-button"
                 onClick={toggleDropdown}
                 disabled={disabled}
                 title={t("moreOptions", currentLanguage)}
-                ref={dropdownRef}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 5v14m-7-7h14" />
                 </svg>
               </button>
 
-              {/* 下拉菜单 */}
+              {/* 简化的下拉菜单 */}
               {showDropdown && (
-                <div 
-                  className="dropdown-menu"
-                  style={getDropdownPosition()}
-                >
-                  <button type="button" className="dropdown-item">
+                <div className="dropdown-menu">
+                  <div className="dropdown-item" onClick={handleNewChat}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
                       <polyline points="14,2 14,8 20,8" />
@@ -237,14 +299,16 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
                       <polyline points="10,9 9,9 8,9" />
                     </svg>
                     <span>{t("newChat", currentLanguage)}</span>
-                  </button>
-                  <button type="button" className="dropdown-item">
+                  </div>
+                  
+                  <div className="dropdown-item" onClick={triggerFileUpload}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                     </svg>
                     <span>{t("upload", currentLanguage)}</span>
-                  </button>
-                  <button type="button" className="dropdown-item">
+                  </div>
+                  
+                  <div className="dropdown-item" onClick={handleAddTab}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                       <line x1="9" y1="1" x2="9" y2="23" />
@@ -253,11 +317,20 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
                       <line x1="1" y1="15" x2="23" y2="15" />
                     </svg>
                     <span>{t("addTab", currentLanguage)}</span>
-                  </button>
+                  </div>
                 </div>
               )}
             </div>
           </div>
+
+          {/* 隐藏的文件输入 */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.pdf,.doc,.docx,.txt"
+            onChange={handleFileUpload}
+            style={{ display: 'none' }}
+          />
         </div>
       </form>
       

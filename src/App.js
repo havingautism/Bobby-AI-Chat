@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import ChatInterface from "./components/ChatInterface";
 import Sidebar from "./components/Sidebar";
 import Settings from "./components/Settings";
-import { loadChatHistory, saveChatHistory } from "./utils/storage";
+import { loadChatHistory, saveChatHistory, migrateFromLocalStorage } from "./utils/storage";
 import { initTheme } from "./utils/theme";
 import { getApiConfig } from "./utils/api";
 import { v4 as uuidv4 } from "uuid";
@@ -19,43 +19,74 @@ function App() {
   const [defaultModel, setDefaultModel] = useState("deepseek-ai/DeepSeek-V3.1");
 
   useEffect(() => {
-    // 初始化主题
-    initTheme();
+    const initializeApp = async () => {
+      try {
+        // 初始化主题
+        initTheme();
 
-    // 获取默认模型配置
-    const apiConfig = getApiConfig();
-    setDefaultModel(apiConfig.model || "deepseek-ai/DeepSeek-V3.1");
+        // 获取默认模型配置
+        const apiConfig = getApiConfig();
+        setDefaultModel(apiConfig.model || "deepseek-ai/DeepSeek-V3.1");
 
-    const savedConversations = loadChatHistory();
-    console.log("加载的对话历史:", savedConversations);
+        // 迁移旧数据
+        await migrateFromLocalStorage();
 
-    if (savedConversations.length > 0) {
-      setConversations(savedConversations);
-      // 优先选择最新的对话（第一个）
-      setCurrentConversationId(savedConversations[0].id);
-    } else {
-      // 创建初始对话
-      const initialConversation = {
-        id: uuidv4(),
-        title: "新对话",
-        messages: [],
-        createdAt: new Date().toISOString(),
-        role: null, // 初始对话没有角色
-        model: apiConfig.model || "deepseek-ai/DeepSeek-V3.1", // 使用配置的默认模型
-      };
-      setConversations([initialConversation]);
-      setCurrentConversationId(initialConversation.id);
-    }
+        // 加载对话历史
+        const savedConversations = await loadChatHistory();
+        console.log("加载的对话历史:", savedConversations);
 
-    // 标记初始化完成
-    setIsInitialized(true);
+        if (savedConversations.length > 0) {
+          setConversations(savedConversations);
+          // 优先选择最新的对话（第一个）
+          setCurrentConversationId(savedConversations[0].id);
+        } else {
+          // 创建初始对话
+          const initialConversation = {
+            id: uuidv4(),
+            title: "新对话",
+            messages: [],
+            createdAt: new Date().toISOString(),
+            role: null, // 初始对话没有角色
+            model: apiConfig.model || "deepseek-ai/DeepSeek-V3.1", // 使用配置的默认模型
+          };
+          setConversations([initialConversation]);
+          setCurrentConversationId(initialConversation.id);
+        }
+
+        // 标记初始化完成
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("初始化应用失败:", error);
+        // 如果初始化失败，创建一个默认对话
+        const initialConversation = {
+          id: uuidv4(),
+          title: "新对话",
+          messages: [],
+          createdAt: new Date().toISOString(),
+          role: null,
+          model: "deepseek-ai/DeepSeek-V3.1",
+        };
+        setConversations([initialConversation]);
+        setCurrentConversationId(initialConversation.id);
+        setIsInitialized(true);
+      }
+    };
+
+    initializeApp();
   }, []);
 
   useEffect(() => {
     // 只在初始化完成后才保存对话历史
     if (isInitialized && conversations.length > 0) {
-      console.log("保存对话历史:", conversations);
-      saveChatHistory(conversations);
+      const saveData = async () => {
+        try {
+          console.log("保存对话历史:", conversations);
+          await saveChatHistory(conversations);
+        } catch (error) {
+          console.error("保存对话历史失败:", error);
+        }
+      };
+      saveData();
     }
   }, [conversations, isInitialized]);
 

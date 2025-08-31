@@ -20,12 +20,18 @@ body {
   letter-spacing: -0.01em;
   font-weight: 400;
   font-size: 14px;
+  /* 禁用移动端双击缩放 */
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
 }
 
 #root {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  /* 禁用移动端双击缩放 */
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
 }
 
 /* 紧凑清晰的字体系统 */
