@@ -479,26 +479,28 @@ const Sidebar = ({
           </div>
 
           {/* 收起按钮 - 右对齐 */}
-          <button
-            className="collapse-toggle-btn"
-            onClick={onToggleCollapse}
-            title={isCollapsed ? "展开侧边栏" : "收起侧边栏"}
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              style={{
-                transform: isCollapsed ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 0.3s ease",
-              }}
+          <div className="collapse-button-container">
+            <button
+              className="collapse-toggle-btn"
+              onClick={onToggleCollapse}
+              title={isCollapsed ? "展开侧边栏" : "收起侧边栏"}
             >
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                style={{
+                  transform: isCollapsed ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.3s ease",
+                }}
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 

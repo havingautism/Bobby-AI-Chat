@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { getCurrentLanguage, setLanguage, LANGUAGES } from "../utils/language";
+import { getCurrentLanguage, setLanguage, t } from "../utils/language";
 import "./LanguageToggle.css";
 
 const LanguageToggle = () => {
-  const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
+  const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [isOpen, setIsOpen] = useState(false);
+
+  const languages = [
+    { code: "zh", name: "中文", flag: "🇨🇳" },
+    { code: "en", name: "English", flag: "🇺🇸" }
+  ];
 
   useEffect(() => {
     const handleLanguageChange = (event) => {
-      setCurrentLang(event.detail);
+      setCurrentLanguage(event.detail);
     };
 
     window.addEventListener("languageChanged", handleLanguageChange);
@@ -17,24 +22,26 @@ const LanguageToggle = () => {
     };
   }, []);
 
-  const handleLanguageSelect = (langCode) => {
-    setLanguage(langCode);
-    setCurrentLang(langCode);
+  const handleLanguageSelect = (languageCode) => {
+    setLanguage(languageCode);
+    setCurrentLanguage(languageCode);
     setIsOpen(false);
   };
 
-  const currentLanguage = LANGUAGES[currentLang];
-  const otherLanguages = Object.values(LANGUAGES).filter(
-    (lang) => lang.code !== currentLang
-  );
+  const toggleDropdown = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const currentLanguageData = languages.find(lang => lang.code === currentLanguage);
 
   return (
-    <div className="language-toggle">
+    <div className="language-toggle-container">
       <button
-        className="language-toggle-button"
-        onClick={() => setIsOpen(!isOpen)}
-        title="切换语言 / Switch Language"
+        className={`language-toggle-btn ${isOpen ? "open" : ""}`}
+        onClick={toggleDropdown}
+        title={t("language", currentLanguage)}
       >
+        {/* 地球图标 */}
         <svg
           width="18"
           height="18"
@@ -42,26 +49,40 @@ const LanguageToggle = () => {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
           <circle cx="12" cy="12" r="10" />
-          <path d="M2 12h20" />
+          <line x1="2" y1="12" x2="22" y2="12" />
           <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
         </svg>
+        <span className="language-code">{currentLanguageData?.code.toUpperCase()}</span>
+        <svg
+          className="dropdown-arrow"
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
       </button>
-      
+
       {isOpen && (
-        <div className="language-dropdown">
-          {Object.values(LANGUAGES).map((lang) => (
+        <div className="language-options">
+          {languages.map((language) => (
             <button
-              key={lang.code}
-              className={`language-option ${lang.code === currentLang ? "selected" : ""}`}
-              onClick={() => handleLanguageSelect(lang.code)}
+              key={language.code}
+              className={`language-option ${currentLanguage === language.code ? "active" : ""}`}
+              onClick={() => handleLanguageSelect(language.code)}
             >
-              <span className="language-flag">{lang.flag}</span>
-              <span className="language-name">{lang.name}</span>
-              {lang.code === currentLang && (
+              <span className="flag">{language.flag}</span>
+              <span className="name">{language.name}</span>
+              {currentLanguage === language.code && (
                 <svg
-                  className="check-icon"
+                  className="check"
                   width="14"
                   height="14"
                   viewBox="0 0 24 24"

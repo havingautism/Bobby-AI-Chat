@@ -1,60 +1,64 @@
+/* 现代语言切换组件样式 */
 .language-toggle {
   position: relative;
-  z-index: 1000;
+  display: inline-block;
 }
 
-.language-toggle-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: var(--text-secondary);
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-}
-
-.language-toggle-button:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  transform: scale(1.05);
-}
-
-.language-toggle-button:active {
-  transform: scale(0.95);
-}
-
-.language-flag {
-  font-size: 14px;
-}
-
-.language-code {
-  font-weight: 500;
-  font-size: 11px;
-}
-
-
-
-.language-dropdown {
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  margin-bottom: 4px;
-  background: var(--bg-primary);
+.language-toggle-btn {
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
-  min-width: 140px;
-  overflow: hidden;
-  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(8px);
+  padding: 10px 16px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  min-width: 80px;
+  justify-content: center;
 }
 
-@keyframes slideUp {
+.language-toggle-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.language-toggle-btn svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.language-toggle-btn:hover svg {
+  transform: rotate(180deg);
+}
+
+.language-toggle-btn.open svg {
+  transform: rotate(180deg);
+}
+
+/* 语言选项下拉菜单 */
+.language-options {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  z-index: 1000;
+  overflow: hidden;
+  min-width: 120px;
+  animation: dropdownSlideUp 0.2s ease-out;
+}
+
+@keyframes dropdownSlideUp {
   from {
     opacity: 0;
     transform: translateY(8px);
@@ -68,70 +72,102 @@
 .language-option {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 12px 16px;
-  background: none;
-  border: none;
+  gap: 12px;
+  padding: 14px 16px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   color: var(--text-primary);
-  font-size: 14px;
-  position: relative;
-}
-
-.language-option:hover {
-  background: var(--bg-hover);
-  transform: translateX(2px);
-}
-
-.language-option.selected {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%);
-  color: var(--accent-color);
+  border-bottom: 1px solid var(--glass-border);
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
-.language-option.selected::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--accent-color);
-  border-radius: 0 2px 2px 0;
+.language-option:last-child {
+  border-bottom: none;
 }
 
-.language-option.selected .language-flag,
-.language-option.selected .language-name {
+.language-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.language-option.active {
+  background: rgba(59, 130, 246, 0.1);
   color: var(--accent-color);
+  border-left: 3px solid var(--accent-color);
 }
 
-.language-name {
-  font-weight: 400;
+.language-option .flag {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.language-option .name {
   flex: 1;
 }
 
-.check-icon {
-  margin-left: auto;
+.language-option .check {
   color: var(--accent-color);
+  margin-left: auto;
   flex-shrink: 0;
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
 }
 
-.language-option:hover .check-icon {
-  opacity: 1;
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .language-toggle-btn {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    min-width: 70px;
+  }
+  
+  .language-options {
+    min-width: 100px;
+  }
+  
+  .language-option {
+    padding: 12px 14px;
+    font-size: 0.85rem;
+  }
 }
 
-/* 暗色模式下的调整 */
-[data-theme="dark"] .language-dropdown {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.2);
-  background: var(--bg-primary);
+@media (max-width: 480px) {
+  .language-toggle-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    min-width: 60px;
+  }
+  
+  .language-options {
+    min-width: 90px;
+  }
+  
+  .language-option {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
 }
 
+/* 暗色模式适配 */
+[data-theme="dark"] .language-toggle-btn {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
 
+[data-theme="dark"] .language-toggle-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+}
 
-[data-theme="dark"] .language-option.selected {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.08) 100%);
+[data-theme="dark"] .language-options {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+}
+
+[data-theme="dark"] .language-option:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="dark"] .language-option.active {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-color);
 }

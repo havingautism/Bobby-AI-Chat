@@ -1173,8 +1173,8 @@
   border-radius: 12px;
   overflow: hidden;
   max-width: 100%;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  /* background: var(--bg-secondary);
+  border: 1px solid var(--border-color); */
 }
 
 .uploaded-image-preview .preview-image {

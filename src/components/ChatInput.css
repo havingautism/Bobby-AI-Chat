@@ -1,273 +1,65 @@
+/* 液体玻璃现代聊天输入框样式 */
 .chat-input-container {
-  padding-bottom: 24px;
-  background: var(--bg-primary);
-  /* border-top: 1px solid var(--border-color); */
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
   position: relative;
-  z-index: 1000;
-  overflow: visible;
-}
-
-/* 暗色模式下的输入框容器背景 */
-[data-theme="dark"] .chat-input-container {
-  background: var(--bg-secondary);
-  border-top-color: var(--border-color);
-}
-
-[data-theme="dark"] .input-wrapper-clean {
-  background: var(--bg-secondary);
-  border-color: var(--border-color);
+  z-index: 10;
 }
 
 .chat-input-form {
-  max-width: 768px;
-  margin: 0 auto;
-  position: relative;
+  width: 100%;
 }
 
 .input-wrapper-clean {
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-md);
-  overflow: visible;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s ease;
   position: relative;
+  overflow: hidden;
 }
 
-.input-main-area {
-  display: flex;
-  align-items: flex-end;
-  padding: 12px 16px;
-  gap: 12px;
+.input-wrapper-clean::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.input-wrapper-clean:hover::before {
+  opacity: 1;
+}
+
+.input-wrapper-clean:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 .input-wrapper-clean:focus-within {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.3), var(--shadow-lg);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 20px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
-.message-textarea-clean {
-  flex: 1;
-  background: transparent !important;
-  border: none !important;
-  outline: none !important;
-  color: var(--text-primary);
-  font-size: 16px;
-  line-height: 1.5;
-  resize: none;
-  font-family: inherit;
-  padding: 6px 0; /* 减小基础内边距 */
-  min-height: 24px;
-  max-height: 120px;
-  box-shadow: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  appearance: none !important;
-}
-
-.message-textarea-clean:focus,
-.message-textarea-clean:focus-visible,
-.message-textarea-clean:active {
-  outline: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  -webkit-box-shadow: none !important;
-  -moz-box-shadow: none !important;
-}
-
-.message-textarea-clean::placeholder {
-  color: var(--text-tertiary);
-}
-
-.message-textarea-clean:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 底部工具栏样式 */
-.bottom-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  margin-top: 0;
-  border-top: 1px solid var(--border-color);
-  background: var(--bg-primary);
-  position: relative;
-  overflow: visible;
-  border-bottom-left-radius: 16px;
-  border-bottom-right-radius: 16px;
-}
-
-.quick-response-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-secondary);
-  font-size: 13px;
-  cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  user-select: none;
-  background: none;
-  border: none;
-}
-
-.quick-response-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.quick-response-btn svg {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.2s ease;
-}
-
-.quick-response-btn.open svg {
-  transform: rotate(180deg);
-}
-
-.plus-button-container {
-  position: relative;
-}
-
-.plus-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 16px;
-}
-
-.plus-button:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-/* 下拉菜单样式 */
-.dropdown-menu {
-  position: fixed;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: var(--shadow-lg);
-  z-index: 99999;
-  overflow: hidden;
-  /* 确保下拉菜单可见 */
-  pointer-events: auto;
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: var(--text-primary);
-  font-size: 14px;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-}
-
-/* 移动端样式 */
-@media (max-width: 768px) {
-  .dropdown-item {
-    padding: 12px 16px;
-    font-size: 16px;
-    min-height: 44px;
-  }
-  
-  .dropdown-item svg {
-    width: 18px;
-    height: 18px;
-  }
-}
-
-.dropdown-item:hover {
-  background: var(--bg-hover);
-}
-
-.dropdown-item svg {
-  flex-shrink: 0;
-  color: var(--text-secondary);
-}
-
-/* 发送按钮样式 */
-.send-button {
-  background: var(--text-primary);
-  border: none;
-  border-radius: 12px;
-  color: var(--bg-primary);
-  cursor: pointer;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-}
-
-.send-button:hover:not(:disabled) {
-  background: var(--text-secondary);
-  transform: scale(1.05);
-}
-
-.send-button:disabled {
-  background: var(--bg-tertiary);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.send-button:disabled svg {
-  color: var(--text-tertiary);
-}
-
-/* 停止按钮样式 */
-.stop-button {
-  background: var(--error-color, #ef4444);
-  border: none;
-  border-radius: 12px;
-  color: white;
-  cursor: pointer;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-}
-
-.stop-button:hover {
-  background: var(--error-hover, #dc2626);
-  transform: scale(1.05);
-}
-
-/* 文件预览样式 */
+/* 文件预览容器 */
 .file-preview-container {
-  margin: 8px 16px;
-  padding: 12px;
-  background: var(--bg-secondary);
-  border-radius: 8px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
-  position: relative;
+  box-shadow: var(--shadow-sm);
 }
 
 .image-preview {
@@ -278,109 +70,317 @@
 .preview-image {
   max-width: 200px;
   max-height: 150px;
-  border-radius: 6px;
+  border-radius: 12px;
   object-fit: cover;
+  display: block;
 }
 
 .remove-file-btn {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 4px;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.remove-file-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
 }
 
 .file-info {
+  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
 }
 
 .file-details {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   flex: 1;
-  min-width: 0;
 }
 
-.file-name {
-  font-size: 14px;
-  color: var(--text-primary);
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.file-size {
-  font-size: 12px;
+.file-details svg {
   color: var(--text-secondary);
   flex-shrink: 0;
 }
 
-.remove-file-btn:hover {
-  background: var(--error-color, #ef4444);
-  color: white;
-  border-color: var(--error-color, #ef4444);
-  transform: scale(1.1);
+.file-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-right: 8px;
 }
 
-/* 文件信息中的删除按钮样式 */
-.file-info .remove-file-btn {
-  position: static;
-  background: none;
-  border: none;
+.file-size {
+  font-size: 0.8rem;
   color: var(--text-secondary);
+}
+
+/* 主要输入区域 */
+.input-main-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.message-textarea-clean {
+  flex: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px 20px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  resize: none;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  min-height: 24px;
+  max-height: 128px;
+}
+
+.message-textarea-clean:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.message-textarea-clean::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* 发送/停止按钮 */
+.send-button,
+.stop-button {
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 16px;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: auto;
-  height: auto;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.send-button {
+  background: var(--bg-gradient-accent);
+  color: white;
+  box-shadow: 0 4px 20px rgba(79, 172, 254, 0.3);
+}
+
+.send-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(79, 172, 254, 0.4);
+}
+
+.send-button:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
   box-shadow: none;
-  z-index: auto;
 }
 
-.file-info .remove-file-btn:hover {
-  background: var(--bg-hover);
-  color: var(--error-color, #ef4444);
-  border-color: transparent;
-  transform: none;
+.stop-button {
+  background: var(--error-color);
+  color: white;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
 }
 
-/* 输入提示样式 */
+.stop-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+}
+
+.send-button svg,
+.stop-button svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s ease;
+}
+
+.send-button:hover:not(:disabled) svg,
+.stop-button:hover svg {
+  transform: scale(1.1);
+}
+
+/* 底部工具栏 */
+.bottom-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.quick-response-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 10px 16px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.quick-response-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.quick-response-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quick-response-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.quick-response-btn:hover:not(:disabled) svg {
+  transform: rotate(180deg);
+}
+
+/* 加号按钮容器 */
+.plus-button-container {
+  position: relative;
+}
+
+.plus-button {
+  width: 40px;
+  height: 40px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+}
+
+.plus-button:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.plus-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.plus-button svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s ease;
+}
+
+.plus-button:hover:not(:disabled) svg {
+  transform: rotate(45deg);
+}
+
+/* 下拉菜单 */
+.dropdown-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  z-index: 1000;
+  overflow: hidden;
+  min-width: 200px;
+  animation: dropdownSlideUp 0.2s ease-out;
+}
+
+@keyframes dropdownSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-item svg {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.dropdown-item span {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* 输入提示 */
 .input-hint {
   text-align: center;
-  font-size: 12px;
+  margin-top: 16px;
+  font-size: 0.8rem;
   color: var(--text-tertiary);
-  margin-top: 8px;
-  padding: 0 16px;
+  opacity: 0.8;
+  font-style: italic;
 }
 
 /* 展开动画 */
-.chat-input-container.expand-upward .input-wrapper-clean {
-  animation: expandUpward 0.2s ease-out;
+.expand-upward .input-wrapper-clean {
+  animation: expandUpward 0.3s ease-out;
 }
 
-.chat-input-container.expand-downward .input-wrapper-clean {
-  animation: expandDownward 0.2s ease-out;
+.expand-downward .input-wrapper-clean {
+  animation: expandDownward 0.3s ease-out;
 }
 
 @keyframes expandUpward {
@@ -412,118 +412,152 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .chat-input-container {
-    padding-bottom: 16px;
+    padding: 16px;
+  }
+  
+  .input-wrapper-clean {
+    padding: 16px;
+    border-radius: 16px;
   }
   
   .input-main-area {
-    padding: 10px 12px;
-    gap: 8px;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .message-textarea-clean {
+    padding: 14px 16px;
+    font-size: 0.9rem;
+    border-radius: 14px;
+  }
+  
+  .send-button,
+  .stop-button {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+  
+  .bottom-toolbar {
+    padding-top: 12px;
+    gap: 12px;
+  }
+  
+  .quick-response-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .plus-button {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+  
+  .dropdown-menu {
+    min-width: 180px;
+  }
+  
+  .dropdown-item {
+    padding: 12px 14px;
+  }
+  
+  .dropdown-item span {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-input-container {
+    padding: 12px;
+  }
+  
+  .input-wrapper-clean {
+    padding: 14px;
+    border-radius: 16px;
+  }
+  
+  .message-textarea-clean {
+    padding: 12px 14px;
+    font-size: 0.85rem;
   }
   
   .send-button,
   .stop-button {
     width: 40px;
     height: 40px;
-    padding: 8px;
-  }
-  
-  .send-button svg,
-  .stop-button svg {
-    width: 18px;
-    height: 18px;
-  }
-  
-  .bottom-toolbar {
-    padding: 6px 12px;
   }
   
   .quick-response-btn {
-    font-size: 12px;
-    padding: 4px 6px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
   }
   
   .plus-button {
-    width: 24px;
-    height: 24px;
-  }
-  
-  .dropdown-menu {
-    min-width: 140px;
-  }
-  
-  .dropdown-item {
-    padding: 8px 10px;
-    font-size: 13px;
-  }
-  
-  .file-preview-container {
-    margin: 6px 12px;
-    padding: 10px;
-  }
-  
-  .preview-image {
-    max-width: 150px;
-    max-height: 120px;
-  }
-  
-  .file-name {
-    font-size: 13px;
-  }
-  
-  .file-size {
-    font-size: 11px;
+    width: 32px;
+    height: 32px;
   }
 }
 
-/* 小屏幕适配 */
-@media (max-width: 480px) {
-  .input-main-area {
-    padding: 8px 10px;
-  }
-  
-  .send-button,
-  .stop-button {
-    width: 36px;
-    height: 36px;
-    padding: 6px;
-  }
-  
-  .send-button svg,
-  .stop-button svg {
-    width: 16px;
-    height: 16px;
-  }
-  
-  .bottom-toolbar {
-    padding: 4px 10px;
-  }
-  
-  .quick-response-btn {
-    font-size: 11px;
-    padding: 3px 5px;
-  }
-  
-  .plus-button {
-    width: 22px;
-    height: 22px;
-  }
-  
-  .dropdown-menu {
-    min-width: 120px;
-  }
-  
-  .dropdown-item {
-    padding: 6px 8px;
-    font-size: 12px;
-  }
-  
-  .file-preview-container {
-    margin: 4px 10px;
-    padding: 8px;
-  }
-  
-  .preview-image {
-    max-width: 120px;
-    max-height: 100px;
-  }
+/* 暗色模式适配 */
+[data-theme="dark"] .input-wrapper-clean {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+}
+
+[data-theme="dark"] .input-wrapper-clean::before {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.05) 100%);
+}
+
+[data-theme="dark"] .file-preview-container {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .message-textarea-clean {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .send-button {
+  background: var(--bg-gradient-accent);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="dark"] .stop-button {
+  background: var(--error-color);
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .quick-response-btn {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .quick-response-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .plus-button {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .plus-button:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+}
+
+[data-theme="dark"] .dropdown-menu {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background: rgba(59, 130, 246, 0.1);
 }
