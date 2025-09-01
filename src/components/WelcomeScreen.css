@@ -2,7 +2,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: 100vh;
+  height: 100vh;
   padding: 40px 20px 120px 20px; /* 增加底部内边距，为对话框留出空间 */
   background: var(--bg-primary);
   overflow-y: auto;
@@ -42,13 +42,18 @@
 }
 
 .logo-circle::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -50%;
   left: -50%;
   width: 200%;
   height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
   transform: rotate(45deg);
   transition: all 0.3s ease;
 }
@@ -288,56 +293,56 @@
   .welcome-screen {
     padding: 20px 16px 100px 16px; /* 移动端也增加底部内边距 */
   }
-  
+
   .welcome-content {
     gap: 24px;
   }
-  
+
   .welcome-title {
     font-size: 36px;
   }
-  
+
   .welcome-subtitle {
     font-size: 16px;
   }
-  
+
   .logo-circle {
     width: 64px;
     height: 64px;
   }
-  
+
   .logo-paw {
     font-size: 28px;
   }
-  
+
   .role-dropdown-container {
     max-width: none;
   }
-  
+
   .role-dropdown-trigger {
     padding: 14px;
   }
-  
+
   .role-name {
     font-size: 13px;
   }
-  
+
   .role-description {
     font-size: 11px;
   }
-  
+
   .role-dropdown-menu {
     max-height: 250px;
   }
-  
+
   .role-option {
     padding: 10px 14px;
   }
-  
+
   .prompt-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .welcome-chat-input .chat-input-container {
     padding-bottom: 12px;
   }
