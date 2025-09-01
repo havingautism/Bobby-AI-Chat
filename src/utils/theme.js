@@ -35,9 +35,20 @@ export const saveTheme = (theme) => {
 
 // 应用主题到DOM
 export const applyTheme = (theme) => {
+  // 添加过渡类
+  document.documentElement.classList.add("theme-transitioning");
+
+  // 设置主题属性
   document.documentElement.setAttribute("data-theme", theme);
   document.documentElement.className =
-    theme === THEMES.DARK ? "dark-theme" : "light-theme";
+    theme === THEMES.DARK
+      ? "dark-theme theme-transitioning"
+      : "light-theme theme-transitioning";
+
+  // 移除过渡类
+  setTimeout(() => {
+    document.documentElement.classList.remove("theme-transitioning");
+  }, 400);
 };
 
 // 切换主题

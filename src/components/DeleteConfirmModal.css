@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 1012; /* 提高删除确认Modal层级，确保在最上层 */
   animation: fadeIn 0.2s ease-out;
 }
 

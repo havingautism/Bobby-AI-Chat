@@ -4,7 +4,7 @@
   right: 20px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 99; /* 降低z-index，确保侧边栏能够遮挡 */
+  z-index: 1008; /* 提高时间轴层级，确保在最上层 */
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -67,7 +67,7 @@
   backdrop-filter: blur(10px);
   border: 1px solid var(--border-color);
   position: relative;
-  z-index: 1002;
+  z-index: 1009; /* 提高切换按钮层级，确保在最上层 */
 }
 
 .timeline-toggle:hover {
@@ -286,7 +286,7 @@
     right: 12px;
     top: 60px; /* 调整到header下方 */
     transform: none;
-    z-index: 99; /* 降低z-index，确保侧边栏能够遮挡 */
+    z-index: 1008; /* 统一时间轴层级 */
   }
 
   .timeline-content {

@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import ChatInterface from "./components/ChatInterface";
 import Sidebar from "./components/Sidebar";
 import Settings from "./components/Settings";
-import { loadChatHistory, saveChatHistory, migrateFromLocalStorage } from "./utils/storage";
+import BackgroundSystem from "./components/BackgroundSystem";
+import {
+  loadChatHistory,
+  saveChatHistory,
+  migrateFromLocalStorage,
+} from "./utils/storage";
 import { initTheme } from "./utils/theme";
 import { getApiConfig } from "./utils/api";
 import { v4 as uuidv4 } from "uuid";
@@ -186,6 +191,7 @@ function App() {
 
   return (
     <div className="app">
+      <BackgroundSystem />
       <Sidebar
         conversations={conversations}
         currentConversationId={currentConversationId}
@@ -214,8 +220,8 @@ function App() {
         )}
       </div>
 
-      <Settings 
-        isOpen={settingsOpen} 
+      <Settings
+        isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         onModelChange={(newModel) => {
           setDefaultModel(newModel);

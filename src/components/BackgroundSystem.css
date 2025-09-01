@@ -1,0 +1,186 @@
+/* 动态背景系统组件样式 */
+.background-system {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: -10;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+  overflow: hidden;
+}
+
+.background-system.visible {
+  opacity: 1;
+}
+
+/* 背景层 */
+.background-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 动态光球 */
+.background-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.6;
+  transition: transform 0.3s ease-out;
+}
+
+.orb-1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.4) 0%,
+    rgba(168, 85, 247, 0.2) 50%,
+    transparent 100%
+  );
+  top: 5%;
+  left: 5%;
+  animation: orbPulse1 12s ease-in-out infinite;
+}
+
+.orb-2 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    circle,
+    rgba(192, 132, 252, 0.35) 0%,
+    rgba(196, 181, 253, 0.15) 50%,
+    transparent 100%
+  );
+  top: 50%;
+  right: 10%;
+  animation: orbPulse2 15s ease-in-out infinite;
+}
+
+.orb-3 {
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(
+    circle,
+    rgba(168, 85, 247, 0.3) 0%,
+    rgba(139, 92, 246, 0.1) 50%,
+    transparent 100%
+  );
+  bottom: 15%;
+  left: 50%;
+  animation: orbPulse3 18s ease-in-out infinite;
+}
+
+@keyframes orbPulse1 {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.6;
+  }
+  33% {
+    transform: scale(1.2) rotate(120deg);
+    opacity: 0.8;
+  }
+  66% {
+    transform: scale(0.8) rotate(240deg);
+    opacity: 0.4;
+  }
+}
+
+@keyframes orbPulse2 {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.3) rotate(180deg);
+    opacity: 0.7;
+  }
+}
+
+@keyframes orbPulse3 {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.4;
+  }
+  25% {
+    transform: scale(0.9) rotate(90deg);
+    opacity: 0.6;
+  }
+  75% {
+    transform: scale(1.1) rotate(270deg);
+    opacity: 0.3;
+  }
+}
+
+/* 暗色模式适配 */
+[data-theme="dark"] .orb-1 {
+  background: radial-gradient(
+    circle,
+    rgba(167, 139, 250, 0.3) 0%,
+    rgba(139, 92, 246, 0.15) 50%,
+    transparent 100%
+  );
+}
+
+[data-theme="dark"] .orb-2 {
+  background: radial-gradient(
+    circle,
+    rgba(196, 181, 253, 0.25) 0%,
+    rgba(167, 139, 250, 0.1) 50%,
+    transparent 100%
+  );
+}
+
+[data-theme="dark"] .orb-3 {
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.2) 0%,
+    rgba(124, 58, 237, 0.08) 50%,
+    transparent 100%
+  );
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .orb-1 {
+    width: 250px;
+    height: 250px;
+    filter: blur(60px);
+  }
+
+  .orb-2 {
+    width: 200px;
+    height: 200px;
+    filter: blur(50px);
+  }
+
+  .orb-3 {
+    width: 150px;
+    height: 150px;
+    filter: blur(40px);
+  }
+}
+
+@media (max-width: 480px) {
+  .background-orb {
+    filter: blur(30px);
+    opacity: 0.4;
+  }
+}
+
+/* 性能优化 */
+@media (prefers-reduced-motion: reduce) {
+  .background-orb {
+    animation: none !important;
+    transform: none !important;
+  }
+}

@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 1013; /* 提高图片预览Modal层级，确保在最上层 */
   backdrop-filter: blur(4px);
   animation: fadeIn 0.2s ease-out;
 }
@@ -48,7 +48,7 @@
   color: white;
   backdrop-filter: blur(10px);
   transition: all 0.2s ease;
-  z-index: 10001;
+  z-index: 1014; /* 提高关闭按钮层级，确保在最上层 */
 }
 
 .image-preview-close-btn:hover {

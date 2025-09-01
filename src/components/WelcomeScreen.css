@@ -176,7 +176,7 @@
   border: 1px solid var(--border-color);
   border-radius: 12px;
   box-shadow: var(--shadow-lg);
-  z-index: 1001; /* 确保在对话框之上 */
+  z-index: 1006; /* 提高WelcomeScreen层级，确保在最上层 */
   margin-top: 4px;
   max-height: 300px;
   overflow-y: auto;
