@@ -40,14 +40,14 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
   const quickPrompts = currentLanguage === "zh" ? [
     "🤔 解释一个复杂的概念",
-    "💻 帮我写一段代码",
+    "👨🏻‍💻 帮我写一段代码",
     "📈 分析当前趋势",
     "✨ 创意写作帮助",
     "😸 和Bobby聊天",
     "🎯 制定学习计划",
   ] : [
     "🤔 Explain a complex concept",
-    "💻 Help me write some code",
+    "👨🏻‍💻 Help me write some code",
     "📈 Analyze current trends",
     "✨ Creative writing help",
     "😸 Chat with Bobby",

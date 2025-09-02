@@ -127,7 +127,7 @@ const MessageList = ({
             <div className="message-container">
               <div className="message-avatar">
                 {message.role === "user" ? (
-                  <div className="user-avatar">🐱</div>
+                  <div className="user-avatar">👤</div>
                 ) : (
                   <div className="bobby-avatar">
                     {role ? (

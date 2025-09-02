@@ -456,13 +456,13 @@ const Sidebar = ({
         {/* 底部按钮区域 */}
         <div className="sidebar-footer">
           <div className="footer-buttons">
-            {/* 设置按钮 */}
+            {/* 用户头像按钮 */}
             <button
-              className="settings-btn"
+              className="user-avatar-btn"
               onClick={onOpenSettings}
               title={t("settings", currentLanguage)}
             >
-              <div className="bobby-avatar">🐱</div>
+              <div className="user-avatar">👤</div>
             </button>
 
             {/* 主题切换按钮 */}

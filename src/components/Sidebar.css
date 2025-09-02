@@ -1037,6 +1037,10 @@
   border-radius: 8px;
 }
 
+/* 窄侧边栏模式下调整头像大小 */
+.sidebar.collapsed .settings-btn .bobby-avatar {
+  font-size: 16px;
+}
 
 .sidebar.collapsed .search-section,
 .sidebar.collapsed .role-filter-section {
@@ -1857,6 +1861,11 @@
     width: 28px;
     height: 28px;
     border-radius: 8px;
+  }
+
+  /* 移动端窄侧栏头像大小调整 */
+  .sidebar.collapsed .settings-btn .bobby-avatar {
+    font-size: 14px;
   }
 
   .sidebar.collapsed .new-chat-btn {
