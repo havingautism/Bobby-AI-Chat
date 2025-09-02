@@ -45,7 +45,6 @@
 }
 
 .input-wrapper-clean:focus-within {
-  border-color: var(--accent-primary);
   box-shadow: var(--glass-shadow-dark);
   transform: translateY(-2px);
 }
@@ -77,6 +76,48 @@
   box-shadow: none !important;
   -webkit-box-shadow: none !important;
   -moz-box-shadow: none !important;
+}
+
+/* Remove all blue outlines */
+.send-button:focus,
+.send-button:focus-visible,
+.stop-button:focus,
+.stop-button:focus-visible,
+.plus-button:focus,
+.plus-button:focus-visible,
+.quick-response-btn:focus,
+.quick-response-btn:focus-visible,
+.dropdown-item:focus,
+.dropdown-item:focus-visible,
+.remove-file-btn:focus,
+.remove-file-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+/* Remove blue selection highlights */
+.send-button::selection,
+.stop-button::selection,
+.plus-button::selection,
+.quick-response-btn::selection,
+.dropdown-item::selection,
+.remove-file-btn::selection {
+  background: transparent;
+}
+
+/* Remove tap highlights on mobile */
+.send-button,
+.stop-button,
+.plus-button,
+.quick-response-btn,
+.dropdown-item,
+.remove-file-btn {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .message-textarea-clean::placeholder {
@@ -161,26 +202,26 @@
   color: var(--text-primary);
 }
 
-/* 下拉菜单样式 */
-.dropdohhwn-menu {
-  position: absolute;
+
+.chat-input-container .dropdown-menu {
+  
   /* 改为向上展开 */
   bottom: calc(100% + 8px);
   top: auto;
   right: 0;
-  background: #ffffff;
+  background: linear-gradient(2deg, rgb(242 242 242) 0%, rgb(255 255 255 / 84%) 100%);
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   z-index: 9999999;
   overflow: hidden;
-  width: 200px;
+  width: 100%;
+  max-width: 150px;
   /* 去掉下方间距，使用 bottom 偏移 */
   margin-top: 0;
   /* 确保下拉菜单可见 */
   pointer-events: auto;
 }
-
 /* 下拉菜单箭头：移动到底部并指向下方 */
 .dropdown-menu::before {
   content: '';
@@ -252,35 +293,44 @@
 
 /* 发送按钮样式 */
 .send-button {
-  background: var(--text-primary);
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
   border: none;
-  border-radius: 12px;
-  color: var(--bg-primary);
+  border-radius: 8px;
+  color: white;
   cursor: pointer;
-  padding: 12px;
+  padding: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+  position: relative;
 }
 
 .send-button:hover:not(:disabled) {
-  background: var(--text-secondary);
   transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+}
+
+.send-button:active:not(:disabled) {
+  transform: scale(0.98);
+  box-shadow: 0 1px 2px rgba(0, 123, 255, 0.3);
 }
 
 .send-button:disabled {
   background: var(--bg-tertiary);
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
+  box-shadow: none;
 }
 
 .send-button:disabled svg {
   color: var(--text-tertiary);
 }
+
 
 /* 停止按钮样式 */
 .stop-button {
@@ -466,9 +516,9 @@
   
   .send-button,
   .stop-button {
-    width: 40px;
-    height: 40px;
-    padding: 8px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
   }
   
   .send-button svg,
@@ -527,9 +577,9 @@
   
   .send-button,
   .stop-button {
-    width: 36px;
-    height: 36px;
-    padding: 6px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
   }
   
   .send-button svg,

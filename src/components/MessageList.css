@@ -601,28 +601,35 @@
 }
 
 .message.user .message-content {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: var(--user-message-text);
-  padding: 12px 18px;
-  border-radius: var(--border-radius-md);
-  /* max-width: 70% !important; */
+  background: linear-gradient(135deg, 
+    rgba(243, 244, 246, 0.9) 0%, 
+    rgba(229, 231, 235, 0.9) 100%);
+  color: var(--text-primary);
+  padding: 14px 20px;
+  border-radius: 20px;
   width: fit-content !important;
   margin-left: 0;
   margin-right: auto;
   font-weight: 500;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   text-align: left;
   display: inline-block !important;
   word-wrap: break-word;
   overflow-wrap: break-word;
   flex: none !important;
-  line-height: 1.5;
-  font-size: 14px;
+  line-height: 1.6;
+  font-size: 15px;
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   position: relative;
   overflow: hidden;
   transition: var(--transition-smooth);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* 确保悬停时文字颜色不变 */
+.message.user .message-content:hover {
+  color: var(--text-primary);
 }
 
 /* 用户消息液态效果 */
@@ -635,7 +642,7 @@
   height: 200%;
   background: radial-gradient(
     circle at center,
-    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.4) 0%,
     transparent 70%
   );
   opacity: 0;
@@ -647,8 +654,8 @@
 }
 
 .message.user .message-content:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 
@@ -1012,16 +1019,20 @@
 
 /* 暗色模式下的用户消息优化 */
 [data-theme="dark"] .message.user .message-content {
-  background: #2563eb;
-  color: #ffffff;
-  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.25);
-  border: 1px solid rgba(37, 99, 235, 0.4);
+  background: linear-gradient(135deg, 
+    rgba(55, 65, 81, 0.9) 0%, 
+    rgba(31, 41, 55, 0.9) 100%);
+  color: #f3f4f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(75, 85, 99, 0.3);
   font-weight: 500;
 }
 
 [data-theme="dark"] .message.user .message-content:hover {
-  background: #1d4ed8;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+  background: linear-gradient(135deg, 
+    rgba(75, 85, 99, 0.9) 0%, 
+    rgba(55, 65, 81, 0.9) 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   transform: translateY(-1px);
   transition: all 0.2s ease;
 }

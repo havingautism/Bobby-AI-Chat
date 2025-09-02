@@ -129,9 +129,7 @@
 
 .setting-input:focus {
   outline: none;
-  border-color: var(--accent-primary) !important;
-  box-shadow: var(--glass-shadow-dark), 
-              0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: var(--glass-shadow-dark);
   transform: translateY(-1px);
 }
 
@@ -866,4 +864,17 @@
   .dropdown-option-description {
     font-size: 11px;
   }
+}
+
+/* Remove all blue focus outlines from Settings */
+.close-button:focus,
+.test-button:focus,
+.save-button:focus,
+.cancel-button:focus,
+.danger-button:focus,
+.dropdown-option:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
 }

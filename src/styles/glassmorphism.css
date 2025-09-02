@@ -282,8 +282,7 @@
 
 .chat-input:focus {
   outline: none;
-  border-color: rgba(128, 0, 255, 0.8);
-  box-shadow: 0 0 15px var(--glow-color);
+  box-shadow: var(--glass-shadow-dark);
 }
 
 /* --- Responsive Design --- */

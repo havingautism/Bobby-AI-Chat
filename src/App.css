@@ -1,3 +1,17 @@
+/* 全局重置 - 移除所有蓝色焦点框 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+*:focus,
+*:focus-visible,
+*:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  border-color: transparent !important;
+}
+
 /* CSS变量定义 */
 :root {
   /* 明亮模式 */
@@ -152,4 +166,40 @@ input:hover {
 *:active {
   outline: none !important;
   box-shadow: none !important;
+}
+
+/* 移除所有按钮和交互元素的蓝色选中效果 */
+button,
+select,
+.dropdown-item,
+.clickable,
+.new-chat-btn,
+.role-filter-trigger,
+.role-filter-option {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button:focus,
+button:focus-visible,
+select:focus,
+select:focus-visible,
+.dropdown-item:focus,
+.dropdown-item:focus-visible,
+.clickable:focus,
+.clickable:focus-visible,
+.new-chat-btn:focus,
+.new-chat-btn:focus-visible,
+.role-filter-trigger:focus,
+.role-filter-trigger:focus-visible,
+.role-filter-option:focus,
+.role-filter-option:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+  border-color: transparent !important;
 }

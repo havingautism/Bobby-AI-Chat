@@ -305,8 +305,7 @@
 
 /* 无障碍支持 */
 .reasoning-toggle:focus {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .reasoning-toggle:focus:not(:focus-visible) {

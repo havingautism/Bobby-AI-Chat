@@ -137,10 +137,28 @@
   transform: translateY(-1px);
 }
 
+.new-chat-btn:focus,
+.new-chat-btn:focus-visible {
+  outline: none !important;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
 .new-chat-btn:hover {
   background: rgba(255, 255, 255, 0.2);
   border-color: var(--glass-border-color);
   transform: translateY(-1px);
+}
+
+.new-chat-btn:focus,
+.new-chat-btn:focus-visible {
+  outline: none !important;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
 }
 
 .new-chat-btn svg {
@@ -174,10 +192,21 @@
 }
 
 .role-filter-trigger:hover {
-  border-color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.1);
   transform: translateY(-1px);
 }
+
+.role-filter-trigger:focus,
+.role-filter-trigger:focus-visible {
+  outline: none !important;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
 
 .role-filter-display {
   display: flex;
@@ -253,6 +282,12 @@
   background: rgba(255, 255, 255, 0.1);
   transform: translateX(2px);
 }
+
+.role-filter-option:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.05);
+}
+
 
 .role-filter-option.selected {
   background: rgba(255, 255, 255, 0.15);
@@ -361,12 +396,10 @@
 
 .search-input:focus {
   outline: none;
-  border-color: var(--accent-primary);
   background: linear-gradient(135deg, 
     var(--glass-bg-light-hover) 0%, 
     var(--glass-bg-dark-hover) 100%);
-  box-shadow: var(--glass-shadow-dark), 
-              0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: var(--glass-shadow-dark);
   transform: translateY(-1px);
 }
 
@@ -1362,12 +1395,10 @@
 
 .search-input:focus {
   outline: none;
-  border-color: var(--accent-primary);
   background: linear-gradient(135deg, 
     var(--glass-bg-light-hover) 0%, 
     var(--glass-bg-dark-hover) 100%);
-  box-shadow: var(--glass-shadow-dark), 
-              0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: var(--glass-shadow-dark);
   transform: translateY(-1px);
 }
 

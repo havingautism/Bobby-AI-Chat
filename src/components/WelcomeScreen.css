@@ -122,12 +122,16 @@
 }
 
 .role-dropdown-trigger:hover {
-  border-color: var(--accent-primary);
   box-shadow: var(--glass-shadow-dark);
   transform: translateY(-2px);
   background: linear-gradient(135deg, 
     var(--glass-bg-light-hover) 0%, 
     var(--glass-bg-dark-hover) 100%);
+}
+
+.role-dropdown-trigger:focus {
+  outline: none;
+  box-shadow: var(--glass-shadow-dark);
 }
 
 .role-dropdown-trigger:disabled {
@@ -217,6 +221,13 @@
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   transform: translateX(4px);
+}
+
+.role-option:focus {
+  outline: none;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
 }
 
 .role-option.selected {
@@ -312,12 +323,16 @@
 }
 
 .prompt-card:hover:not(:disabled) {
-  border-color: var(--accent-primary);
   box-shadow: var(--glass-shadow-dark);
   transform: translateY(-4px);
   background: linear-gradient(135deg, 
     var(--glass-bg-light-hover) 0%, 
     var(--glass-bg-dark-hover) 100%);
+}
+
+.prompt-card:focus {
+  outline: none;
+  box-shadow: var(--glass-shadow-dark);
 }
 
 /* 液态光晕效果 */
