@@ -687,6 +687,7 @@
 /* 流式输出效果 */
 .message.streaming .message-content {
   position: relative;
+  
 }
 
 .message.streaming .message-content::after {
@@ -704,6 +705,7 @@
 /* 流式消息的特殊样式 */
 .message.streaming {
   background-color: rgba(99, 102, 241, 0.05);
+  border-radius: 25px;
 }
 
 [data-theme="dark"] .message.streaming {

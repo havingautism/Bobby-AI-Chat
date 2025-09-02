@@ -651,20 +651,28 @@
     height: 36px;
     padding: 0;
     border-radius: 8px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(135deg, 
+      var(--glass-bg-light) 0%, 
+      var(--glass-bg-dark) 100%);
+    border: 1px solid var(--glass-border-light);
     color: var(--text-primary);
     font-size: 18px;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition-smooth);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-shadow-light);
     flex-shrink: 0;
   }
 
   .sidebar-toggle:hover {
-    background: var(--bg-hover);
+    background: linear-gradient(135deg, 
+      var(--glass-bg-light-hover) 0%, 
+      var(--glass-bg-dark-hover) 100%);
     transform: scale(1.05);
+    box-shadow: var(--glass-shadow-dark);
   }
 
   .sidebar-toggle:active {
@@ -695,7 +703,7 @@
   }
 
   .header-model-selector {
-    display: none; /* 移动端隐藏模型选择器 */
+    display: flex; /* 移动端显示模型选择器 */
   }
 
   .timeline-toggle.mobile-only {
@@ -704,18 +712,26 @@
     height: 36px;
     padding: 0;
     border-radius: 8px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(135deg, 
+      var(--glass-bg-light) 0%, 
+      var(--glass-bg-dark) 100%);
+    border: 1px solid var(--glass-border-light);
     color: var(--text-primary);
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition-smooth);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-shadow-light);
   }
 
   .timeline-toggle.mobile-only:hover {
-    background: var(--bg-hover);
+    background: linear-gradient(135deg, 
+      var(--glass-bg-light-hover) 0%, 
+      var(--glass-bg-dark-hover) 100%);
     transform: scale(1.05);
+    box-shadow: var(--glass-shadow-dark);
   }
 
   .timeline-toggle.mobile-only:active {
@@ -746,7 +762,10 @@
 
   /* 移动端输入区域优化 */
   .chat-interface-input {
-    padding: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 8px;
+
   }
 }
 

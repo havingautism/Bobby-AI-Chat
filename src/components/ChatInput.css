@@ -1,5 +1,5 @@
 .chat-input-container {
-  padding-bottom: 24px;
+  padding-bottom: 0;
   position: relative;
   z-index: 1000;
   overflow: visible;
@@ -32,7 +32,7 @@
   border: 1px solid var(--glass-border-light);
   border-radius: var(--border-radius-lg);
   transition: var(--transition-smooth);
-  box-shadow: var(--glass-shadow-light);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
   overflow: visible;
   position: relative;
 }
@@ -45,7 +45,7 @@
 }
 
 .input-wrapper-clean:focus-within {
-  box-shadow: var(--glass-shadow-dark);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
 }
 
@@ -506,7 +506,7 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .chat-input-container {
-    padding-bottom: 16px;
+    padding-bottom: 0;
   }
   
   .input-main-area {
