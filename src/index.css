@@ -12,8 +12,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "kern" 1;
   text-rendering: optimizeLegibility;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  /* New background for Glassmorphism */
+  background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+  background-size: 400% 400%;
+  animation: gradientAnimation 15s ease infinite;
+  color: var(--text-primary, #e0e0e0);
   height: 100vh;
   overflow: hidden;
   line-height: 1.4;
@@ -24,6 +27,12 @@ body {
   touch-action: manipulation;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes gradientAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 #root {

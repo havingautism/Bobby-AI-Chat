@@ -550,7 +550,7 @@ const ChatInterface = ({
   // 如果没有消息，显示欢迎界面
   if (conversation.messages.length === 0) {
     return (
-      <div className="chat-interface">
+      <>
         <div className="chat-header">
           <div className="header-left">
             <button className="sidebar-toggle" onClick={onToggleSidebar}>
@@ -566,12 +566,12 @@ const ChatInterface = ({
           onJumpToMessage={handleJumpToMessage}
           currentMessageId={currentMessageId}
         />
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="chat-interface">
+    <>
       <div className="chat-header">
         <div className="header-left">
           <button className="sidebar-toggle" onClick={onToggleSidebar}>
@@ -656,7 +656,7 @@ const ChatInterface = ({
         onJumpToMessage={handleJumpToMessage}
         currentMessageId={currentMessageId}
       />
-    </div>
+    </>
   );
 };
 

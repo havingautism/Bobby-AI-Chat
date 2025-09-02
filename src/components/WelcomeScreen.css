@@ -4,7 +4,6 @@
   align-items: flex-start;
   height: 100vh;
   padding: 40px 20px 120px 20px; /* 增加底部内边距，为对话框留出空间 */
-  background: var(--bg-primary);
   overflow-y: auto;
 }
 
@@ -176,7 +175,7 @@
   border: 1px solid var(--border-color);
   border-radius: 12px;
   box-shadow: var(--shadow-lg);
-  z-index: 1001; /* 确保在对话框之上 */
+  z-index: 9999; /* 确保在对话框之上 */
   margin-top: 4px;
   max-height: 300px;
   overflow-y: auto;

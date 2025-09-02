@@ -111,14 +111,10 @@ button {
   color: var(--text-primary);
 }
 
-.message.assistant {
-  background: var(--bg-primary);
-}
 
 
 /* 欢迎界面主题 */
 .welcome-screen {
-  background: var(--bg-primary);
   color: var(--text-primary);
 }
 
@@ -159,22 +155,14 @@ button {
   color: var(--bg-primary);
 }
 
-/* 暗色模式下的特殊样式 */
-[data-theme="dark"] .message.user {
-  background: var(--bg-secondary);
-}
 
-[data-theme="dark"] .message.assistant {
-  background: var(--bg-secondary);
-}
+
+
 
 [data-theme="dark"] .message.assistant.loading {
   background: var(--bg-primary);
 }
 
-[data-theme="dark"] .welcome-screen {
-  background: var(--bg-secondary);
-}
 
 [data-theme="dark"] .new-chat-btn {
   background: var(--bg-primary);

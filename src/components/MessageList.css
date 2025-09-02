@@ -392,7 +392,6 @@
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 0 24px;
     gap: 8px; /* 减少头像和文字之间的间距 */
     display: flex;
     flex-direction: column; /* 移动端垂直布局：头像在上，文字在下 */
@@ -616,10 +615,6 @@
   font-size: 14px;
 }
 
-/* 助手消息样式 - 现代化设计 */
-.message.assistant {
-  background: var(--assistant-bg);
-}
 
 .message.assistant .message-content {
   color: var(--text-primary);
@@ -877,7 +872,6 @@
 /* 超小屏幕优化 */
 @media (max-width: 480px) {
   .message-container {
-    padding: 0 24px;
     gap: 10px;
   }
   

@@ -8,6 +8,7 @@ import { getApiConfig } from "./utils/api";
 import { v4 as uuidv4 } from "uuid";
 import "./App.css";
 import "./styles/theme.css";
+import "./styles/glassmorphism.css"; // Import the new theme
 
 function App() {
   const [conversations, setConversations] = useState([]);
@@ -185,7 +186,7 @@ function App() {
   );
 
   return (
-    <div className="app">
+    <div className="app-container">
       <Sidebar
         conversations={conversations}
         currentConversationId={currentConversationId}
@@ -199,11 +200,25 @@ function App() {
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         onOpenSettings={() => setSettingsOpen(true)}
       />
-      <div
-        className={`main-content ${sidebarOpen ? "sidebar-open" : ""} ${
-          sidebarCollapsed ? "sidebar-collapsed" : ""
-        }`}
-      >
+      {/* 移动端侧边栏遮罩层 */}
+      {sidebarOpen && window.innerWidth <= 768 && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)', /* 增加遮罩层透明度 */
+            zIndex: 997, /* 确保在侧边栏下方，但在其他内容上方 */
+            display: 'block',
+            cursor: 'pointer'
+          }}
+        />
+      )}
+      <div className="glass-pane chat-interface">
         {currentConversation && (
           <ChatInterface
             conversation={currentConversation}

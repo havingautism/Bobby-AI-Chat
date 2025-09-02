@@ -1,7 +1,5 @@
 .chat-input-container {
   padding-bottom: 24px;
-  background: var(--bg-primary);
-  /* border-top: 1px solid var(--border-color); */
   position: relative;
   z-index: 1000;
   overflow: visible;
@@ -9,7 +7,6 @@
 
 /* 暗色模式下的输入框容器背景 */
 [data-theme="dark"] .chat-input-container {
-  background: var(--bg-secondary);
   border-top-color: var(--border-color);
 }
 
