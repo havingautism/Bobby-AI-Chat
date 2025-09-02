@@ -18,6 +18,8 @@ const ChatInterface = ({
   onToggleSidebar,
   onOpenSettings,
 }) => {
+  // 获取当前会话的响应模式，默认为 normal
+  const [responseMode, setResponseMode] = useState(conversation.responseMode || "normal");
   // 不再需要独立的加载状态管理
   // const [loadingConversations, setLoadingConversations] = useState(new Set());
   const [currentRole, setCurrentRole] = useState(() => loadSelectedRole());
@@ -43,6 +45,12 @@ const ChatInterface = ({
     }
   };
 
+  // 处理响应模式变化
+  const handleResponseModeChange = (newMode) => {
+    setResponseMode(newMode);
+    onUpdateConversation(conversation.id, { responseMode: newMode });
+  };
+
   // 不再需要独立的加载状态，使用流式输出的内联指示器
   // const isLoading = loadingConversations.has(conversation.id) || (isStreaming && streamingConversationId === conversation.id);
 
@@ -66,6 +74,13 @@ const ChatInterface = ({
   useEffect(() => {
     scrollToBottom();
   }, [conversation.messages]);
+
+  // 同步会话的响应模式
+  useEffect(() => {
+    if (conversation.responseMode !== undefined) {
+      setResponseMode(conversation.responseMode);
+    }
+  }, [conversation.responseMode]);
 
   // 监听角色变化
   useEffect(() => {
@@ -143,7 +158,7 @@ const ChatInterface = ({
       role: "user",
       content: fullContent,
       timestamp: new Date().toISOString(),
-      options, // 保存模式和个性选择
+      options: { ...options, responseMode }, // 保存模式和个性选择，包括响应模式
       uploadedFile: uploadedFile ? {
         name: uploadedFile.name,
         type: uploadedFile.type,
@@ -642,6 +657,8 @@ const ChatInterface = ({
         showFileUpload={true}
         expandDirection="up"
         className="chat-interface-input"
+        responseMode={responseMode}
+        onResponseModeChange={handleResponseModeChange}
         onNewChat={() => {
           // 新建对话的逻辑
           console.log('新建对话');

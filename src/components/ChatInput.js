@@ -14,6 +14,8 @@ const ChatInput = ({
   className = "",
   onNewChat = () => {},
   onAddTab = () => {},
+  responseMode: externalResponseMode,
+  onResponseModeChange,
 }) => {
   const [message, setMessage] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -21,7 +23,7 @@ const ChatInput = ({
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [uploadedFile, setUploadedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
-  const [responseMode, setResponseMode] = useState("normal"); // normal 或 thinking
+  const [responseMode, setResponseMode] = useState(externalResponseMode || "normal"); // normal 或 thinking
   const dropdownRef = useRef(null);
   const quickResponseRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -73,6 +75,13 @@ const ChatInput = ({
       };
     }
   }, [showDropdown, showQuickResponseDropdown]);
+
+  // 同步外部 responseMode 的变化
+  useEffect(() => {
+    if (externalResponseMode !== undefined) {
+      setResponseMode(externalResponseMode);
+    }
+  }, [externalResponseMode]);
 
   const toggleDropdown = () => {
     const newShowState = !showDropdown;
@@ -311,8 +320,12 @@ const ChatInput = ({
                     <div 
                       className={`quick-response-item ${responseMode === "normal" ? "active" : ""}`}
                       onClick={() => {
-                        setResponseMode("normal");
+                        const newMode = "normal";
+                        setResponseMode(newMode);
                         setShowQuickResponseDropdown(false);
+                        if (onResponseModeChange) {
+                          onResponseModeChange(newMode);
+                        }
                       }}
                     >
                       <div className="response-mode-icon">
@@ -336,8 +349,12 @@ const ChatInput = ({
                     <div 
                       className={`quick-response-item ${responseMode === "thinking" ? "active" : ""}`}
                       onClick={() => {
-                        setResponseMode("thinking");
+                        const newMode = "thinking";
+                        setResponseMode(newMode);
                         setShowQuickResponseDropdown(false);
+                        if (onResponseModeChange) {
+                          onResponseModeChange(newMode);
+                        }
                       }}
                     >
                       <div className="response-mode-icon">

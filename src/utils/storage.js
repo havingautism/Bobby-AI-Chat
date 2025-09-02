@@ -39,6 +39,9 @@ const compressConversation = (conversation) => {
       role: msg.role,
       content: msg.content,
       timestamp: msg.timestamp,
+      // 保存思考过程
+      hasReasoning: msg.hasReasoning || false,
+      reasoning: msg.reasoning,
       // 移除大型文件数据，只保留基本信息
       uploadedFile: msg.uploadedFile ? {
         name: msg.uploadedFile.name,

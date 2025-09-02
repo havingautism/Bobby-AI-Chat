@@ -18,6 +18,10 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [defaultModel, setDefaultModel] = useState("deepseek-ai/DeepSeek-V3.1");
+  const [lastResponseMode, setLastResponseMode] = useState(() => {
+    // 从 localStorage 读取保存的响应模式，默认为 "normal"
+    return localStorage.getItem('lastResponseMode') || "normal";
+  });
 
   // 同步默认模型与API配置
   useEffect(() => {
@@ -55,9 +59,14 @@ function App() {
         console.log("加载的对话历史:", savedConversations);
 
         if (savedConversations.length > 0) {
-          setConversations(savedConversations);
+          // 为没有 responseMode 的对话添加默认值，使用最后保存的响应模式
+          const migratedConversations = savedConversations.map(conv => ({
+            ...conv,
+            responseMode: conv.responseMode || lastResponseMode
+          }));
+          setConversations(migratedConversations);
           // 优先选择最新的对话（第一个）
-          setCurrentConversationId(savedConversations[0].id);
+          setCurrentConversationId(migratedConversations[0].id);
         } else {
           // 创建初始对话
           const initialConversation = {
@@ -67,6 +76,7 @@ function App() {
             createdAt: new Date().toISOString(),
             role: null, // 初始对话没有角色
             model: defaultModel, // 使用当前默认模型
+            responseMode: lastResponseMode, // 使用最后选择的响应模式
           };
           setConversations([initialConversation]);
           setCurrentConversationId(initialConversation.id);
@@ -84,6 +94,7 @@ function App() {
           createdAt: new Date().toISOString(),
           role: null,
           model: defaultModel,
+          responseMode: lastResponseMode, // 使用最后选择的响应模式
         };
         setConversations([initialConversation]);
         setCurrentConversationId(initialConversation.id);
@@ -130,6 +141,7 @@ function App() {
         createdAt: new Date().toISOString(),
         role: null, // 新对话没有角色
         model: defaultModel, // 使用当前配置的默认模型
+        responseMode: lastResponseMode, // 使用最后选择的响应模式
       };
       setConversations([newConversation, ...conversationsWithMessages]);
       setCurrentConversationId(newConversation.id);
@@ -162,6 +174,7 @@ function App() {
             createdAt: new Date().toISOString(),
             role: null,
             model: defaultModel, // 使用当前配置的默认模型
+            responseMode: lastResponseMode, // 使用最后选择的响应模式
           };
           setCurrentConversationId(newConversation.id);
           return [newConversation];
@@ -189,6 +202,7 @@ function App() {
               createdAt: new Date().toISOString(),
               role: null,
               model: defaultModel, // 使用当前配置的默认模型
+              responseMode: lastResponseMode, // 使用最后选择的响应模式
             };
             setCurrentConversationId(newConversation.id);
             return [newConversation];
@@ -203,7 +217,19 @@ function App() {
 
   const updateConversation = (id, updates) => {
     setConversations((prev) =>
-      prev.map((conv) => (conv.id === id ? { ...conv, ...updates } : conv))
+      prev.map((conv) => {
+        if (conv.id === id) {
+          const updatedConv = { ...conv, ...updates };
+          // 如果更新了响应模式，同时更新最后选择的模式
+          if (updates.responseMode !== undefined) {
+            setLastResponseMode(updates.responseMode);
+            // 保存到 localStorage
+            localStorage.setItem('lastResponseMode', updates.responseMode);
+          }
+          return updatedConv;
+        }
+        return conv;
+      })
     );
   };
 

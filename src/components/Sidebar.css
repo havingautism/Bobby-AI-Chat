@@ -875,7 +875,20 @@
   
   /* 移动端常驻显示操作按钮 */
   .conversation-actions {
-    opacity: 1;
+    opacity: 1 !important;
+  }
+  
+  /* 确保移动端菜单按钮可见 */
+  .menu-btn {
+    opacity: 1 !important;
+    color: var(--text-secondary) !important;
+  }
+  
+  /* 触摸设备上始终显示操作按钮 */
+  @media (hover: none) {
+    .conversation-actions {
+      opacity: 1 !important;
+    }
   }
   
   /* 移动端标题显示更多内容 */
