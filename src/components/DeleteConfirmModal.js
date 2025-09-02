@@ -37,7 +37,16 @@ const DeleteConfirmModal = ({
   return (
     <div className="delete-confirm-modal-overlay" onClick={handleBackdropClick}>
       <div className="delete-confirm-modal">
-      
+        <div className="delete-confirm-modal-header">
+          <div className="delete-confirm-modal-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </div>
+          <h3 className="delete-confirm-modal-title">
+            {currentLanguage === "zh" ? "删除对话" : "Delete Conversation"}
+          </h3>
+        </div>
         
         <div className="delete-confirm-modal-content">
           <p className="delete-confirm-modal-message">

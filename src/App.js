@@ -25,6 +25,18 @@ function App() {
     setDefaultModel(apiConfig.model || "deepseek-ai/DeepSeek-V3.1");
   }, []);
 
+  // 监听默认模型变化，更新空对话的模型
+  useEffect(() => {
+    // 更新所有空对话的模型为新的默认模型
+    setConversations(prev => prev.map(conv => {
+      if (conv.messages.length === 0) {
+        // 如果对话是空的，使用新的默认模型
+        return { ...conv, model: defaultModel };
+      }
+      return conv;
+    }));
+  }, [defaultModel]);
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -54,7 +66,7 @@ function App() {
             messages: [],
             createdAt: new Date().toISOString(),
             role: null, // 初始对话没有角色
-            model: apiConfig.model || "deepseek-ai/DeepSeek-V3.1", // 使用配置的默认模型
+            model: defaultModel, // 使用当前默认模型
           };
           setConversations([initialConversation]);
           setCurrentConversationId(initialConversation.id);
@@ -71,7 +83,7 @@ function App() {
           messages: [],
           createdAt: new Date().toISOString(),
           role: null,
-          model: "deepseek-ai/DeepSeek-V3.1",
+          model: defaultModel,
         };
         setConversations([initialConversation]);
         setCurrentConversationId(initialConversation.id);
@@ -131,18 +143,16 @@ function App() {
   const deleteConversation = (id) => {
     setConversations((prev) => {
       const filtered = prev.filter((conv) => conv.id !== id);
+      const currentConv = prev.find(conv => conv.id === currentConversationId);
+      
+      // 判断是否为新对话页面（当前对话没有消息）
+      const isNewConversationPage = currentConv && currentConv.messages.length === 0;
 
-      // 检查是否还有空对话
-      const hasEmptyConversation = filtered.some(
-        (conv) => conv.messages.length === 0
-      );
-
-      if (currentConversationId === id) {
-        // 如果删除的是当前对话，切换到其他对话
+      if (isNewConversationPage) {
+        // 新对话页面删除任何对话：跳到按时间排序的最新对话
         if (filtered.length > 0) {
-          // 优先切换到空对话，如果没有则切换到第一个有消息的对话
-          const emptyConv = filtered.find((conv) => conv.messages.length === 0);
-          setCurrentConversationId(emptyConv ? emptyConv.id : filtered[0].id);
+          const sortedByTime = [...filtered].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          setCurrentConversationId(sortedByTime[0].id);
         } else {
           // 如果没有任何对话了，创建一个新的空对话
           const newConversation = {
@@ -156,19 +166,35 @@ function App() {
           setCurrentConversationId(newConversation.id);
           return [newConversation];
         }
-      }
-
-      // 如果删除后没有空对话了，创建一个新的空对话
-      if (!hasEmptyConversation) {
-        const newConversation = {
-          id: uuidv4(),
-          title: "新对话",
-          messages: [],
-          createdAt: new Date().toISOString(),
-          role: null,
-          model: defaultModel, // 使用当前配置的默认模型
-        };
-        return [newConversation, ...filtered];
+      } else {
+        // 其他页面删除：保持当前会话不变（除非删除的是当前对话）
+        if (currentConversationId === id) {
+          // 删除的是当前对话，需要切换到其他对话
+          if (filtered.length > 0) {
+            // 优先选择同角色的对话，或者按时间排序的最新对话
+            const deletedConv = prev.find(conv => conv.id === id);
+            const sameRoleConversations = filtered.filter(conv => conv.role === deletedConv?.role);
+            if (sameRoleConversations.length > 0) {
+              setCurrentConversationId(sameRoleConversations[0].id);
+            } else {
+              const sortedByTime = [...filtered].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+              setCurrentConversationId(sortedByTime[0].id);
+            }
+          } else {
+            // 如果没有任何对话了，创建一个新的空对话
+            const newConversation = {
+              id: uuidv4(),
+              title: "新对话",
+              messages: [],
+              createdAt: new Date().toISOString(),
+              role: null,
+              model: defaultModel, // 使用当前配置的默认模型
+            };
+            setCurrentConversationId(newConversation.id);
+            return [newConversation];
+          }
+        }
+        // 如果删除的不是当前对话，保持当前会话不变
       }
 
       return filtered;
@@ -230,8 +256,15 @@ function App() {
         onClose={() => setSettingsOpen(false)}
         onModelChange={(newModel) => {
           setDefaultModel(newModel);
-          // 只更新默认模型，不更新当前对话的模型
-          // 当前对话的模型应该保持用户手动选择的状态
+          
+          // 更新当前对话的模型（如果对话还没有消息）
+          if (currentConversation) {
+            if (currentConversation.messages.length === 0) {
+              // 如果是空对话，使用新的默认模型
+              updateConversation(currentConversation.id, { model: newModel });
+            }
+            // 如果对话已有消息，保持当前手动选择的模型不变
+          }
         }}
       />
     </div>

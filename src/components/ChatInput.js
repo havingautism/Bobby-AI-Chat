@@ -13,20 +13,23 @@ const ChatInput = ({
   expandDirection = "auto", // "up", "down", "auto"
   className = "",
   onNewChat = () => {},
-  onAddTab = () => {}
+  onAddTab = () => {},
 }) => {
   const [message, setMessage] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showQuickResponseDropdown, setShowQuickResponseDropdown] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [uploadedFile, setUploadedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [responseMode, setResponseMode] = useState("normal"); // normal 或 thinking
   const dropdownRef = useRef(null);
+  const quickResponseRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if ((message.trim() || uploadedFile) && !disabled) {
-      onSendMessage(message, uploadedFile);
+      onSendMessage(message, uploadedFile, { responseMode });
       setMessage("");
       setUploadedFile(null);
       setFilePreview(null);
@@ -58,15 +61,18 @@ const ChatInput = ({
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
+      if (quickResponseRef.current && !quickResponseRef.current.contains(event.target)) {
+        setShowQuickResponseDropdown(false);
+      }
     };
 
-    if (showDropdown) {
+    if (showDropdown || showQuickResponseDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [showDropdown]);
+  }, [showDropdown, showQuickResponseDropdown]);
 
   const toggleDropdown = () => {
     const newShowState = !showDropdown;
@@ -282,18 +288,79 @@ const ChatInput = ({
           {/* 底部工具栏 */}
           {showBottomToolbar && (
             <div className="bottom-toolbar">
-              {/* 快速响应按钮 */}
-              <button 
-                type="button" 
-                className="quick-response-btn" 
-                disabled={disabled}
-                title={t("quickResponse", currentLanguage)}
-              >
-                <span>{t("quickResponse", currentLanguage)}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
+              {/* 快速响应下拉框 */}
+              <div className="quick-response-container" ref={quickResponseRef}>
+                <button 
+                  type="button" 
+                  className={`quick-response-btn ${showQuickResponseDropdown ? 'open' : ''}`} 
+                  disabled={disabled}
+                  onClick={() => setShowQuickResponseDropdown(!showQuickResponseDropdown)}
+                  title="选择响应模式"
+                >
+                  <span>
+                    {responseMode === "thinking" ? "思考模式" : "快速响应"}
+                  </span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+
+                {/* 响应模式下拉菜单 */}
+                {showQuickResponseDropdown && (
+                  <div className="quick-response-dropdown">
+                    <div 
+                      className={`quick-response-item ${responseMode === "normal" ? "active" : ""}`}
+                      onClick={() => {
+                        setResponseMode("normal");
+                        setShowQuickResponseDropdown(false);
+                      }}
+                    >
+                      <div className="response-mode-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                      </div>
+                      <div className="response-mode-info">
+                        <div className="response-mode-title">快速响应</div>
+                        <div className="response-mode-desc">标准模式，快速生成回复</div>
+                      </div>
+                      <div className="check-mark">
+                        {responseMode === "normal" && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`quick-response-item ${responseMode === "thinking" ? "active" : ""}`}
+                      onClick={() => {
+                        setResponseMode("thinking");
+                        setShowQuickResponseDropdown(false);
+                      }}
+                    >
+                      <div className="response-mode-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                          <path d="M12 8v4M12 16h.01"/>
+                        </svg>
+                      </div>
+                      <div className="response-mode-info">
+                        <div className="response-mode-title">思考模式</div>
+                        <div className="response-mode-desc">展示AI的推理过程</div>
+                      </div>
+                      <div className="check-mark">
+                        {responseMode === "thinking" && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* 加号按钮和下拉菜单 */}
               <div className="plus-button-container" ref={dropdownRef}>

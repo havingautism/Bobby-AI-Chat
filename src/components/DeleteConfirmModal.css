@@ -15,10 +15,14 @@
 }
 
 .delete-confirm-modal {
-  background: var(--bg-primary);
-  border-radius: 12px;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: var(--border-radius-lg);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--glass-border-light);
   max-width: 380px;
   width: 95%;
   overflow: hidden;
@@ -28,7 +32,21 @@
 
 /* 暗色模式优化 */
 [data-theme="dark"] .delete-confirm-modal {
+  background: linear-gradient(135deg, 
+    rgba(30, 30, 30, 0.95) 0%, 
+    rgba(20, 20, 20, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .delete-confirm-modal-btn.cancel-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .delete-confirm-modal-btn.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .delete-confirm-modal-header {
@@ -36,7 +54,7 @@
   align-items: center;
   gap: 10px;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--glass-border-light);
 }
 
 .delete-confirm-modal-icon {
@@ -81,7 +99,7 @@
   display: flex;
   gap: 8px;
   padding: 12px 20px 20px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--glass-border-light);
 }
 
 .delete-confirm-modal-btn {
@@ -92,33 +110,40 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 40px; /* 适中的点击区域 */
+  position: relative;
+  overflow: hidden;
 }
 
 .delete-confirm-modal-btn.cancel-btn {
-  background: var(--bg-secondary);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--glass-border-light);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .delete-confirm-modal-btn.cancel-btn:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--border-hover);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--glass-border-heavy);
 }
 
 .delete-confirm-modal-btn.confirm-btn {
-  background: var(--error-color);
+  background: linear-gradient(135deg, var(--error-color) 0%, var(--error-hover, #dc2626) 100%);
   color: white;
   border: 1px solid var(--error-color);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .delete-confirm-modal-btn.confirm-btn:hover {
-  background: var(--error-hover, #dc2626);
+  background: linear-gradient(135deg, var(--error-hover, #dc2626) 0%, #b91c1c 100%);
   border-color: var(--error-hover, #dc2626);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  transform: translateY(-1px);
 }
 
 /* 动画效果 */

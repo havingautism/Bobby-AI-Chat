@@ -176,6 +176,7 @@
   color: var(--text-primary);
 }
 
+
 .quick-response-btn svg {
   width: 14px;
   height: 14px;
@@ -184,6 +185,133 @@
 
 .quick-response-btn.open svg {
   transform: rotate(180deg);
+}
+
+/* 快速响应容器 */
+.quick-response-container {
+  position: relative;
+}
+
+/* 响应模式下拉菜单 */
+.quick-response-dropdown {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(248, 250, 252, 0.9) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 9999999;
+  overflow: hidden;
+  width: 220px;
+  margin-bottom: 8px;
+}
+
+/* 暗夜模式响应模式下拉菜单 */
+[data-theme="dark"] .quick-response-dropdown {
+  background: linear-gradient(135deg, 
+    rgba(30, 30, 30, 0.95) 0%, 
+    rgba(20, 20, 20, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 下拉菜单箭头 */
+.quick-response-dropdown::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 16px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"] .quick-response-dropdown::before {
+  border-top: 6px solid rgba(30, 30, 30, 0.95);
+}
+
+/* 响应模式项 */
+.quick-response-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  position: relative;
+}
+
+.quick-response-item:hover {
+  background: var(--bg-hover);
+}
+
+.quick-response-item.active {
+  background: var(--bg-hover);
+}
+
+/* 响应模式图标 */
+.response-mode-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.quick-response-item .response-mode-icon svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-secondary);
+}
+
+
+/* 响应模式信息 */
+.response-mode-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.response-mode-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  color: var(--text-primary);
+}
+
+
+.response-mode-desc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.3;
+}
+
+
+/* 选中标记 */
+.quick-response-item .check-mark {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.quick-response-item.active .check-mark svg {
+  width: 14px;
+  height: 14px;
+  color: var(--accent-color, #8b5cf6);
 }
 
 .plus-button-container {
@@ -273,6 +401,34 @@
 
 /* 移动端样式 */
 @media (max-width: 768px) {
+  .quick-response-dropdown {
+    width: 260px;
+    left: -20px;
+  }
+  
+  .quick-response-item {
+    padding: 16px;
+    gap: 14px;
+  }
+  
+  .response-mode-icon {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .quick-response-item .response-mode-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .response-mode-title {
+    font-size: 16px;
+  }
+  
+  .response-mode-desc {
+    font-size: 13px;
+  }
+  
   .dropdown-item {
     padding: 12px 16px;
     font-size: 16px;

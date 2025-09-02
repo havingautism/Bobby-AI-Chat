@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:dribbble.com)"
+      "WebFetch(domain:dribbble.com)",
+      "WebFetch(domain:docs.siliconflow.cn)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
