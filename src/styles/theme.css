@@ -51,6 +51,12 @@ body {
   color: var(--text-primary);
 }
 
+/* 暗夜模式背景渐变 */
+[data-theme="dark"] body {
+  background: linear-gradient(135deg, #0a0a0f 0%, #151520 100%);
+  min-height: 100vh;
+}
+
 /* 输入框主题 */
 input, textarea {
   background: var(--bg-primary) !important;

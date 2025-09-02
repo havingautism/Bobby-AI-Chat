@@ -2222,3 +2222,15 @@
 [data-theme="dark"] .collapsed-divider {
   background: rgba(255, 255, 255, 0.16); /* 暗色更明显 */
 }
+
+/* 暗夜模式角色筛选下拉框 */
+[data-theme="dark"] .role-filter-dropdown {
+  background: linear-gradient(135deg, 
+    rgba(30, 30, 35, 0.95) 0%, 
+    rgba(20, 20, 25, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .role-filter-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

@@ -60,47 +60,47 @@
   --error-border: #fed7d7;
 }
 
-/* 暗夜模式 */
+/* 暗夜模式 - 参考 Dribbble 设计 */
 [data-theme="dark"] {
-  --bg-primary: #2d3748;
-  --bg-secondary: #1a202c;
-  --bg-tertiary: #4a5568;
-  --text-primary: #f7fafc;
-  --text-secondary: #e2e8f0;
-  --text-tertiary: #a0aec0;
-  --border-color: #4a5568;
-  --border-hover: #718096;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
-  --accent-color: #63b3ed;
-  --accent-hover: #4299e1;
-  --success-color: #48bb78;
-  --warning-color: #ed8936;
-  --error-color: #f56565;
-  --success-hover: #38a169;
-  --bg-quaternary: #2d3748;
-  --bg-hover: #4a5568;
-  --code-bg: #1a202c;
-  --code-border: #4a5568;
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #151520;
+  --bg-tertiary: #1a1a2e;
+  --text-primary: #f0f0f0;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #808080;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.2);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --accent-color: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --success-hover: #059669;
+  --bg-quaternary: #151520;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --code-bg: rgba(0, 0, 0, 0.3);
+  --code-border: rgba(255, 255, 255, 0.1);
   
   /* 高级消息样式变量 - 暗夜模式 */
   --user-bg: transparent;
-  --assistant-bg: #2f2f2f;
-  --user-message-bg: #1c7ed6;
+  --assistant-bg: rgba(255, 255, 255, 0.05);
+  --user-message-bg: #8b5cf6;
   --user-message-text: #ffffff;
-  --message-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --message-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
   
   /* 头像样式变量 - 暗夜模式 */
-  --avatar-bg: #3f3f3f;
-  --avatar-border: #4f4f4f;
-  --avatar-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  --user-avatar-bg: #0084ff;
+  --avatar-bg: rgba(255, 255, 255, 0.1);
+  --avatar-border: rgba(255, 255, 255, 0.2);
+  --avatar-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --user-avatar-bg: #8b5cf6;
   --user-avatar-text: #ffffff;
-  --user-avatar-border: #0084ff;
-  --assistant-avatar-bg: #10a37f;
+  --user-avatar-border: #8b5cf6;
+  --assistant-avatar-bg: #10b981;
   --assistant-avatar-text: #ffffff;
-  --assistant-avatar-border: #10a37f;
+  --assistant-avatar-border: #10b981;
   
   /* 错误样式 - 暗夜模式 */
   --error-bg: #2d1b1b;
