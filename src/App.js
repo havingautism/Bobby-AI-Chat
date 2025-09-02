@@ -197,28 +197,24 @@ function App() {
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onToggleCollapse={() => {
+          const next = !sidebarCollapsed;
+          setSidebarCollapsed(next);
+          // 切到收起 -> 以窄栏显示，需要打开
+          if (next) {
+            setSidebarOpen(true);
+          }
+        }}
         onOpenSettings={() => setSettingsOpen(true)}
       />
-      {/* 移动端侧边栏遮罩层 */}
-      {sidebarOpen && window.innerWidth <= 768 && (
+      {/* 移动端侧边栏遮罩层：仅宽栏打开时显示 */}
+      {sidebarOpen && !sidebarCollapsed && window.innerWidth <= 768 && (
         <div 
           className="sidebar-overlay" 
           onClick={() => setSidebarOpen(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)', /* 增加遮罩层透明度 */
-            zIndex: 997, /* 确保在侧边栏下方，但在其他内容上方 */
-            display: 'block',
-            cursor: 'pointer'
-          }}
         />
       )}
-      <div className="glass-pane chat-interface">
+      <div className={`glass-pane chat-interface ${window.innerWidth <= 768 && sidebarOpen && sidebarCollapsed ? 'with-collapsed-sidebar' : ''} ${window.innerWidth <= 768 && sidebarOpen && !sidebarCollapsed ? 'pushed-by-sidebar' : ''}`}>
         {currentConversation && (
           <ChatInterface
             conversation={currentConversation}

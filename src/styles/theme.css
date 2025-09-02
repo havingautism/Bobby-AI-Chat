@@ -141,14 +141,9 @@ button {
   }
 }
 
-/* 暗色模式特殊处理 */
-[data-theme="dark"] {
-  /* 确保某些元素在暗色模式下有足够的对比度 */
-}
 
-[data-theme="dark"] .sidebar-overlay {
-  background-color: rgba(0, 0, 0, 0.8);
-}
+
+
 
 [data-theme="dark"] .search-highlight {
   background-color: var(--warning-color);
@@ -200,7 +195,3 @@ button {
   background: var(--bg-tertiary);
 }
 
-[data-theme="dark"] .conversation-item.active {
-  background: var(--bg-tertiary);
-  border-left-color: var(--accent-color);
-}

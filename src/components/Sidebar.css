@@ -4,9 +4,19 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.25);
   z-index: 998;
   display: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* 暗色模式下的模糊遮罩，降低不透明度以体现模糊效果 */
+[data-theme="dark"] .sidebar-overlay {
+  /* 使用浅色半透明叠加，结合模糊呈现磨砂玻璃效果，而不是全黑 */
+  background-color: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .sidebar {
@@ -38,7 +48,6 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
   z-index: 998;
   display: none;
 }
@@ -458,10 +467,7 @@
   }
 }
 
-.conversation-item.active {
-  background-color: rgba(255, 255, 255, 0.15);
-  border-left: 3px solid var(--accent-color-1);
-}
+
 
 .conversation-icon {
   flex-shrink: 0;
@@ -769,7 +775,6 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
   }
   
   .sidebar {
@@ -1369,7 +1374,6 @@
 
 .conversation-item.active {
   background-color: var(--bg-tertiary);
-  border-left: 3px solid var(--accent-color);
 }
 
 .conversation-icon {
@@ -1672,32 +1676,43 @@
 }
 
 @media (max-width: 768px) {
-  .sidebar-overlay {
-    display: block;
+  /* 收起状态默认隐藏，仅当同时具有 .open 才显示为窄竖条 */
+  .sidebar.collapsed {
+    left: -100% !important;
+    width: 56px; /* 预设更窄的宽度以节省空间 */
   }
-  
-  .sidebar {
+
+  .sidebar.collapsed.open {
     position: fixed;
     top: 0;
-    left: 0;
+    left: 0 !important;
     height: 100vh;
-    z-index: 999;
+    width: 56px; /* 窄侧栏更省空间 */
+    transform: none;
+    z-index: 1001;
+    border-top-right-radius: var(--border-radius-main);
+    border-bottom-right-radius: var(--border-radius-main);
+    overflow: hidden;
   }
-  
-  .conversation-actions {
-    opacity: 1;
+
+  /* 窄侧栏中的控件尺寸更小 */
+  .sidebar.collapsed .settings-btn,
+  .sidebar.collapsed .theme-toggle-btn,
+  .sidebar.collapsed .collapse-toggle-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
   }
-  
-  .conversation-title {
-    font-size: 12px;
+
+  .sidebar.collapsed .new-chat-btn {
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    border-radius: 10px;
   }
-  
-  .title-text {
-    max-width: 120px;
-  }
-  
-  .conversation-role-row {
-    gap: 4px;
+
+  .sidebar.collapsed.open ~ .sidebar-overlay {
+    display: none !important;
   }
 }
 

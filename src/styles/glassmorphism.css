@@ -33,8 +33,15 @@
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border-color);
   border-radius: var(--border-radius-main);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2) !important;
   color: var(--text-primary-color);
+}
+
+/* 保持阴影在点击/聚焦状态不变 */
+.glass-pane:active,
+.glass-pane:focus,
+.glass-pane:focus-within {
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2) !important;
 }
 
 /* --- Sidebar --- */
@@ -109,6 +116,26 @@
     overflow: hidden;
     position: relative;
   }
+    .glass-pane {
+      
+      box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.079) !important;
+    }
+
+
+
+  /* 当移动端显示收起的窄侧栏（open + collapsed）时，为聊天界面预留更小空间 */
+  .chat-interface.with-collapsed-sidebar {
+    margin-left: 62px; /* 56px rail + 6px gutter */
+    width: calc(100% - 62px);
+    border-top-left-radius: var(--border-radius-main);
+    border-bottom-left-radius: var(--border-radius-main);
+  }
+
+  /* 收起但未打开时保持隐藏（默认 left: -100%），打开时放到左侧 */
+  .sidebar.collapsed.open {
+    left: 0;
+    width: 56px;
+  }
 
   .sidebar {
     position: fixed;
@@ -119,24 +146,38 @@
     z-index: 1000;
     transform: none;
     transition: left 0.3s ease;
-    /* 移动端使用实心背景 */
     background: var(--bg-secondary) !important;
     background-image: none !important;
     backdrop-filter: none !important;
   }
 
   .sidebar.open {
+    border-top-right-radius:var(--border-radius-main) ;
+    border-bottom-right-radius:var(--border-radius-main) ;
     left: 0;
     max-width: 70%;
   }
 
+  /* 收起但未打开时，侧边栏以窄竖条显示在左侧 */
+  .sidebar.collapsed:not(.open) {
+    left: 0;
+    width: 64px;
+  }
+
   .chat-interface {
-    padding: 0;
+    padding: 0 24px; /* 移动端左右各留 24px 安全边距 */
     flex: 1;
     min-height: 0;
     width: 100%;
     height: 100vh;
     border-radius: 0;
+    transition: transform 0.3s ease, width 0.3s ease, margin-left 0.3s ease; /* 平滑过渡 */
+    box-sizing: border-box; /* 使 padding 参与总宽度计算 */
+  }
+
+  /* 宽侧边栏打开时，聊天界面被“推挤”向右 */
+  .pushed-by-sidebar {
+    transform: translateX(280px); /* 与移动端宽侧边栏宽度一致 */
   }
 
   .glass-pane {

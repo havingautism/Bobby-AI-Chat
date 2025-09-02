@@ -142,7 +142,7 @@ const Sidebar = ({
 
   return (
     <>
-      {isOpen && <div className="sidebar-overlay" onClick={onToggle} />}
+      {isOpen && !isCollapsed && <div className="sidebar-overlay" onClick={onToggle} />}
       <div
         className={`sidebar glass-pane ${isOpen ? "open" : ""} ${
           isCollapsed ? "collapsed" : ""

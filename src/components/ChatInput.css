@@ -41,8 +41,8 @@
 }
 
 .input-wrapper-clean:focus-within {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.3), var(--shadow-lg);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-md);
 }
 
 .message-textarea-clean {
