@@ -21,21 +21,29 @@
 
 .sidebar {
   width: 260px;
-  background: var(--bg-secondary);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 1001;
   transform: translateX(-100%);
   transition: all 0.3s ease;
-  border-right: 1px solid var(--border-color);
-  box-shadow: var(--shadow-md);
+  border-right: 1px solid var(--glass-border-light);
+  box-shadow: var(--glass-shadow-light);
 }
 
 .sidebar.collapsed {
   width: 60px;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border-color);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-right: 1px solid var(--glass-border-light);
 }
 
 .sidebar.collapsed .sidebar-header {

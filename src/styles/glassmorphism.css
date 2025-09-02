@@ -1,19 +1,42 @@
-/* === Glassmorphism Theme for AI Chat === */
+/* === Liquid Glass UI for AI Chat === */
 
 /* --- Core Variables --- */
 :root {
-  --background-gradient-start: #1a1a2e;
-  --background-gradient-mid: #16213e;
-  --background-gradient-end: #0f3460;
-  --glass-bg-color: rgba(255, 255, 255, 0.08);
-  --glass-border-color: rgba(255, 255, 255, 0.15);
-  --text-primary-color: #e0e0e0;
-  --text-secondary-color: #a0a0a0;
-  --accent-color-1: #e94560;
-  --accent-color-2: #533483;
-  --glow-color: rgba(128, 0, 255, 0.5);
-  --border-radius-main: 20px;
-  --border-radius-small: 12px;
+  /* 保持原有背景色 */
+  --background-gradient-start: #ffffff;
+  --background-gradient-mid: #f8f9fa;
+  --background-gradient-end: #f1f3f4;
+  
+  /* 液态玻璃效果 */
+  --glass-bg-light: rgba(255, 255, 255, 0.25);
+  --glass-bg-light-hover: rgba(255, 255, 255, 0.35);
+  --glass-bg-dark: rgba(0, 0, 0, 0.05);
+  --glass-bg-dark-hover: rgba(0, 0, 0, 0.08);
+  --glass-border-light: rgba(255, 255, 255, 0.18);
+  --glass-border-dark: rgba(0, 0, 0, 0.08);
+  --glass-shadow-light: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --glass-shadow-dark: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --glass-blur: blur(20px);
+  --glass-blur-strong: blur(40px);
+  
+  /* 文字颜色 */
+  --text-primary-color: #1f2937;
+  --text-secondary-color: #6b7280;
+  --text-tertiary-color: #9ca3af;
+  
+  /* 强调色 */
+  --accent-primary: #3b82f6;
+  --accent-secondary: #8b5cf6;
+  --accent-tertiary: #ec4899;
+  
+  /* 圆角 */
+  --border-radius-xl: 24px;
+  --border-radius-lg: 20px;
+  --border-radius-md: 16px;
+  --border-radius-sm: 12px;
+  
+  /* 动画 */
+  --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* --- Main App Container & Layout --- */
@@ -26,22 +49,111 @@
   gap: 1rem;
 }
 
-/* --- Glassmorphism Base Style --- */
-.glass-pane {
-  background: var(--glass-bg-color);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border-color);
-  border-radius: var(--border-radius-main);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2) !important;
+/* --- Liquid Glass Base Style --- */
+.liquid-glass {
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--glass-shadow-light);
   color: var(--text-primary-color);
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
 }
 
-/* 保持阴影在点击/聚焦状态不变 */
-.glass-pane:active,
-.glass-pane:focus,
-.glass-pane:focus-within {
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2) !important;
+/* 液态玻璃悬停效果 */
+.liquid-glass:hover {
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+  box-shadow: var(--glass-shadow-dark);
+  transform: translateY(-2px);
+}
+
+/* 内部光晕效果 */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.liquid-glass:hover::before {
+  opacity: 1;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .liquid-glass {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(0, 0, 0, 0.2) 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: var(--glass-shadow-dark);
+}
+
+[data-theme="dark"] .liquid-glass:hover {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.12) 0%, 
+    rgba(0, 0, 0, 0.25) 100%);
+}
+
+/* 超强玻璃效果（用于重要元素） */
+.liquid-glass-strong {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  backdrop-filter: var(--glass-blur-strong);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* 液态按钮效果 */
+.liquid-button {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.liquid-button:hover::before {
+  width: 300px;
+  height: 300px;
 }
 
 /* --- Sidebar --- */

@@ -7,15 +7,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-sm);
   padding: 8px 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
   min-width: 200px;
   font-size: 14px;
   color: var(--text-primary);
+  box-shadow: var(--glass-shadow-light);
 }
 
 /* 移动端简化模式 */
@@ -41,10 +46,12 @@
 }
 
 .model-selector-trigger:hover:not(.disabled) {
-  background: var(--bg-tertiary);
-  border-color: var(--accent-color);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-dark);
 }
 
 .model-selector-trigger:active:not(.disabled) {

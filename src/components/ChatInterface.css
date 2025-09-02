@@ -11,12 +11,17 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background-color: var(--bg-secondary);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   position: sticky;
   top: 0;
   z-index: 10;
   min-height: 60px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--glass-border-light);
+  box-shadow: var(--glass-shadow-light);
 }
 
 
@@ -44,8 +49,10 @@
 }
 
 .sidebar-toggle:hover {
-  background-color: var(--bg-tertiary);
+  background: var(--glass-bg-light-hover);
   color: var(--text-primary);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .conversation-header {

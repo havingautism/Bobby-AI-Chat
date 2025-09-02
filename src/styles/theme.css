@@ -5,6 +5,47 @@
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+/* 液态玻璃效果动画 */
+@keyframes liquidFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes liquidPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* 液态光晕效果 */
+.liquid-glow {
+  position: relative;
+}
+
+.liquid-glow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(45deg, 
+    var(--accent-primary), 
+    var(--accent-secondary), 
+    var(--accent-tertiary));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, 
+              linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.liquid-glow:hover::after {
+  opacity: 1;
+}
+
 body {
   background: var(--bg-secondary);
   color: var(--text-primary);
