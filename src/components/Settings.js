@@ -19,7 +19,10 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
   const [testMessage, setTestMessage] = useState("");
   const [testSuccess, setTestSuccess] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState('bottom');
   const [storageInfo, setStorageInfo] = useState(null);
+  const dropdownRef = useRef(null);
+  const [dropdownWidth, setDropdownWidth] = useState(undefined);
 
   // 硅基流动模型列表，按类型排序（与ModelSelector保持一致）
   const siliconFlowModels = {
@@ -144,6 +147,20 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
     };
   }, []);
 
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showModelDropdown && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowModelDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showModelDropdown]);
+
   const handleClearHistory = async () => {
     if (window.confirm("确定要清除所有聊天历史吗？此操作不可撤销。")) {
       await clearChatHistory();
@@ -172,35 +189,28 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
 
   const toggleModelDropdown = () => {
     const newShowState = !showModelDropdown;
-    setShowModelDropdown(newShowState);
     
     if (newShowState) {
-      // 延迟设置位置，确保DOM已更新
-      setTimeout(() => {
-        const trigger = document.querySelector('.dropdown-trigger');
-        const dropdown = document.querySelector('.dropdown-menu');
+      // 计算下拉菜单位置
+      const container = dropdownRef.current;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - rect.bottom;
+        const spaceAbove = rect.top;
+
+        setDropdownWidth(rect.width);
         
-        if (trigger && dropdown) {
-          const rect = trigger.getBoundingClientRect();
-          const viewportHeight = window.innerHeight;
-          const spaceBelow = viewportHeight - rect.bottom;
-          
-          // 设置宽度和位置
-          dropdown.style.width = `${rect.width}px`;
-          dropdown.style.left = `${rect.left}px`;
-          
-          if (spaceBelow < 300) {
-            // 向上显示
-            dropdown.style.top = 'auto';
-            dropdown.style.bottom = `${viewportHeight - rect.top + 4}px`;
-          } else {
-            // 向下显示
-            dropdown.style.top = `${rect.bottom + 4}px`;
-            dropdown.style.bottom = 'auto';
-          }
+        // 如果下方空间不足，则向上显示
+        if (spaceBelow < 300 && spaceAbove > 300) {
+          setDropdownPosition('top');
+        } else {
+          setDropdownPosition('bottom');
         }
-      }, 0);
+      }
     }
+    
+    setShowModelDropdown(newShowState);
   };
 
   const handleSave = async () => {
@@ -315,7 +325,7 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
           {/* 模型选择 */}
           <div className="setting-group">
             <label>默认模型选择 *</label>
-            <div className="simple-dropdown">
+            <div className="simple-dropdown" ref={dropdownRef}>
               <button
                 type="button"
                 className="dropdown-trigger"
@@ -375,7 +385,8 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
               </button>
 
               {showModelDropdown && (
-                <div className="dropdown-menu">
+                <div className={`dropdown-menu ${dropdownPosition}`}
+                     style={{  width: dropdownWidth, right: 'auto' }}>
                   {Object.entries(siliconFlowModels).map(([categoryKey, category]) => (
                     <div key={categoryKey} className="dropdown-category">
                       <div className="dropdown-category-header">{category.name}</div>
