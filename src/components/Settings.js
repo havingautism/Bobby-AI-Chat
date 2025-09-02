@@ -471,27 +471,27 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
                   />
                 </div>
               </div>
+              
+              {/* 存储信息 */}
+              <div className="setting-group">
+                <label>存储信息</label>
+                {storageInfo ? (
+                  <div className="storage-info">
+                    <p>对话数量: {storageInfo.conversationCount}</p>
+                    <p>总大小: {storageInfo.totalSize}</p>
+                    <button 
+                      className="danger-button" 
+                      onClick={handleClearHistory}
+                    >
+                      清除所有聊天历史
+                    </button>
+                  </div>
+                ) : (
+                  <p>加载中...</p>
+                )}
+              </div>
             </div>
           </details>
-
-          {/* 存储信息 */}
-          <div className="setting-group">
-            <label>存储信息</label>
-            {storageInfo ? (
-              <div className="storage-info">
-                <p>对话数量: {storageInfo.conversationCount}</p>
-                <p>总大小: {storageInfo.totalSize}</p>
-                <button 
-                  className="danger-button" 
-                  onClick={handleClearHistory}
-                >
-                  清除所有聊天历史
-                </button>
-              </div>
-            ) : (
-              <p>加载中...</p>
-            )}
-          </div>
           
           {/* 保存消息 */}
           {saveMessage && (

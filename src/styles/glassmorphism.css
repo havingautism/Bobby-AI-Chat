@@ -102,13 +102,27 @@
     rgba(255, 255, 255, 0.08) 0%, 
     rgba(0, 0, 0, 0.2) 100%);
   border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: var(--glass-shadow-dark);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .liquid-glass:hover {
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.12) 0%, 
     rgba(0, 0, 0, 0.25) 100%);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* 深色模式下的变量调整 */
+[data-theme="dark"] {
+  --glass-bg-light: rgba(255, 255, 255, 0.08);
+  --glass-bg-light-hover: rgba(255, 255, 255, 0.12);
+  --glass-bg-dark: rgba(0, 0, 0, 0.2);
+  --glass-bg-dark-hover: rgba(0, 0, 0, 0.3);
+  --glass-border-light: rgba(255, 255, 255, 0.08);
+  --glass-border-dark: rgba(0, 0, 0, 0.2);
+  --glass-shadow-light: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --glass-shadow-dark: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
 /* 超强玻璃效果（用于重要元素） */
@@ -154,6 +168,58 @@
 .liquid-button:hover::before {
   width: 300px;
   height: 300px;
+}
+
+/* 通用液态玻璃工具类 */
+.glass-sm {
+  border-radius: var(--border-radius-sm);
+  padding: 8px 12px;
+}
+
+.glass-md {
+  border-radius: var(--border-radius-md);
+  padding: 12px 16px;
+}
+
+.glass-lg {
+  border-radius: var(--border-radius-lg);
+  padding: 16px 20px;
+}
+
+.glass-xl {
+  border-radius: var(--border-radius-xl);
+  padding: 20px 24px;
+}
+
+/* 液态卡片效果 */
+.liquid-card {
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--glass-shadow-light);
+  padding: 20px;
+  transition: var(--transition-smooth);
+}
+
+.liquid-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--glass-shadow-dark);
+  border-color: var(--accent-primary);
+}
+
+/* 液态分隔线 */
+.liquid-divider {
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    var(--glass-border-light) 20%, 
+    var(--glass-border-light) 80%, 
+    transparent 100%);
+  margin: 16px 0;
 }
 
 /* --- Sidebar --- */
