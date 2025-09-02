@@ -173,9 +173,16 @@ const ChatInterface = ({
       // 不在这里设置标题，让AI在回复后自动生成
     };
 
-    // 如果是第一条消息且有角色信息，保存角色到对话中
-    if (conversation.messages.length === 0 && options.role) {
-      updates.role = options.role;
+    // 如果是第一条消息，保存角色和响应模式到对话中
+    if (conversation.messages.length === 0) {
+      if (options.role) {
+        updates.role = options.role;
+      }
+      if (options.responseMode) {
+        updates.responseMode = options.responseMode;
+        // 同时更新本地状态
+        setResponseMode(options.responseMode);
+      }
     }
 
     onUpdateConversation(currentConversationId, updates);

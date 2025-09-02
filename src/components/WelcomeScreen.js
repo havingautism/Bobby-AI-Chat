@@ -8,6 +8,10 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
   const [selectedRole, setSelectedRole] = useState(loadSelectedRole());
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+  const [responseMode, setResponseMode] = useState(() => {
+    // 从 localStorage 读取保存的响应模式
+    return localStorage.getItem('lastResponseMode') || "normal";
+  });
   const dropdownRef = useRef(null);
 
   // 点击外部关闭下拉菜单
@@ -61,8 +65,15 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
         role: selectedRole,
         temperature: selectedRoleData.temperature,
         systemPrompt: selectedRoleData.systemPrompt,
+        responseMode: responseMode,
       });
     }
+  };
+
+  const handleResponseModeChange = (newMode) => {
+    setResponseMode(newMode);
+    // 保存到 localStorage
+    localStorage.setItem('lastResponseMode', newMode);
   };
 
   const handleRoleChange = (roleId) => {
@@ -79,6 +90,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
       role: selectedRole,
       temperature: selectedRoleData.temperature,
       systemPrompt: selectedRoleData.systemPrompt,
+      responseMode: responseMode,
     });
   };
 
@@ -192,6 +204,8 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
             }
             expandDirection="down"
             className="welcome-chat-input"
+            responseMode={responseMode}
+            onResponseModeChange={handleResponseModeChange}
           />
         </div>
 
