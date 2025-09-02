@@ -184,15 +184,13 @@
 }
 
 .dropdown-menu {
-  position: fixed;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   box-shadow: var(--shadow-lg);
   z-index: 999999;
-  max-height: 300px;
-  overflow-y: auto;
-  width: 100%;
+  max-height: 350px;
+  width: 150px;
   max-width: 600px;
 }
 

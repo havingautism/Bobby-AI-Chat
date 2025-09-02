@@ -69,54 +69,8 @@ const ChatInput = ({
   }, [showDropdown]);
 
   const toggleDropdown = () => {
-    console.log('toggleDropdown clicked, current state:', showDropdown);
     const newShowState = !showDropdown;
     setShowDropdown(newShowState);
-    
-    if (newShowState) {
-      // 延迟设置位置，确保DOM已更新
-      setTimeout(() => {
-        const button = document.querySelector('.plus-button');
-        const dropdown = document.querySelector('.dropdown-menu');
-        
-                 if (button && dropdown) {
-           const buttonRect = button.getBoundingClientRect();
-           const isMobile = window.innerWidth <= 768;
-          
-                     if (isMobile) {
-             // 移动端：使用合适的固定宽度，向上展开
-             const containerRect = document.querySelector('.input-wrapper-clean').getBoundingClientRect();
-             
-             // 移动端使用固定宽度，但比PC端稍宽一些
-             const mobileWidth = 240; // 移动端固定宽度
-             dropdown.style.width = `${mobileWidth}px`;
-             
-             // 右对齐，与PC端保持一致
-             dropdown.style.left = `${buttonRect.right - mobileWidth}px`;
-             
-             // 计算下拉菜单的高度
-             const itemHeight = 44; // 移动端菜单项更高
-             const itemCount = 3;
-             const dropdownHeight = itemHeight * itemCount;
-             
-             dropdown.style.top = `${buttonRect.top - dropdownHeight - 8}px`;
-             dropdown.style.bottom = 'auto';
-           } else {
-            // PC端：固定宽度，右对齐
-            dropdown.style.width = '200px';
-            
-            // 计算下拉菜单的高度
-            const itemHeight = 36; // PC端菜单项稍矮
-            const itemCount = 3;
-            const dropdownHeight = itemHeight * itemCount;
-            
-            dropdown.style.left = `${buttonRect.right - 200}px`; // 右对齐
-            dropdown.style.top = `${buttonRect.top - dropdownHeight - 8}px`;
-            dropdown.style.bottom = 'auto';
-          }
-        }
-      }, 0);
-    }
   };
 
   // 处理文件上传
@@ -350,12 +304,7 @@ const ChatInput = ({
                 <button
                   type="button"
                   className="plus-button"
-                  onClick={(e) => {
-                    console.log('Plus button clicked');
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleDropdown();
-                  }}
+                  onClick={toggleDropdown}
                   disabled={disabled}
                   title={t("moreOptions", currentLanguage)}
                 >
@@ -367,7 +316,6 @@ const ChatInput = ({
                 {/* 简化的下拉菜单 */}
                 {showDropdown && (
                   <div className="dropdown-menu">
-                    {console.log('Dropdown menu rendered, showDropdown:', showDropdown)}
                     <div className="dropdown-item" onClick={handleNewChat}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />

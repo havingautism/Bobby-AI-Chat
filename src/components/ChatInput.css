@@ -154,15 +154,48 @@
 
 /* 下拉菜单样式 */
 .dropdown-menu {
-  position: fixed;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  position: absolute;
+  /* 改为向上展开 */
+  bottom: calc(100% + 8px);
+  top: auto;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  box-shadow: var(--shadow-lg);
-  z-index: 99999;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 9999999;
   overflow: hidden;
+  width: 200px;
+  /* 去掉下方间距，使用 bottom 偏移 */
+  margin-top: 0;
   /* 确保下拉菜单可见 */
   pointer-events: auto;
+}
+
+/* 下拉菜单箭头：移动到底部并指向下方 */
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  right: 20px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #ffffff;
+}
+
+.dropdown-menu::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  right: 20px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #e5e7eb;
+  z-index: -1;
 }
 
 .dropdown-item {
@@ -191,6 +224,11 @@
   .dropdown-item svg {
     width: 18px;
     height: 18px;
+  }
+  
+  /* 移动端设置更宽的固定宽度 */
+  .dropdown-menu {
+    width: 240px;
   }
 }
 
