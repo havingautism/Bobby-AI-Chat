@@ -264,3 +264,64 @@ tr:hover {
     padding: 8px 12px;
   }
 }
+
+/* 移动端滚动条优化 */
+@media (max-width: 768px) {
+  /* 隐藏所有滚动条但保持滚动功能 */
+  ::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    display: none;
+  }
+  
+  /* Firefox 隐藏滚动条 */
+  * {
+    scrollbar-width: none;
+  }
+  
+  /* 确保内容可以滚动 */
+  .chat-messages,
+  .conversations-list,
+  .code-content,
+  .welcome-textarea,
+  .message-textarea-clean,
+  .dropdown-menu,
+  .model-dropdown,
+  .timeline-items,
+  pre,
+  code {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+/* 触摸设备滚动条优化 */
+@media (hover: none) and (pointer: coarse) {
+  /* 为触摸设备提供窄滚动条 */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  
+  /* 暗色模式下的滚动条 */
+  [data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  
+  [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}

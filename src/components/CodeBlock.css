@@ -170,6 +170,18 @@
   background: #6b7280;
 }
 
+/* 移动端滚动条隐藏 */
+@media (max-width: 768px) {
+  .code-content::-webkit-scrollbar {
+    height: 0px;
+    display: none;
+  }
+  
+  .code-content {
+    scrollbar-width: none;
+  }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .code-block {

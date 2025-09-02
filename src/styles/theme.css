@@ -96,6 +96,15 @@ button {
   background-color: var(--text-tertiary);
 }
 
+/* 移动端滚动条隐藏 */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    display: none;
+  }
+}
+
 /* 代码块主题 */
 .code-block {
   background: var(--code-bg);
