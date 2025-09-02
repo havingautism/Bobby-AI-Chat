@@ -2046,3 +2046,24 @@
   border-color: rgba(99, 102, 241, 0.3);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
+
+.collapsed-section-title {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  padding: 6px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.collapsed-divider {
+  align-self: stretch; /* 占满窄侧栏宽度 */
+  height: 1px;
+
+  background: rgb(0 0 0 / 8%);
+  opacity: 0.9; /* 提升可见度 */
+  border-radius: 1px;
+}
+
+[data-theme="dark"] .collapsed-divider {
+  background: rgba(255, 255, 255, 0.16); /* 暗色更明显 */
+}
