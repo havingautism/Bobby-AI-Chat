@@ -7,6 +7,16 @@
   overflow-y: auto;
 }
 
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .welcome-screen {
+    /* 为固定header留出空间 */
+    padding-top: 80px;
+    /* 为固定输入框留出空间 */
+    padding-bottom: 140px;
+  }
+}
+
 .welcome-content {
   max-width: 768px;
   width: 100%;

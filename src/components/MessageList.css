@@ -13,6 +13,15 @@
   text-align: center;
 }
 
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .empty-state {
+    /* 为固定header留出空间，不预留底部空白 */
+    padding-top: 80px;
+    padding-bottom: 20px;
+  }
+}
+
 .empty-content {
   max-width: 1000px; /* 增加空状态容器宽度 */
   width: 100%;
@@ -110,9 +119,50 @@
 
 .message {
   width: 100%;
-  padding: 16px 0;
+  padding: 8px 0;
   transition: all 0.2s ease;
   position: relative;
+}
+
+/* 用户消息气泡右对齐 */
+.message.user .message-container {
+  justify-content: flex-end;
+}
+
+.message.user .message-content {
+  margin-left: auto;
+}
+
+/* 移动端消息样式 */
+@media (max-width: 768px) {
+  .message {
+    /* 移除底部padding，不预留空白 */
+    padding: 8px 0;
+  }
+  
+  /* 最后一条消息保持一致间距 */
+  .message:last-child {
+    padding-bottom: 8px;
+  }
+  
+  /* 消息操作按钮优化 */
+  .copy-button,
+  .regenerate-button {
+    /* 触摸反馈 */
+    transition: all 0.15s ease;
+  }
+  
+  .copy-button:active,
+  .regenerate-button:active {
+    transform: scale(0.9);
+  }
+  
+  /* 确保代码块可以选中文本 */
+  .message-content pre,
+  .message-content code {
+    user-select: text;
+    -webkit-user-select: text;
+  }
 }
 
 .message-container {
@@ -122,6 +172,11 @@
   gap: 16px;
   align-items: flex-start; /* 确保头像和文字顶部对齐 */
   position: relative;
+}
+
+/* 用户消息容器右对齐 */
+.message.user .message-container {
+  justify-content: flex-end;
 }
 
 .message-avatar {
@@ -247,7 +302,7 @@
 
 .message.user .message-content {
   max-width: 75%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
   font-weight: 500;
 }
 
@@ -407,6 +462,7 @@
 }
 
 .message-content p {
+  
   margin: 12px 0; /* 稍微增加段落间距 */
   line-height: 1.6;
   font-weight: 450; /* 增加段落字重 */
@@ -755,6 +811,7 @@
   color: var(--message-text-primary);
   max-width: 100%;
   padding: 0;
+  margin-left: 6px;
 }
 
 /* .message.assistant::before {

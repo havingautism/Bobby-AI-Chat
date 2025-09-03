@@ -125,30 +125,6 @@ const MessageList = ({
             } ${currentMessageId === message.id ? "jump-highlight" : ""}`}
           >
             <div className="message-container">
-              <div className="message-avatar">
-                {message.role === "user" ? (
-                  <div className="user-avatar">👤</div>
-                ) : (
-                  <div className="bobby-avatar">
-                    {role ? (
-                      <div
-                        className="role-avatar-large"
-                        style={{ color: role.color }}
-                      >
-                        {role.avatar}
-                      </div>
-                    ) : (
-                      <img
-                        width="30"
-                        height="30"
-                        src={bobbyLogo}
-                        alt="Bobby"
-                        className="bobby-logo"
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
               <div className="message-content">
                 {message.role === "assistant" ? (
                   <>

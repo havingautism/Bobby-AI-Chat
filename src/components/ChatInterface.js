@@ -7,7 +7,7 @@ import ConversationTimeline from "./ConversationTimeline";
 import { sendMessage, sendMessageStream, isApiConfigured, generateChatTitleStream } from "../utils/api";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
 import { getCurrentLanguage, t } from "../utils/language";
-
+import { initMobileOptimizer } from "../utils/mobileOptimizer";
 
 import "./ChatInterface.css";
 //
@@ -74,6 +74,27 @@ const ChatInterface = ({
   useEffect(() => {
     scrollToBottom();
   }, [conversation.messages]);
+
+  // 初始化移动端优化器
+  useEffect(() => {
+    const mobileOptimizer = initMobileOptimizer();
+    
+    // 添加滚动性能优化类
+    const chatMessages = document.querySelector('.chat-messages');
+    if (chatMessages) {
+      chatMessages.classList.add('optimized-scrolling');
+    }
+    
+    // 组件卸载时清理
+    return () => {
+      if (mobileOptimizer && mobileOptimizer.disable) {
+        mobileOptimizer.disable();
+      }
+      if (chatMessages) {
+        chatMessages.classList.remove('optimized-scrolling');
+      }
+    };
+  }, []);
 
   // 同步会话的响应模式
   useEffect(() => {
@@ -600,16 +621,22 @@ const ChatInterface = ({
             ☰
           </button>
           <div className="conversation-header">
-            <h1 className="conversation-title">
-              {conversation.title || "新对话"}
-            </h1>
-            <button
-              className="logo-button"
-              style={{ color: getRoleById(currentRole).color, display: 'none' }}
-              title={getRoleById(currentRole).name}
-            >
-              {getRoleById(currentRole).avatar}
-            </button>
+            <div className="conversation-info">
+              <div 
+                className="conversation-avatar"
+                style={{ color: getRoleById(conversation.role || currentRole).color }}
+              >
+                {getRoleById(conversation.role || currentRole).avatar}
+              </div>
+              <div className="conversation-details">
+                <div className="conversation-role">
+                  {getRoleById(conversation.role || currentRole).name}
+                </div>
+                <h1 className="conversation-title">
+                  {conversation.title || "新对话"}
+                </h1>
+              </div>
+            </div>
           </div>
         </div>
         <div className="header-actions">
@@ -622,22 +649,24 @@ const ChatInterface = ({
             className="header-model-selector"
           />
           
-          {/* 移动端时间线按钮 */}
-          <button
-            className="timeline-toggle mobile-only"
-            onClick={() => {
-              const timeline = document.querySelector('.conversation-timeline');
-              if (timeline) {
-                timeline.classList.toggle('timeline-visible');
-              }
-            }}
-            title={t("timeline", currentLanguage)}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12,6 12,12 16,14"/>
-            </svg>
-          </button>
+          {/* 移动端时间线按钮 - 只在有2条以上用户消息时显示 */}
+          {conversation.messages && conversation.messages.filter(msg => msg.role === "user").length > 1 && (
+            <button
+              className="timeline-toggle mobile-only"
+              onClick={() => {
+                const timeline = document.querySelector('.conversation-timeline');
+                if (timeline) {
+                  timeline.classList.toggle('timeline-visible');
+                }
+              }}
+              title={t("timeline", currentLanguage)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12,6 12,12 16,14"/>
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
