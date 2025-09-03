@@ -40,7 +40,7 @@ jobs:
     # 后续步骤保持不变
     # Subsequent steps remain the same
     - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      run: pnpm install
 
     - name: Build
       run: pnpm run build
