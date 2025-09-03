@@ -1053,7 +1053,6 @@
   gap: 8px;
 }
 
-.sidebar.collapsed .settings-btn,
 .sidebar.collapsed .theme-toggle-btn,
 .sidebar.collapsed .collapse-toggle-btn {
   width: 36px;
@@ -2157,6 +2156,58 @@
   transform: scale(0.95);
 }
 
+.settings-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.settings-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  transform: scale(1.05);
+}
+
+.settings-btn:active {
+  transform: scale(0.95);
+}
+
+.language-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.language-toggle-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  transform: scale(1.05);
+}
+
+.language-toggle-btn:active {
+  transform: scale(0.95);
+}
+
 /* 收起按钮样式 */
 .collapse-toggle-btn {
   background: none;
@@ -2190,7 +2241,30 @@
   gap: 8px;
 }
 
-.sidebar.collapsed .settings-btn,
+.sidebar.collapsed .settings-btn {
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.sidebar.collapsed .settings-btn:hover {
+  background: var(--bg-tertiary);
+  transform: scale(1.05);
+}
+
+.sidebar.collapsed .language-toggle-btn {
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.sidebar.collapsed .language-toggle-btn:hover {
+  background: var(--bg-tertiary);
+  transform: scale(1.05);
+}
+
 .sidebar.collapsed .theme-toggle-btn,
 .sidebar.collapsed .collapse-toggle-btn {
   width: 36px;

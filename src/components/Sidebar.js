@@ -2,8 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { AI_ROLES, getRoleById } from "../utils/roles";
 import { getCurrentTheme, toggleTheme } from "../utils/theme";
 import { getCurrentLanguage, t } from "../utils/language";
-import LanguageToggle from "./LanguageToggle";
 import DeleteConfirmModal from "./DeleteConfirmModal";
+import LanguageToggle from "./LanguageToggle";
 import "./Sidebar.css";
 
 const Sidebar = ({
@@ -456,13 +456,24 @@ const Sidebar = ({
         {/* 底部按钮区域 */}
         <div className="sidebar-footer">
           <div className="footer-buttons">
-            {/* 用户头像按钮 */}
+            {/* 设置按钮 */}
             <button
-              className="user-avatar-btn"
+              className="settings-btn"
               onClick={onOpenSettings}
               title={t("settings", currentLanguage)}
             >
-              <div className="user-avatar">👤</div>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1" />
+                <path d="M20.49 7.52l-4.24 4.24m-6.36 6.36l-4.24 4.24M3.51 7.52l4.24 4.24m6.36 6.36l4.24 4.24" />
+              </svg>
             </button>
 
             {/* 主题切换按钮 */}
