@@ -27,14 +27,14 @@ jobs:
       with:
         version: 9
 
+    # 关键改动在这里！
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'pnpm'
+        # 我们暂时移除了 cache: 'pnpm' 这一行，
+        # 因为 pnpm-lock.yaml 文件已被删除，无法进行缓存。
 
-    # 关键改动：暂时移除了 --frozen-lockfile
-    # 因为我们删除了 lock 文件，需要让 pnpm 根据 package.json 重新安装
     - name: Install dependencies
       run: pnpm install
 
