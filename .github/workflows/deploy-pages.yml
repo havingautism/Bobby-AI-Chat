@@ -27,7 +27,7 @@ jobs:
     - name: Install pnpm
       uses: pnpm/action-setup@v4
       with:
-        version: 8
+        version: 9
 
     # 现在 setup-node 可以找到 pnpm 命令来配置缓存了
     # Now that pnpm is installed, setup-node can find it to configure caching
