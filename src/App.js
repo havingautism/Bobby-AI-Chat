@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import "./App.css";
 import "./styles/theme.css";
 import "./styles/glassmorphism.css"; // Import the new theme
+import "./utils/mobileFontOptimizer"; // Import mobile font optimizer
 
 function App() {
   const [conversations, setConversations] = useState([]);
@@ -27,6 +28,12 @@ function App() {
   useEffect(() => {
     const apiConfig = getApiConfig();
     setDefaultModel(apiConfig.model || "deepseek-ai/DeepSeek-V3.1");
+    
+    // 初始化移动字体优化器
+    if (window.MobileFontOptimizer) {
+      const fontOptimizer = new window.MobileFontOptimizer();
+      window.fontOptimizer = fontOptimizer; // 全局访问
+    }
   }, []);
 
   // 监听默认模型变化，更新空对话的模型

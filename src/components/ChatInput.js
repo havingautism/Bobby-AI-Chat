@@ -27,6 +27,8 @@ const ChatInput = ({
   const dropdownRef = useRef(null);
   const quickResponseRef = useRef(null);
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
+  const [inputHeight, setInputHeight] = useState(0);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -35,6 +37,14 @@ const ChatInput = ({
       setMessage("");
       setUploadedFile(null);
       setFilePreview(null);
+      
+      // 发送消息后重置输入框高度
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "24px";
+          window.dispatchEvent(new CustomEvent('inputHeightChange'));
+        }
+      }, 100);
     }
   };
 
@@ -75,6 +85,61 @@ const ChatInput = ({
       };
     }
   }, [showDropdown, showQuickResponseDropdown]);
+
+  // 动态调整chat-messages的padding-bottom以适应输入框高度
+  useEffect(() => {
+    const updateMessagesPadding = () => {
+      if (textareaRef.current) {
+        const isMobile = window.innerWidth <= 768;
+        const inputContainer = textareaRef.current.closest('.chat-input-container');
+        const chatMessages = document.querySelector('.chat-messages');
+        
+        if (inputContainer && chatMessages) {
+          // 获取输入框的实际高度
+          const containerHeight = inputContainer.offsetHeight;
+          
+          // 移除所有padding bottom，不预留空白
+          chatMessages.style.paddingBottom = '0px';
+          setInputHeight(containerHeight);
+        }
+      }
+    };
+
+    // 初始化时设置一次
+    updateMessagesPadding();
+
+    // 监听窗口大小变化
+    const handleResize = () => {
+      updateMessagesPadding();
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    // 监听输入框内容变化（通过自定义事件）
+    const handleInputChange = () => {
+      setTimeout(updateMessagesPadding, 10); // 延迟10ms确保DOM已更新
+    };
+
+    window.addEventListener('inputHeightChange', handleInputChange);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('inputHeightChange', handleInputChange);
+    };
+  }, [className]); // 添加className依赖
+
+  // 监听message状态变化，当消息被清空时重置输入框高度
+  useEffect(() => {
+    if (!message.trim() && textareaRef.current) {
+      // 延迟重置以确保DOM更新完成
+      setTimeout(() => {
+        if (textareaRef.current && !textareaRef.current.value.trim()) {
+          textareaRef.current.style.height = "24px";
+          window.dispatchEvent(new CustomEvent('inputHeightChange'));
+        }
+      }, 50);
+    }
+  }, [message]);
 
   // 同步外部 responseMode 的变化
   useEffect(() => {
@@ -218,6 +283,7 @@ const ChatInput = ({
               placeholder={placeholder || (uploadedFile ? t("typeMessageWithFile", currentLanguage) : t("typeMessage", currentLanguage))}
               disabled={disabled}
               rows={1}
+              ref={textareaRef}
               className="message-textarea-clean"
               style={{
                 height: "auto",
@@ -251,6 +317,42 @@ const ChatInput = ({
                     container.classList.add('expand-downward');
                     container.classList.remove('expand-upward');
                   }
+                }
+                
+                // 触发自定义事件通知输入框高度变化
+                window.dispatchEvent(new CustomEvent('inputHeightChange'));
+                
+                // 简化的移动端键盘处理
+                if (isMobile && document.activeElement === e.target && !className.includes('welcome-chat-input')) {
+                  // 简单的滚动到输入框，让CSS处理视口适配
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  }, 100);
+                }
+              }}
+              
+              // 添加失焦事件处理
+              onBlur={(e) => {
+                // 重置输入框高度为单行高度
+                e.target.style.height = "auto";
+                
+                // 移除键盘打开的类（如果需要）
+                const isMobile = window.innerWidth <= 768;
+                if (isMobile && !className.includes('welcome-chat-input')) {
+                  document.body.classList.remove('keyboard-open');
+                  
+                  // 移动端失焦时触发padding更新
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('inputHeightChange'));
+                  }, 50);
+                }
+                
+                // 如果输入框内容为空，确保重置为最小高度
+                if (!e.target.value.trim()) {
+                  e.target.style.height = "24px";
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('inputHeightChange'));
+                  }, 50);
                 }
               }}
             />

@@ -387,7 +387,7 @@
   border-radius: var(--border-radius-md);
   color: var(--text-primary);
   font-size: 15px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
   font-weight: 400;
   line-height: 1.4;
   transition: var(--transition-smooth);
@@ -458,7 +458,7 @@
   margin-bottom: 10px;
   margin-top: 10px;
   padding: 0 8px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
 }
 
 .conversation-item {
@@ -572,7 +572,7 @@
   font-size: 15px;
   color: var(--text-primary-color);
   margin-bottom: 6px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
   font-weight: 500;
   line-height: 1.4;
 }
@@ -580,7 +580,7 @@
 .no-results-hint {
   font-size: 13px;
   color: var(--text-secondary-color);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
   font-weight: 400;
   line-height: 1.4;
 }
@@ -606,7 +606,7 @@
   text-overflow: ellipsis;
   font-weight: 500;
   line-height: 1.4;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
   margin-bottom: 3px;
 }
 
@@ -621,7 +621,7 @@
   outline: none;
   font-weight: 500;
   line-height: 1.4;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
   transition: all 0.2s ease;
 }
 
@@ -839,6 +839,7 @@
     top: 0;
     left: -100%;
     height: 100vh;
+    height: 100dvh; /* 动态视口高度 */
     width: 280px; /* 减小移动端宽度，从260px调整到280px */
     z-index: 999;
     transform: none;
@@ -859,6 +860,14 @@
     /* 覆盖glass-pane的毛玻璃效果 */
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    /* 修复移动端侧边栏滚动和地址栏遮挡问题 */
+    max-height: 100dvh;
+    overflow-y: auto;
+    /* 为iOS安全区域留出空间 */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    /* iOS Safari 兼容 */
+    min-height: -webkit-fill-available;
   }
 
   .sidebar.open {
@@ -929,6 +938,9 @@
   /* 移动端对话列表优化 */
   .conversations-list {
     padding: 8px;
+    /* 确保对话列表可以在移动端滚动 */
+    overflow-y: auto;
+    max-height: calc(100dvh - 200px); /* 减去头部和底部的高度，使用动态视口 */
   }
 
   .conversation-item {
@@ -1363,6 +1375,7 @@
 
 /* 对话角色标签 */
 .conversation-role {
+  width: min-content;
   font-size: 9px;
   font-weight: 600;
   opacity: 0.85;
@@ -1403,7 +1416,7 @@
   border-radius: var(--border-radius-md);
   color: var(--text-primary);
   font-size: 15px; /* 与对话UI一致 */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif; /* 统一字体 */
   font-weight: 400;
   line-height: 1.4;
   transition: var(--transition-smooth);
@@ -1474,7 +1487,7 @@
   margin-bottom: 10px; /* 增加下边距 */
   margin-top: 10px;
   padding: 0 8px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif; /* 统一字体 */
 }
 
 .conversation-item {
@@ -1590,7 +1603,7 @@
   font-size: 15px; /* 与对话UI一致 */
   color: var(--text-primary);
   margin-bottom: 6px; /* 增加间距 */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif; /* 统一字体 */
   font-weight: 500;
   line-height: 1.4;
 }
@@ -1598,7 +1611,7 @@
 .no-results-hint {
   font-size: 13px; /* 稍微增大字体 */
   color: var(--text-tertiary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif; /* 统一字体 */
   font-weight: 400;
   line-height: 1.4;
 }
@@ -1624,7 +1637,7 @@
   text-overflow: ellipsis;
   font-weight: 500; /* 增加字重，更现代化 */
   line-height: 1.4; /* 改善行间距 */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 与对话UI字体一致 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif; /* 与对话UI字体一致 */
   margin-bottom: 3px;
 }
 
@@ -1639,7 +1652,7 @@
   outline: none;
   font-weight: 500; /* 与标题字重一致 */
   line-height: 1.4; /* 与标题行间距一致 */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 与对话UI字体一致 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif; /* 与对话UI字体一致 */
   transition: all 0.2s ease; /* 添加过渡效果 */
 }
 
@@ -2026,7 +2039,7 @@
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 3px; /* 稍微增加间距 */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif; /* 统一字体 */
   line-height: 1.3; /* 添加行间距 */
 }
 
@@ -2034,7 +2047,7 @@
   font-size: 13px; /* 稍微增大字体 */
   color: var(--text-secondary);
   font-weight: 500;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* 统一字体 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif; /* 统一字体 */
   line-height: 1.3; /* 添加行间距 */
 }
 

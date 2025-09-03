@@ -1,6 +1,30 @@
 /* 全局重置 - 移除所有蓝色焦点框 */
 * {
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 可选择文本的元素 */
+input, textarea, [contenteditable] {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+
+/* 移动端全局优化 */
+@media (max-width: 768px) {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    /* 防止页面级别的下拉刷新 */
+    overscroll-behavior-y: none;
+  }
+  
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
 }
 *:focus,
 *:focus-visible,
@@ -110,10 +134,13 @@
 .app {
   display: flex;
   height: 100vh;
+  height: 100dvh; /* 动态视口高度，适配移动端键盘弹出 */
   background: var(--bg-secondary);
   position: relative;
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
+  /* iOS Safari 兼容 */
+  min-height: -webkit-fill-available;
 }
 
 .main-content {
