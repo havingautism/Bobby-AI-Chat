@@ -13,7 +13,7 @@ jobs:
       contents: read
       pages: write
       id-token: write
-    
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -22,17 +22,23 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    # 关键改动：先运行 pnpm/action-setup 来安装 pnpm
+    # This step installs pnpm and adds it to the PATH
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+
+    # 现在 setup-node 可以找到 pnpm 命令来配置缓存了
+    # Now that pnpm is installed, setup-node can find it to configure caching
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'pnpm'
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 8
-
+    # 后续步骤保持不变
+    # Subsequent steps remain the same
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
 
@@ -45,8 +51,9 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: './build'
+        path: './build' # 确保你的构建输出目录是 'build'
 
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
+
