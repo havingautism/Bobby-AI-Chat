@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import MessageList from "./MessageList";
-import MessageInput from "./MessageInput";
+import ChatInput from "./ChatInput";
 import WelcomeScreen from "./WelcomeScreen";
 import ModelSelector from "./ModelSelector";
 import ConversationTimeline from "./ConversationTimeline";
 import { sendMessage, sendMessageStream, isApiConfigured, generateChatTitleStream } from "../utils/api";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
+import { getCurrentLanguage, t } from "../utils/language";
 
 
 import "./ChatInterface.css";
@@ -17,9 +18,12 @@ const ChatInterface = ({
   onToggleSidebar,
   onOpenSettings,
 }) => {
+  // 获取当前会话的响应模式，默认为 normal
+  const [responseMode, setResponseMode] = useState(conversation.responseMode || "normal");
   // 不再需要独立的加载状态管理
   // const [loadingConversations, setLoadingConversations] = useState(new Set());
   const [currentRole, setCurrentRole] = useState(() => loadSelectedRole());
+  const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingConversationId, setStreamingConversationId] = useState(null);
   // const [streamingMessageId, setStreamingMessageId] = useState(null);
@@ -29,7 +33,7 @@ const ChatInterface = ({
   const [currentMessageId, setCurrentMessageId] = useState(null);
 
   const messagesEndRef = useRef(null);
-  
+
   // 停止流式输出
   const stopStreaming = () => {
     if (abortController) {
@@ -39,6 +43,12 @@ const ChatInterface = ({
       // setStreamingMessageId(null);
       setAbortController(null);
     }
+  };
+
+  // 处理响应模式变化
+  const handleResponseModeChange = (newMode) => {
+    setResponseMode(newMode);
+    onUpdateConversation(conversation.id, { responseMode: newMode });
   };
 
   // 不再需要独立的加载状态，使用流式输出的内联指示器
@@ -65,6 +75,13 @@ const ChatInterface = ({
     scrollToBottom();
   }, [conversation.messages]);
 
+  // 同步会话的响应模式
+  useEffect(() => {
+    if (conversation.responseMode !== undefined) {
+      setResponseMode(conversation.responseMode);
+    }
+  }, [conversation.responseMode]);
+
   // 监听角色变化
   useEffect(() => {
     const handleStorageChange = () => {
@@ -81,10 +98,22 @@ const ChatInterface = ({
     };
   }, []);
 
+  // 监听语言变化
+  useEffect(() => {
+    const handleLanguageChange = (event) => {
+      setCurrentLanguage(event.detail);
+    };
+
+    window.addEventListener("languageChanged", handleLanguageChange);
+    return () => {
+      window.removeEventListener("languageChanged", handleLanguageChange);
+    };
+  }, []);
 
 
-  const handleSendMessage = async (content, options = {}) => {
-    if (!content.trim() || isStreaming) return;
+
+  const handleSendMessage = async (content, uploadedFile = null, options = {}) => {
+    if ((!content.trim() && !uploadedFile) || isStreaming) return;
 
     // 检查API是否配置
     if (!isApiConfigured()) {
@@ -95,12 +124,46 @@ const ChatInterface = ({
     // 保存当前对话ID，防止在异步操作过程中ID发生变化
     const currentConversationId = conversation.id;
 
+    // 处理文件内容
+    let fileContent = "";
+    let imageData = null;
+    if (uploadedFile && uploadedFile.type) {
+      if (uploadedFile.type.startsWith('image/')) {
+        // 图片文件，保存base64数据用于多模态消息
+        const reader = new FileReader();
+        imageData = await new Promise((resolve) => {
+          reader.onload = (e) => {
+            resolve(e.target.result);
+          };
+          reader.readAsDataURL(uploadedFile);
+        });
+        // 图片数据将用于多模态消息，不添加文本描述
+      } else {
+        // 文本文件，读取内容
+        const reader = new FileReader();
+        fileContent = await new Promise((resolve) => {
+          reader.onload = (e) => {
+            resolve(`[文件: ${uploadedFile.name}]\n${e.target.result}`);
+          };
+          reader.readAsText(uploadedFile);
+        });
+      }
+    }
+
+    // 组合消息内容
+    const fullContent = content.trim() + (fileContent ? `\n\n${fileContent}` : "") + (imageData ? `\n${imageData}` : "");
+
     const userMessage = {
       id: Date.now().toString(),
       role: "user",
-      content: content.trim(),
+      content: fullContent,
       timestamp: new Date().toISOString(),
-      options, // 保存模式和个性选择
+      options: { ...options, responseMode }, // 保存模式和个性选择，包括响应模式
+      uploadedFile: uploadedFile ? {
+        name: uploadedFile.name,
+        type: uploadedFile.type,
+        size: uploadedFile.size
+      } : null
     };
 
     // 添加用户消息
@@ -110,9 +173,16 @@ const ChatInterface = ({
       // 不在这里设置标题，让AI在回复后自动生成
     };
 
-    // 如果是第一条消息且有角色信息，保存角色到对话中
-    if (conversation.messages.length === 0 && options.role) {
-      updates.role = options.role;
+    // 如果是第一条消息，保存角色和响应模式到对话中
+    if (conversation.messages.length === 0) {
+      if (options.role) {
+        updates.role = options.role;
+      }
+      if (options.responseMode) {
+        updates.responseMode = options.responseMode;
+        // 同时更新本地状态
+        setResponseMode(options.responseMode);
+      }
     }
 
     onUpdateConversation(currentConversationId, updates);
@@ -125,15 +195,15 @@ const ChatInterface = ({
   const sendMessageWithStream = async (messages, options, conversationId) => {
     setIsStreaming(true);
     setStreamingConversationId(conversationId);
-    
+
     // 创建 AbortController
     const controller = new AbortController();
     setAbortController(controller);
-    
+
     // 创建初始的助手消息
     const assistantMessageId = (Date.now() + 1).toString();
     // setStreamingMessageId(assistantMessageId);
-    
+
     const initialAssistantMessage = {
       id: assistantMessageId,
       role: "assistant",
@@ -141,17 +211,17 @@ const ChatInterface = ({
       timestamp: new Date().toISOString(),
       isStreaming: true,
     };
-    
+
     // 立即添加空的助手消息
     onUpdateConversation(conversationId, {
       messages: [...messages, initialAssistantMessage],
     });
-    
+
     try {
       let fullContent = "";
       let fullReasoning = "";
       let hasReasoning = false;
-      
+
       await sendMessageStream(
         messages,
         options,
@@ -163,7 +233,7 @@ const ChatInterface = ({
             fullReasoning = chunk.fullReasoning;
             hasReasoning = true;
           }
-          
+
           // 更新流式消息内容
           const updatedMessage = {
             id: assistantMessageId,
@@ -174,11 +244,11 @@ const ChatInterface = ({
             timestamp: new Date().toISOString(),
             isStreaming: true,
           };
-          
+
           // 更新消息列表 - 查找并更新现有消息，避免重复添加
           const currentMessages = [...messages];
           const existingMessageIndex = currentMessages.findIndex(msg => msg.id === assistantMessageId);
-          
+
           if (existingMessageIndex >= 0) {
             // 更新现有消息
             currentMessages[existingMessageIndex] = updatedMessage;
@@ -186,7 +256,7 @@ const ChatInterface = ({
             // 添加新消息（第一次）
             currentMessages.push(updatedMessage);
           }
-          
+
           onUpdateConversation(conversationId, {
             messages: currentMessages,
           });
@@ -202,9 +272,9 @@ const ChatInterface = ({
             timestamp: new Date().toISOString(),
             isStreaming: false,
           };
-          
+
           const finalMessages = [...messages, finalMessage];
-          
+
           // 最终更新消息
           onUpdateConversation(conversationId, {
             messages: finalMessages,
@@ -219,20 +289,20 @@ const ChatInterface = ({
             allMessages: finalMessages.map(m => ({ role: m.role, contentLength: m.content.length })),
             shouldGenerate: finalMessages.length === 2 && finalMessages[0].role === "user" && finalMessages[1].role === "assistant"
           });
-          
+
           // 确保是用户消息+AI回复的第一次对话
-          if (finalMessages.length === 2 && 
-              finalMessages[0].role === "user" && 
-              finalMessages[1].role === "assistant") {
+          if (finalMessages.length === 2 &&
+            finalMessages[0].role === "user" &&
+            finalMessages[1].role === "assistant") {
             // 使用 setTimeout 来异步执行流式标题生成，不阻塞流式输出完成
             setTimeout(async () => {
               try {
                 console.log("自动生成标题 - 开始...", { conversationId, finalMessages });
-                
+
                 // 设置标题生成状态
                 setIsTitleGenerating(true);
                 setTitleGeneratingId(conversationId);
-                
+
                 // 显示正在生成标题的状态
                 onUpdateConversation(conversationId, {
                   title: "正在生成标题...",
@@ -271,22 +341,39 @@ const ChatInterface = ({
                   console.error("流式标题生成完全失败，使用备用方案:", error);
                   setIsTitleGenerating(false);
                   setTitleGeneratingId(null);
-                  // 使用用户的第一条消息作为标题
+                  // 使用用户的第一条消息作为标题，但过滤掉图片数据
                   const userMessage = finalMessages.find(m => m.role === "user");
-                  const fallbackTitle = userMessage?.content?.slice(0, 30) + 
-                                      (userMessage?.content?.length > 30 ? "..." : "") || "新对话";
+                  let fallbackTitle = "新对话";
+                  
+                  if (userMessage?.content) {
+                    // 过滤掉base64图片数据，只保留纯文本内容
+                    const textContent = userMessage.content.replace(/data:image\/[^;]+;base64,[^\s]+/g, '').trim();
+                    if (textContent) {
+                      fallbackTitle = textContent.slice(0, 30) + (textContent.length > 30 ? "..." : "");
+                    }
+                  }
+                  
                   onUpdateConversation(conversationId, {
                     title: fallbackTitle,
                     isTitleGenerating: false,
                   });
                 }
-                
+
               } catch (error) {
                 console.error("自动生成标题失败:", error);
                 setIsTitleGenerating(false);
                 setTitleGeneratingId(null);
-                // 使用用户的第一条消息作为标题
-                const fallbackTitle = finalMessages[0].content;
+                // 使用用户的第一条消息作为标题，但过滤掉图片数据
+                let fallbackTitle = "新对话";
+                
+                if (finalMessages[0]?.content) {
+                  // 过滤掉base64图片数据，只保留纯文本内容
+                  const textContent = finalMessages[0].content.replace(/data:image\/[^;]+;base64,[^\s]+/g, '').trim();
+                  if (textContent) {
+                    fallbackTitle = textContent.slice(0, 30) + (textContent.length > 30 ? "..." : "");
+                  }
+                }
+                
                 onUpdateConversation(conversationId, {
                   title: fallbackTitle,
                   isTitleGenerating: false,
@@ -300,7 +387,7 @@ const ChatInterface = ({
         // onError 回调
         (error) => {
           console.error("流式发送消息失败:", error);
-          
+
           const errorMessage = {
             id: assistantMessageId,
             role: "assistant",
@@ -309,17 +396,17 @@ const ChatInterface = ({
             timestamp: new Date().toISOString(),
             retryData: { messages, options, conversationId },
           };
-          
+
           onUpdateConversation(conversationId, {
             messages: [...messages, errorMessage],
           });
         },
         controller
       );
-      
+
     } catch (error) {
       console.error("流式发送消息失败:", error);
-      
+
       const errorMessage = {
         id: assistantMessageId,
         role: "assistant",
@@ -328,7 +415,7 @@ const ChatInterface = ({
         timestamp: new Date().toISOString(),
         retryData: { messages, options, conversationId },
       };
-      
+
       onUpdateConversation(conversationId, {
         messages: [...messages, errorMessage],
       });
@@ -339,7 +426,7 @@ const ChatInterface = ({
       setAbortController(null);
     }
   };
-  
+
   // 带重试功能的消息发送（保留非流式版本作为备用）
   // eslint-disable-next-line no-unused-vars
   const sendMessageWithRetry = async (messages, options, conversationId) => {
@@ -458,7 +545,7 @@ const ChatInterface = ({
 
     // 获取这条消息之前的所有消息（包括用户消息）
     const messagesBeforeAssistant = conversation.messages.slice(0, messageIndex);
-    
+
     // 移除这条助手消息及其之后的所有消息
     const updatedMessages = messagesBeforeAssistant;
 
@@ -475,8 +562,8 @@ const ChatInterface = ({
     if (lastUserMessage) {
       // 重新生成回复，传递对话的模型信息
       await sendMessageWithStream(
-        updatedMessages, 
-        { ...lastUserMessage.options, model: conversation.model }, 
+        updatedMessages,
+        { ...lastUserMessage.options, model: conversation.model },
         conversation.id
       );
     }
@@ -485,15 +572,15 @@ const ChatInterface = ({
   // 如果没有消息，显示欢迎界面
   if (conversation.messages.length === 0) {
     return (
-      <div className="chat-interface">
+      <>
         <div className="chat-header">
           <div className="header-left">
             <button className="sidebar-toggle" onClick={onToggleSidebar}>
               ☰
             </button>
           </div>
-                  <div className="header-actions">
-        </div>
+          <div className="header-actions">
+          </div>
         </div>
         <WelcomeScreen onSendMessage={handleSendMessage} disabled={isStreaming} />
         <ConversationTimeline
@@ -501,12 +588,12 @@ const ChatInterface = ({
           onJumpToMessage={handleJumpToMessage}
           currentMessageId={currentMessageId}
         />
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="chat-interface">
+    <>
       <div className="chat-header">
         <div className="header-left">
           <button className="sidebar-toggle" onClick={onToggleSidebar}>
@@ -516,9 +603,9 @@ const ChatInterface = ({
             <h1 className="conversation-title">
               {conversation.title || "新对话"}
             </h1>
-            <button 
+            <button
               className="logo-button"
-              style={{ color: getRoleById(currentRole).color, display:'none' }}
+              style={{ color: getRoleById(currentRole).color, display: 'none' }}
               title={getRoleById(currentRole).name}
             >
               {getRoleById(currentRole).avatar}
@@ -534,6 +621,23 @@ const ChatInterface = ({
             disabled={isStreaming && streamingConversationId === conversation.id}
             className="header-model-selector"
           />
+          
+          {/* 移动端时间线按钮 */}
+          <button
+            className="timeline-toggle mobile-only"
+            onClick={() => {
+              const timeline = document.querySelector('.conversation-timeline');
+              if (timeline) {
+                timeline.classList.toggle('timeline-visible');
+              }
+            }}
+            title={t("timeline", currentLanguage)}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12,6 12,12 16,14"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -551,18 +655,32 @@ const ChatInterface = ({
         <div ref={messagesEndRef} />
       </div>
 
-              <MessageInput 
-          onSendMessage={handleSendMessage} 
-          disabled={isStreaming && streamingConversationId === conversation.id}
-          isStreaming={isStreaming && streamingConversationId === conversation.id}
-          onStopStreaming={stopStreaming}
-        />
-        <ConversationTimeline
-          messages={conversation.messages}
-          onJumpToMessage={handleJumpToMessage}
-          currentMessageId={currentMessageId}
-        />
-    </div>
+      <ChatInput
+        onSendMessage={handleSendMessage}
+        disabled={isStreaming && streamingConversationId === conversation.id}
+        isStreaming={isStreaming && streamingConversationId === conversation.id}
+        onStopStreaming={stopStreaming}
+        showBottomToolbar={true}
+        showFileUpload={true}
+        expandDirection="up"
+        className="chat-interface-input"
+        responseMode={responseMode}
+        onResponseModeChange={handleResponseModeChange}
+        onNewChat={() => {
+          // 新建对话的逻辑
+          console.log('新建对话');
+        }}
+        onAddTab={() => {
+          // 添加新标签页的逻辑
+          console.log('添加新标签页');
+        }}
+      />
+      <ConversationTimeline
+        messages={conversation.messages}
+        onJumpToMessage={handleJumpToMessage}
+        currentMessageId={currentMessageId}
+      />
+    </>
   );
 };
 

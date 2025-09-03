@@ -7,20 +7,74 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-sm);
   padding: 8px 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
   min-width: 200px;
   font-size: 14px;
   color: var(--text-primary);
+  box-shadow: var(--glass-shadow-light);
+}
+
+/* 移动端简化模式 */
+.model-selector-trigger.mobile-mode {
+  min-width: auto;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  justify-content: center;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  border: 1px solid var(--glass-border-light);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow-light);
+  transition: var(--transition-smooth);
+}
+
+.model-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.model-selector-trigger.mobile-mode .dropdown-arrow {
+  display: none;
 }
 
 .model-selector-trigger:hover:not(.disabled) {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: var(--accent-color);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-dark);
+}
+
+.model-selector-trigger.mobile-mode:hover:not(.disabled) {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+  box-shadow: var(--glass-shadow-dark);
+}
+
+.model-selector-trigger:active:not(.disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.model-selector-trigger.mobile-mode:active:not(.disabled) {
+  transform: scale(0.95);
 }
 
 .model-selector-trigger.disabled {
@@ -70,14 +124,22 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--glass-shadow-dark);
   z-index: 1000;
   max-height: 400px;
   overflow-y: auto;
   margin-top: 4px;
+  
+  /* 移动端隐藏滚动条 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
 .model-dropdown.top {
@@ -114,33 +176,40 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 8px 16px;
+  padding: 12px 16px;
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: var(--transition-smooth);
   text-align: left;
+  position: relative;
+  margin: 2px 8px;
+  border-radius: var(--border-radius-sm);
 }
 
 .model-option:hover {
-  background: var(--bg-hover);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  transform: translateX(4px);
 }
 
 .model-option.selected {
-  background: linear-gradient(135deg, var(--accent-color) 0%, #6366f1 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(99, 179, 237, 0.3);
+  background: transparent;
+  color: var(--text-primary);
 }
 
 .model-option.selected .model-option-name,
 .model-option.selected .model-option-description {
-  color: white;
+  color: var(--text-primary);
 }
 
 .model-option.selected .pro-badge {
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: none;
 }
 
 .model-option-info {
@@ -172,7 +241,13 @@
 .selected-indicator {
   margin-left: 8px;
   font-weight: bold;
-  color: inherit;
+  color: var(--accent-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.model-option.selected .selected-indicator {
+  opacity: 1;
 }
 
 .pro-badge {
@@ -204,6 +279,14 @@
     min-width: 280px;
     left: auto;
     right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  [data-theme="dark"] .model-dropdown {
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   .model-option {
@@ -221,23 +304,42 @@
   }
 }
 
-/* 滚动条样式 */
+/* 滚动条样式 - 液态玻璃风格 */
 .model-dropdown::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .model-dropdown::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-  border-radius: 3px;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: 4px;
+  border: 1px solid var(--glass-border-light);
 }
 
 .model-dropdown::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
+  background: linear-gradient(135deg, 
+    var(--accent-primary) 0%, 
+    var(--accent-secondary) 100%);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .model-dropdown::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: linear-gradient(135deg, 
+    var(--accent-secondary) 0%, 
+    var(--accent-tertiary) 100%);
+  border-color: var(--glass-border-light);
+}
+
+/* 移动端隐藏滚动条 */
+@media (max-width: 768px) {
+  .model-dropdown::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* 暗色模式下的模型选择按钮使用暗色背景 */

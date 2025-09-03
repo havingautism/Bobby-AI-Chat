@@ -1,13 +1,17 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AI_ROLES, saveSelectedRole, loadSelectedRole } from "../utils/roles";
 import { getCurrentLanguage } from "../utils/language";
+import ChatInput from "./ChatInput";
 import "./WelcomeScreen.css";
 
 const WelcomeScreen = ({ onSendMessage, disabled }) => {
-  const [message, setMessage] = useState("");
   const [selectedRole, setSelectedRole] = useState(loadSelectedRole());
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+  const [responseMode, setResponseMode] = useState(() => {
+    // 从 localStorage 读取保存的响应模式
+    return localStorage.getItem('lastResponseMode') || "normal";
+  });
   const dropdownRef = useRef(null);
 
   // 点击外部关闭下拉菜单
@@ -40,31 +44,36 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
   const quickPrompts = currentLanguage === "zh" ? [
     "🤔 解释一个复杂的概念",
-    "💻 帮我写一段代码",
+    "👨🏻‍💻 帮我写一段代码",
     "📈 分析当前趋势",
     "✨ 创意写作帮助",
     "😸 和Bobby聊天",
     "🎯 制定学习计划",
   ] : [
     "🤔 Explain a complex concept",
-    "💻 Help me write some code",
+    "👨🏻‍💻 Help me write some code",
     "📈 Analyze current trends",
     "✨ Creative writing help",
     "😸 Chat with Bobby",
     "🎯 Create a learning plan",
   ];
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (message.trim() && !disabled) {
+  const handleSubmit = (message, uploadedFile) => {
+    if ((message.trim() || uploadedFile) && !disabled) {
       const selectedRoleData = roles.find((role) => role.id === selectedRole);
-      onSendMessage(message, {
+      onSendMessage(message, uploadedFile, {
         role: selectedRole,
         temperature: selectedRoleData.temperature,
         systemPrompt: selectedRoleData.systemPrompt,
+        responseMode: responseMode,
       });
-      setMessage("");
     }
+  };
+
+  const handleResponseModeChange = (newMode) => {
+    setResponseMode(newMode);
+    // 保存到 localStorage
+    localStorage.setItem('lastResponseMode', newMode);
   };
 
   const handleRoleChange = (roleId) => {
@@ -77,10 +86,11 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
   const handleQuickPrompt = (prompt) => {
     const selectedRoleData = roles.find((role) => role.id === selectedRole);
-    onSendMessage(prompt, {
+    onSendMessage(prompt, null, {
       role: selectedRole,
       temperature: selectedRoleData.temperature,
       systemPrompt: selectedRoleData.systemPrompt,
+      responseMode: responseMode,
     });
   };
 
@@ -182,69 +192,21 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
         {/* 输入框 */}
         <div className="welcome-input-section">
-          <form onSubmit={handleSubmit} className="welcome-input-form">
-            <div className="welcome-input-wrapper-clean">
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={
-                  currentLanguage === "zh" 
-                    ? `和${roles.find((role) => role.id === selectedRole)?.name}开始对话...`
-                    : `Start chatting with ${roles.find((role) => role.id === selectedRole)?.name}...`
-                }
-                disabled={disabled}
-                rows={1}
-                className="welcome-textarea-clean"
-                style={{
-                  height: "auto",
-                  minHeight: "24px",
-                  maxHeight: "128px",
-                  outline: "none",
-                  border: "none",
-                  boxShadow: "none",
-                  WebkitAppearance: "none",
-                  MozAppearance: "none",
-                  appearance: "none",
-                }}
-                onInput={(e) => {
-                  e.target.style.height = "auto";
-                  e.target.style.height =
-                    Math.min(e.target.scrollHeight, 128) + "px";
-                  
-                  // 在欢迎页面中，始终向下展开
-                  const container = e.target.closest('.welcome-input-wrapper-clean');
-                  if (container) {
-                    container.classList.add('expand-downward');
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit(e);
-                  }
-                }}
-              />
-              <button
-                type="submit"
-                disabled={!message.trim() || disabled}
-                className="welcome-send-button"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="m3 3 3 9-3 9 19-9Z" />
-                  <path d="m6 12 13 0" />
-                </svg>
-              </button>
-            </div>
-          </form>
+          <ChatInput
+            onSendMessage={handleSubmit}
+            disabled={disabled}
+            showBottomToolbar={true}
+            showFileUpload={true}
+            placeholder={
+              currentLanguage === "zh" 
+                ? `和${roles.find((role) => role.id === selectedRole)?.name}开始对话...`
+                : `Start chatting with ${roles.find((role) => role.id === selectedRole)?.name}...`
+            }
+            expandDirection="down"
+            className="welcome-chat-input"
+            responseMode={responseMode}
+            onResponseModeChange={handleResponseModeChange}
+          />
         </div>
 
         {/* 快速提示 */}

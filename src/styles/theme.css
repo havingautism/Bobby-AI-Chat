@@ -5,9 +5,56 @@
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+/* 液态玻璃效果动画 */
+@keyframes liquidFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes liquidPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* 液态光晕效果 */
+.liquid-glow {
+  position: relative;
+}
+
+.liquid-glow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(45deg, 
+    var(--accent-primary), 
+    var(--accent-secondary), 
+    var(--accent-tertiary));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, 
+              linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.liquid-glow:hover::after {
+  opacity: 1;
+}
+
 body {
   background: var(--bg-secondary);
   color: var(--text-primary);
+}
+
+/* 暗夜模式背景渐变 */
+[data-theme="dark"] body {
+  background: linear-gradient(135deg, #0a0a0f 0%, #151520 100%);
+  min-height: 100vh;
 }
 
 /* 输入框主题 */
@@ -18,8 +65,7 @@ input, textarea {
 }
 
 input:focus, textarea:focus {
-  border-color: var(--accent-color) !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
 }
 
 input::placeholder, textarea::placeholder {
@@ -48,6 +94,15 @@ button {
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--text-tertiary);
+}
+
+/* 移动端滚动条隐藏 */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    display: none;
+  }
 }
 
 /* 代码块主题 */
@@ -111,14 +166,10 @@ button {
   color: var(--text-primary);
 }
 
-.message.assistant {
-  background: var(--bg-primary);
-}
 
 
 /* 欢迎界面主题 */
 .welcome-screen {
-  background: var(--bg-primary);
   color: var(--text-primary);
 }
 
@@ -145,36 +196,23 @@ button {
   }
 }
 
-/* 暗色模式特殊处理 */
-[data-theme="dark"] {
-  /* 确保某些元素在暗色模式下有足够的对比度 */
-}
 
-[data-theme="dark"] .sidebar-overlay {
-  background-color: rgba(0, 0, 0, 0.8);
-}
+
+
 
 [data-theme="dark"] .search-highlight {
   background-color: var(--warning-color);
   color: var(--bg-primary);
 }
 
-/* 暗色模式下的特殊样式 */
-[data-theme="dark"] .message.user {
-  background: var(--bg-secondary);
-}
 
-[data-theme="dark"] .message.assistant {
-  background: var(--bg-secondary);
-}
+
+
 
 [data-theme="dark"] .message.assistant.loading {
   background: var(--bg-primary);
 }
 
-[data-theme="dark"] .welcome-screen {
-  background: var(--bg-primary);
-}
 
 [data-theme="dark"] .new-chat-btn {
   background: var(--bg-primary);
@@ -212,7 +250,3 @@ button {
   background: var(--bg-tertiary);
 }
 
-[data-theme="dark"] .conversation-item.active {
-  background: var(--bg-tertiary);
-  border-left-color: var(--accent-color);
-}

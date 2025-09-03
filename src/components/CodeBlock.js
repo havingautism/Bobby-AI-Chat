@@ -63,8 +63,8 @@ const CodeBlock = ({ children, language = "text" }) => {
       json: "📋",
       xml: "📄",
       sql: "🗃️",
-      bash: "💻",
-      shell: "💻",
+      bash: "👨🏻‍💻",
+      shell: "👨🏻‍💻",
       powershell: "💙",
       c: "⚙️",
       cpp: "⚙️",
@@ -81,7 +81,7 @@ const CodeBlock = ({ children, language = "text" }) => {
       scala: "🔴",
       perl: "🐪",
       lua: "🌙",
-      default: "💻",
+      default: "👨🏻‍💻",
     };
     return icons[lang.toLowerCase()] || icons.default;
   };
@@ -146,6 +146,8 @@ const CodeBlock = ({ children, language = "text" }) => {
             overflowX: "auto",
             whiteSpace: "pre",
             wordWrap: "normal",
+            border: "none",
+            borderRadius: "0",
           }}
           codeTagProps={{
             style: {

@@ -1,0 +1,100 @@
+.image-preview-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.image-preview-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: scaleIn 0.2s ease-out;
+}
+
+.image-preview-modal-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  cursor: zoom-out;
+}
+
+.image-preview-close-btn {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+  z-index: 10001;
+}
+
+.image-preview-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.image-preview-close-btn:active {
+  transform: scale(0.95);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .image-preview-modal-content {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+  
+  .image-preview-close-btn {
+    top: -50px;
+    right: 10px;
+    width: 44px;
+    height: 44px;
+  }
+  
+  .image-preview-modal-image {
+    border-radius: 4px;
+  }
+}

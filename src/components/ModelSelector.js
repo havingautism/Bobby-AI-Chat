@@ -8,6 +8,21 @@ const ModelSelector = ({
   disabled = false,
   className = "" 
 }) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 检测移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState('bottom');
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
@@ -147,6 +162,8 @@ const ModelSelector = ({
   const toggleDropdown = () => {
     if (disabled) return;
     
+    const newShowDropdown = !showDropdown;
+    
     if (!showDropdown) {
       // 计算下拉菜单位置
       const container = dropdownRef.current;
@@ -164,24 +181,43 @@ const ModelSelector = ({
         }
       }
     }
-    setShowDropdown(!showDropdown);
+    
+    setShowDropdown(newShowDropdown);
+    
+    // 通知其他组件下拉框状态变化
+    const event = new CustomEvent('modelDropdownToggle', {
+      detail: { isOpen: newShowDropdown }
+    });
+    window.dispatchEvent(event);
   };
 
   return (
     <div className={`model-selector ${className}`} ref={dropdownRef}>
       <button
-        className={`model-selector-trigger ${disabled ? 'disabled' : ''}`}
+        className={`model-selector-trigger ${disabled ? 'disabled' : ''} ${isMobile ? 'mobile-mode' : ''}`}
         onClick={toggleDropdown}
         disabled={disabled}
         title={t("switchModel", currentLanguage)}
       >
-        <div className="model-info">
-          <span className="model-name">
-            {currentModelInfo.name}
-            {currentModelInfo.isPro && <span className="pro-badge">Pro</span>}
-          </span>
-          <span className="model-description">{currentModelInfo.description}</span>
-        </div>
+                 {isMobile ? (
+           // 移动端只显示图标
+           <div className="model-icon">
+             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+               <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+               <path d="M2 17L12 22L22 17"/>
+               <path d="M2 12L12 17L22 12"/>
+             </svg>
+           </div>
+         ) : (
+          // PC端显示完整信息
+          <div className="model-info">
+            <span className="model-name">
+              {currentModelInfo.name}
+              {currentModelInfo.isPro && <span className="pro-badge">Pro</span>}
+            </span>
+            <span className="model-description">{currentModelInfo.description}</span>
+          </div>
+        )}
         <span className="dropdown-arrow">▼</span>
       </button>
 

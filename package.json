@@ -2,9 +2,16 @@
   "name": "ai-chat-app",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://havingautism.github.io/Bobby-AI-Chat/",
   "license": "CC-BY-NC-SA-4.0",
   "description": "A modern AI chat application built with React, supporting multiple AI models",
-  "keywords": ["ai", "chat", "react", "siliconflow", "openai"],
+  "keywords": [
+    "ai",
+    "chat",
+    "react",
+    "siliconflow",
+    "openai"
+  ],
   "author": "Bobby Project Contributors",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
@@ -13,6 +20,7 @@
     "autoprefixer": "^10.4.21",
     "axios": "^1.4.0",
     "daisyui": "^5.0.51",
+    "idb": "^8.0.3",
     "postcss": "^8.5.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -20,6 +28,7 @@
     "react-scripts": "5.0.1",
     "react-syntax-highlighter": "^15.6.6",
     "react-textarea-autosize": "^8.5.9",
+    "streamdown": "^1.1.7",
     "tailwindcss": "^4.1.12",
     "uuid": "^9.0.0",
     "web-vitals": "^2.1.4"

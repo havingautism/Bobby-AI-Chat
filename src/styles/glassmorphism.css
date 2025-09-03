@@ -1,0 +1,504 @@
+/* === Liquid Glass UI for AI Chat === */
+
+/* --- Core Variables --- */
+:root {
+  /* 保持原有背景色 */
+  --background-gradient-start: #ffffff;
+  --background-gradient-mid: #f8f9fa;
+  --background-gradient-end: #f1f3f4;
+  
+  /* 液态玻璃效果 */
+  --glass-bg-light: rgba(255, 255, 255, 0.25);
+  --glass-bg-light-hover: rgba(255, 255, 255, 0.35);
+  --glass-bg-dark: rgba(0, 0, 0, 0.05);
+  --glass-bg-dark-hover: rgba(0, 0, 0, 0.08);
+  --glass-border-light: rgba(255, 255, 255, 0.18);
+  --glass-border-dark: rgba(0, 0, 0, 0.08);
+  --glass-shadow-light: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --glass-shadow-dark: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --glass-blur: blur(20px);
+  --glass-blur-strong: blur(40px);
+  
+  /* 文字颜色 */
+  --text-primary-color: #1f2937;
+  --text-secondary-color: #6b7280;
+  --text-tertiary-color: #9ca3af;
+  
+  /* 消息文字颜色 */
+  --message-text-primary: #1f2937;
+  --message-text-secondary: #6b7280;
+  
+  /* 代码块文字颜色 */
+  --code-text-primary: #f0f0f0;
+  --code-text-secondary: #d0d0d0;
+  
+  /* 语法高亮颜色 */
+  --syntax-keyword: #569cd6;
+  --syntax-string: #ce9178;
+  --syntax-comment: #6a9955;
+  --syntax-number: #0066cc;
+  --syntax-function: #dcdcaa;
+  --syntax-operator: #d4d4d4;
+  --syntax-punctuation: #d4d4d4;
+  
+  /* 强调色 */
+  --accent-primary: #3b82f6;
+  --accent-secondary: #8b5cf6;
+  --accent-tertiary: #ec4899;
+  
+  /* 圆角 */
+  --border-radius-xl: 24px;
+  --border-radius-lg: 20px;
+  --border-radius-md: 16px;
+  --border-radius-sm: 12px;
+  
+  /* 动画 */
+  --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* --- Main App Container & Layout --- */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  /* padding: 1rem; */
+  box-sizing: border-box;
+  /* gap: 1rem; */
+}
+
+/* --- Liquid Glass Base Style --- */
+.liquid-glass {
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--glass-shadow-light);
+  color: var(--text-primary-color);
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 液态玻璃悬停效果 */
+.liquid-glass:hover {
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+  box-shadow: var(--glass-shadow-dark);
+  transform: translateY(-2px);
+}
+
+/* 内部光晕效果 */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.liquid-glass:hover::before {
+  opacity: 1;
+}
+
+/* 深色模式适配 - 参考 Dribbble 设计 */
+[data-theme="dark"] .liquid-glass {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.02) 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .liquid-glass:hover {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.12) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* 深色模式下的变量调整 - 参考 Dribbble 设计 */
+[data-theme="dark"] {
+  --glass-bg-light: rgba(255, 255, 255, 0.08);
+  --glass-bg-light-hover: rgba(255, 255, 255, 0.12);
+  --glass-bg-dark: rgba(255, 255, 255, 0.02);
+  --glass-bg-dark-hover: rgba(255, 255, 255, 0.05);
+  --glass-border-light: rgba(255, 255, 255, 0.08);
+  --glass-border-dark: rgba(255, 255, 255, 0.12);
+  --glass-shadow-light: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --glass-shadow-dark: 
+    0 12px 48px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  
+  /* 深色模式文字颜色 - 更柔和的白色 */
+  --text-primary-color: #f0f0f0;
+  --text-secondary-color: #b0b0b0;
+  --text-tertiary-color: #808080;
+  
+  /* 深色模式消息文字颜色 */
+  --message-text-primary: #ffffff;
+  --message-text-secondary: #d0d0d0;
+  
+  /* 深色模式代码块文字颜色 */
+  --code-text-primary: #ffffff;
+  --code-text-secondary: #e0e0e0;
+  
+  /* 深色模式语法高亮颜色 - 更柔和的配色 */
+  --syntax-keyword: #c792ea;
+  --syntax-string: #c3e88d;
+  --syntax-comment: #546e7a;
+  --syntax-number: #f78c6c;
+  --syntax-function: #82aaff;
+  --syntax-operator: #89ddff;
+  --syntax-punctuation: #d0d0d0;
+}
+
+/* 超强玻璃效果（用于重要元素） */
+.liquid-glass-strong {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  backdrop-filter: var(--glass-blur-strong);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* 液态按钮效果 */
+.liquid-button {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.liquid-button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* 通用液态玻璃工具类 */
+.glass-sm {
+  border-radius: var(--border-radius-sm);
+  padding: 8px 12px;
+}
+
+.glass-md {
+  border-radius: var(--border-radius-md);
+  padding: 12px 16px;
+}
+
+.glass-lg {
+  border-radius: var(--border-radius-lg);
+  padding: 16px 20px;
+}
+
+.glass-xl {
+  border-radius: var(--border-radius-xl);
+  padding: 20px 24px;
+}
+
+/* 液态卡片效果 */
+.liquid-card {
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--glass-shadow-light);
+  padding: 20px;
+  transition: var(--transition-smooth);
+}
+
+.liquid-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--glass-shadow-dark);
+  border-color: var(--accent-primary);
+}
+
+/* 深色模式液态卡片增强 - 参考 Dribbble 设计 */
+[data-theme="dark"] .liquid-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .liquid-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(139, 92, 246, 0.08) 0%,
+    transparent 50%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+[data-theme="dark"] .liquid-card:hover::before {
+  opacity: 1;
+}
+
+[data-theme="dark"] .liquid-card:hover {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.12) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 
+    0 16px 64px rgba(139, 92, 246, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-4px);
+}
+
+/* 液态分隔线 */
+.liquid-divider {
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    var(--glass-border-light) 20%, 
+    var(--glass-border-light) 80%, 
+    transparent 100%);
+  margin: 16px 0;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+/* --- Chat Interface --- */
+.chat-interface {
+  flex-grow: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Message List --- */
+.message-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 16px;
+}
+
+/* --- Message Bubbles --- */
+.message {
+  margin-bottom: 1rem;
+  /* padding: 0.8rem 1.2rem; */
+  border-radius: var(--border-radius-main);
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.message.user {
+  margin-right: auto;
+  margin-left: auto;
+  /* border-top-right-radius: var(--border-radius-small); */
+}
+
+.message.assistant {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+
+.chat-input {
+  width: 100%;
+  background: var(--glass-bg-color);
+  border: 1px solid var(--glass-border-color);
+  border-radius: var(--border-radius-main);
+  padding: 1rem;
+  color: var(--text-primary-color);
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.chat-input:focus {
+  outline: none;
+  box-shadow: var(--glass-shadow-dark);
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+    padding: 0;
+    gap: 0;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+    .glass-pane {
+      
+      box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.079) !important;
+    }
+
+
+
+  /* 当移动端显示收起的窄侧栏（open + collapsed）时，为聊天界面预留更小空间 */
+  .chat-interface.with-collapsed-sidebar {
+    margin-left: 62px; /* 56px rail + 6px gutter */
+    width: calc(100% - 62px);
+    border-top-left-radius: var(--border-radius-main);
+    border-bottom-left-radius: var(--border-radius-main);
+  }
+
+  /* 收起但未打开时保持隐藏（默认 left: -100%），打开时放到左侧 */
+  .sidebar.collapsed.open {
+    left: 0;
+    width: 56px;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    height: 100vh;
+    width: 280px; /* 与Sidebar.css保持一致 */
+    z-index: 1000;
+    transform: none;
+    transition: left 0.3s ease;
+    background: var(--bg-secondary) !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .sidebar.open {
+    border-top-right-radius:var(--border-radius-main) ;
+    border-bottom-right-radius:var(--border-radius-main) ;
+    left: 0;
+    max-width: 70%;
+  }
+
+  /* 收起但未打开时，侧边栏以窄竖条显示在左侧 */
+  .sidebar.collapsed:not(.open) {
+    left: 0;
+    width: 64px;
+  }
+
+  .chat-interface {
+    padding: 0 24px; /* 移动端左右各留 24px 安全边距 */
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;
+    transition: transform 0.3s ease, width 0.3s ease, margin-left 0.3s ease; /* 平滑过渡 */
+    box-sizing: border-box; /* 使 padding 参与总宽度计算 */
+  }
+
+  /* 宽侧边栏打开时，聊天界面被“推挤”向右 */
+  .pushed-by-sidebar {
+    transform: translateX(280px); /* 与移动端宽侧边栏宽度一致 */
+  }
+
+  .glass-pane {
+    border-radius: 0;
+    height: 100vh;
+    width: 100%;
+  }
+
+  /* 移动端消息气泡优化 */
+  .message {
+    max-width: 90%;
+    /* padding: 0.6rem 1rem; */
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* 移动端输入框优化 */
+  .chat-input {
+    padding: 0.8rem;
+    font-size: 0.9rem;
+    border-radius: var(--border-radius-small);
+  }
+
+
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 480px) {
+  .app-container {
+    padding: 0;
+    gap: 0;
+  }
+
+  .chat-interface {
+    padding: 0;
+  }
+
+  .message {
+    max-width: 95%;
+    /* padding: 0.5rem 0.8rem; */
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .chat-input {
+    padding: 0.6rem;
+    font-size: 0.85rem;
+  }
+
+ 
+}

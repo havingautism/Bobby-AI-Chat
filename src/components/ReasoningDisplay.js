@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import MarkdownRenderer from "./MarkdownRenderer";
+import ReasoningContentRenderer from "./ReasoningContentRenderer";
 import { getCurrentLanguage, t } from "../utils/language";
 import "./ReasoningDisplay.css";
 
@@ -60,7 +60,7 @@ const ReasoningDisplay = ({ reasoning, isStreaming = false }) => {
 
       <div className={`reasoning-content ${isExpanded ? "expanded" : ""}`}>
         <div className="reasoning-inner">
-          <MarkdownRenderer>{reasoning}</MarkdownRenderer>
+          <ReasoningContentRenderer>{reasoning}</ReasoningContentRenderer>
         </div>
       </div>
     </div>

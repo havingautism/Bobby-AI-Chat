@@ -1,27 +1,238 @@
-const STORAGE_KEY = "ai-chat-conversations";
+import { openDB } from 'idb';
 
-export const loadChatHistory = () => {
+const DB_NAME = 'ai-chat-db';
+const DB_VERSION = 1;
+const CONVERSATIONS_STORE = 'conversations';
+const SETTINGS_STORE = 'settings';
+
+// 初始化数据库
+const initDB = async () => {
+  return openDB(DB_NAME, DB_VERSION, {
+    upgrade(db) {
+      // 创建对话存储
+      if (!db.objectStoreNames.contains(CONVERSATIONS_STORE)) {
+        const conversationsStore = db.createObjectStore(CONVERSATIONS_STORE, { 
+          keyPath: 'id' 
+        });
+        conversationsStore.createIndex('timestamp', 'lastUpdated', { unique: false });
+      }
+      
+      // 创建设置存储
+      if (!db.objectStoreNames.contains(SETTINGS_STORE)) {
+        db.createObjectStore(SETTINGS_STORE, { keyPath: 'key' });
+      }
+    },
+  });
+};
+
+// 获取数据库实例
+const getDB = async () => {
+  return await initDB();
+};
+
+// 压缩数据 - 移除大型文件数据
+const compressConversation = (conversation) => {
+  return {
+    ...conversation,
+    messages: conversation.messages.map(msg => ({
+      id: msg.id,
+      role: msg.role,
+      content: msg.content,
+      timestamp: msg.timestamp,
+      // 保存思考过程
+      hasReasoning: msg.hasReasoning || false,
+      reasoning: msg.reasoning,
+      // 移除大型文件数据，只保留基本信息
+      uploadedFile: msg.uploadedFile ? {
+        name: msg.uploadedFile.name,
+        type: msg.uploadedFile.type,
+        size: msg.uploadedFile.size
+      } : null
+    }))
+  };
+};
+
+// 清理旧数据
+const cleanOldConversations = (conversations) => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+    // 按时间排序，保留最新的对话
+    const sorted = conversations.sort((a, b) => {
+      const aTime = a.lastUpdated || 0;
+      const bTime = b.lastUpdated || 0;
+      return bTime - aTime;
+    });
+
+    // 只保留最新的20个对话
+    return sorted.slice(0, 20);
+  } catch (error) {
+    console.error("清理对话数据失败:", error);
+    return conversations;
+  }
+};
+
+export const loadChatHistory = async () => {
+  try {
+    const db = await getDB();
+    const tx = db.transaction(CONVERSATIONS_STORE, 'readonly');
+    const store = tx.objectStore(CONVERSATIONS_STORE);
+    const conversations = await store.getAll();
+    
+    // 按时间排序
+    return conversations.sort((a, b) => {
+      const aTime = a.lastUpdated || 0;
+      const bTime = b.lastUpdated || 0;
+      return bTime - aTime;
+    });
   } catch (error) {
     console.error("加载聊天历史失败:", error);
     return [];
   }
 };
 
-export const saveChatHistory = (conversations) => {
+export const saveChatHistory = async (conversations) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+    // 清理旧数据
+    const cleaned = cleanOldConversations(conversations);
+    
+    // 压缩数据
+    const compressed = cleaned.map(compressConversation);
+    
+    const db = await getDB();
+    const tx = db.transaction(CONVERSATIONS_STORE, 'readwrite');
+    const store = tx.objectStore(CONVERSATIONS_STORE);
+    
+    // 清除所有现有数据
+    await store.clear();
+    
+    // 添加新数据，同时更新最后更新时间
+    const now = Date.now();
+    for (const conversation of compressed) {
+      await store.put({
+        ...conversation,
+        lastUpdated: now
+      });
+    }
+    
+    await tx.done;
+    console.log(`已保存 ${compressed.length} 个对话到 IndexedDB`);
   } catch (error) {
     console.error("保存聊天历史失败:", error);
   }
 };
 
-export const clearChatHistory = () => {
+export const saveConversation = async (conversation) => {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    const compressed = compressConversation(conversation);
+    const db = await getDB();
+    const tx = db.transaction(CONVERSATIONS_STORE, 'readwrite');
+    const store = tx.objectStore(CONVERSATIONS_STORE);
+    
+    await store.put({
+      ...compressed,
+      lastUpdated: Date.now()
+    });
+    
+    await tx.done;
+  } catch (error) {
+    console.error("保存单个对话失败:", error);
+  }
+};
+
+export const deleteConversation = async (conversationId) => {
+  try {
+    const db = await getDB();
+    const tx = db.transaction(CONVERSATIONS_STORE, 'readwrite');
+    const store = tx.objectStore(CONVERSATIONS_STORE);
+    
+    await store.delete(conversationId);
+    await tx.done;
+  } catch (error) {
+    console.error("删除对话失败:", error);
+  }
+};
+
+export const clearChatHistory = async () => {
+  try {
+    const db = await getDB();
+    const tx = db.transaction(CONVERSATIONS_STORE, 'readwrite');
+    const store = tx.objectStore(CONVERSATIONS_STORE);
+    
+    await store.clear();
+    await tx.done;
+    console.log("已清除所有聊天历史");
   } catch (error) {
     console.error("清除聊天历史失败:", error);
+  }
+};
+
+// 设置相关存储
+export const saveSetting = async (key, value) => {
+  try {
+    const db = await getDB();
+    const tx = db.transaction(SETTINGS_STORE, 'readwrite');
+    const store = tx.objectStore(SETTINGS_STORE);
+    
+    await store.put({ key, value });
+    await tx.done;
+  } catch (error) {
+    console.error("保存设置失败:", error);
+  }
+};
+
+export const loadSetting = async (key, defaultValue = null) => {
+  try {
+    const db = await getDB();
+    const tx = db.transaction(SETTINGS_STORE, 'readonly');
+    const store = tx.objectStore(SETTINGS_STORE);
+    
+    const result = await store.get(key);
+    return result ? result.value : defaultValue;
+  } catch (error) {
+    console.error("加载设置失败:", error);
+    return defaultValue;
+  }
+};
+
+// 迁移 localStorage 数据到 IndexedDB
+export const migrateFromLocalStorage = async () => {
+  try {
+    const oldData = localStorage.getItem('ai-chat-conversations');
+    if (oldData) {
+      const conversations = JSON.parse(oldData);
+      if (conversations.length > 0) {
+        await saveChatHistory(conversations);
+        localStorage.removeItem('ai-chat-conversations');
+        console.log("已迁移 localStorage 数据到 IndexedDB");
+      }
+    }
+  } catch (error) {
+    console.error("迁移数据失败:", error);
+  }
+};
+
+// 获取存储使用情况
+export const getStorageInfo = async () => {
+  try {
+    const db = await getDB();
+    const tx = db.transaction(CONVERSATIONS_STORE, 'readonly');
+    const store = tx.objectStore(CONVERSATIONS_STORE);
+    const conversations = await store.getAll();
+    
+    const totalSize = new Blob([JSON.stringify(conversations)]).size;
+    const sizeInMB = (totalSize / (1024 * 1024)).toFixed(2);
+    
+    return {
+      conversationCount: conversations.length,
+      totalSize: sizeInMB + ' MB',
+      conversations: conversations.map(c => ({
+        id: c.id,
+        title: c.title,
+        messageCount: c.messages.length,
+        lastUpdated: c.lastUpdated
+      }))
+    };
+  } catch (error) {
+    console.error("获取存储信息失败:", error);
+    return null;
   }
 };

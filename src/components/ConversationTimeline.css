@@ -4,7 +4,7 @@
   right: 20px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 1000;
+  z-index: 99; /* 降低z-index，确保侧边栏能够遮挡 */
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -12,55 +12,73 @@
   will-change: transform;
 }
 
+/* PC端常驻在右上角 */
+.conversation-timeline.desktop {
+  right: 20px;
+  top: 120px; /* 距离顶部120px，回到右上角位置 */
+  transform: none;
+  transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 添加平滑过渡动画 */
+}
+
+/* PC端下拉框打开时，时间轴移动到下拉框下方 */
+.conversation-timeline.desktop.dropdown-open {
+  top: 500px; /* 下拉框打开时，时间轴移动到更下方，确保不被遮挡 */
+}
+
 /* PC端常驻显示 */
 .conversation-timeline.desktop .timeline-content {
   opacity: 1;
   visibility: visible;
   transform: translateX(0) scale(1);
+  position: relative;
+  right: 0;
+  top: 0;
+  display: block;
 }
 
 /* 移动端默认隐藏 */
 .conversation-timeline.mobile .timeline-content {
   opacity: 0;
   visibility: hidden;
-  transform: translateX(20px) scale(0.95);
+  transform: translateY(-10px) scale(0.95);
 }
 
-.conversation-timeline.mobile.visible .timeline-content {
+.conversation-timeline.mobile.visible .timeline-content,
+.conversation-timeline.timeline-visible .timeline-content {
   opacity: 1;
   visibility: visible;
-  transform: translateX(0) scale(1);
+  transform: translateY(0) scale(1);
 }
 
-/* 切换按钮 - 仅移动端显示 */
+/* 切换按钮样式 - 仅用于header中的按钮 */
 .timeline-toggle {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   border: none;
-  background: var(--bg-primary);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
   color: var(--text-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color);
+  box-shadow: var(--glass-shadow-light);
+  transition: var(--transition-smooth);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
   position: relative;
   z-index: 1002;
 }
 
-/* PC端隐藏切换按钮 */
-.conversation-timeline.desktop .timeline-toggle {
-  display: none;
-}
-
 .timeline-toggle:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-  background: var(--bg-hover);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+  box-shadow: var(--glass-shadow-dark);
 }
 
 .timeline-toggle:active {
@@ -74,15 +92,27 @@
   top: 0;
   width: 280px;
   max-height: 400px;
-  background: var(--bg-primary);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  border: 1px solid var(--border-color);
-  backdrop-filter: blur(20px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--glass-shadow-dark);
+  border: 1px solid var(--glass-border-light);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  transition: var(--transition-smooth);
   overflow: hidden;
   transform-origin: right center;
   will-change: transform, opacity;
+}
+
+/* PC端时间轴内容样式调整 */
+.conversation-timeline.desktop .timeline-content {
+  position: relative;
+  right: 0;
+  top: 0;
+  width: 280px;
+  max-height: 500px; /* PC端可以稍微高一点 */
 }
 
 /* PC端常驻显示时使用更轻的阴影 */
@@ -148,6 +178,18 @@
   background: var(--text-secondary);
 }
 
+/* 移动端隐藏滚动条 */
+@media (max-width: 768px) {
+  .timeline-items {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  .timeline-items::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* 时间轴项目 */
 .timeline-item {
   display: flex;
@@ -158,30 +200,47 @@
   position: relative;
   border-radius: 8px;
   margin: 0 8px;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  outline: none;
 }
 
 .timeline-item:hover {
-  background: var(--bg-hover);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
   transform: translateX(-2px);
 }
 
 .timeline-item.active {
-  background: var(--accent-color);
-  color: white;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+  color: var(--text-primary);
   transform: translateX(-2px);
+  /* 优化选中状态的padding，让内容更紧凑 */
+  padding: 10px 18px;
+  margin: 2px 6px;
+  border-radius: 10px;
+  box-shadow: var(--glass-shadow-dark);
+  border: 1px solid var(--glass-border-light);
 }
 
 .timeline-item.active .timeline-time,
 .timeline-item.active .timeline-preview {
-  color: white;
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .timeline-item.active .timeline-dot {
-  background: white;
+  background: var(--accent-primary);
+  transform: scale(1.3);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
 }
 
 .timeline-item.active .dot-inner {
-  background: var(--accent-color);
+  background: white;
+  transform: scale(1.2);
 }
 
 /* 时间轴圆点 */
@@ -240,34 +299,27 @@
 /* 移动端适配 */
 @media (max-width: 768px) {
   .conversation-timeline {
+    position: fixed;
     right: 12px;
-    top: auto;
-    bottom: 80px;
+    top: 60px; /* 调整到header下方 */
     transform: none;
+    z-index: 99; /* 降低z-index，确保侧边栏能够遮挡 */
   }
 
   .timeline-content {
-    right: 50px;
-    top: auto;
-    bottom: 0;
+    position: relative;
+    right: 0;
+    top: 0;
     width: 240px;
     max-height: 300px;
-    transform-origin: right bottom;
+    transform-origin: right top;
   }
 
   .timeline-items {
     margin: 0 -4px;
   }
 
-  .timeline-toggle {
-    width: 36px;
-    height: 36px;
-  }
 
-  .timeline-toggle svg {
-    width: 14px;
-    height: 14px;
-  }
 
   .timeline-header {
     padding: 12px 16px;
@@ -286,6 +338,29 @@
   .timeline-item {
     padding: 10px 16px;
     margin: 0 4px;
+  }
+
+  .timeline-item.active {
+    /* 移动端选中状态优化 */
+    padding: 8px 14px;
+    margin: 2px 2px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, 
+      var(--glass-bg-light-hover) 0%, 
+      var(--glass-bg-dark-hover) 100%);
+    box-shadow: var(--glass-shadow-dark);
+    border: 1px solid var(--glass-border-light);
+  }
+
+  .timeline-item.active .timeline-dot {
+    /* 移动端选中状态圆点优化 - 增强视觉效果 */
+    transform: scale(1.3);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+  }
+
+  .timeline-item.active .dot-inner {
+    /* 移动端选中状态内圆点优化 */
+    transform: scale(1.2);
   }
 
   .timeline-dot {
@@ -320,21 +395,26 @@
 @media (max-width: 480px) {
   .conversation-timeline {
     right: 8px;
+    top: 60px;
   }
   
   .timeline-content {
     width: 220px;
-    right: 45px;
+    right: 0;
   }
-  
-  .timeline-toggle {
-    width: 32px;
-    height: 32px;
+
+  .timeline-item.active {
+    /* 小屏幕选中状态进一步优化 */
+    padding: 6px 12px;
+    margin: 1px 1px;
+    border-radius: 6px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
   }
-  
-  .timeline-toggle svg {
-    width: 12px;
-    height: 12px;
+
+  .timeline-item.active .timeline-dot {
+    /* 小屏幕选中状态圆点优化 */
+    transform: scale(1.4);
+    box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.5);
   }
   
   .timeline-header h3 {
@@ -361,14 +441,30 @@
 @keyframes timelineSlideIn {
   from {
     opacity: 0;
-    transform: translateX(20px) scale(0.95);
+    transform: translateY(-10px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
 .conversation-timeline.mobile.visible .timeline-content {
   animation: timelineSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 移动端时间轴显示控制 */
+.conversation-timeline.timeline-visible .timeline-content {
+  animation: timelineSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 桌面端隐藏移动端按钮 */
+.desktop-only {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none;
+  }
 }

@@ -3,12 +3,18 @@
   background: var(--bg-primary);
   /* border-top: 1px solid var(--border-color); */
   position: relative;
+  z-index: 1000;
 }
 
 /* 暗色模式下的输入框容器背景 */
 [data-theme="dark"] .message-input-container {
   background: var(--bg-secondary);
   border-top-color: var(--border-color);
+}
+
+[data-theme="dark"] .input-wrapper-clean {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
 }
 
 .message-input-form {
@@ -19,13 +25,20 @@
 
 .input-wrapper-clean {
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: 16px;
-  padding: 16px;
   transition: all 0.2s ease;
   box-shadow: var(--shadow-md);
+  overflow: visible;
+  position: relative;
+}
+
+.input-main-area {
+  display: flex;
+  align-items: flex-end;
+  padding: 12px 16px;
   gap: 12px;
 }
 
@@ -44,7 +57,9 @@
   line-height: 1.5;
   resize: none;
   font-family: inherit;
-  padding: 8px 0; /* 减小基础内边距 */
+  padding: 6px 0; /* 减小基础内边距 */
+  min-height: 24px;
+  max-height: 120px;
   box-shadow: none !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
@@ -68,6 +83,149 @@
 .message-textarea-clean:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 底部工具栏样式 */
+.bottom-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  margin-top: 0;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  position: relative;
+  overflow: visible;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+[data-theme="dark"] .bottom-toolbar {
+  background: var(--bg-secondary);
+  border-top-color: var(--border-color);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+/* 快速响应按钮样式 */
+.quick-response-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.quick-response-btn:hover:not(:disabled) {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.quick-response-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 加号按钮容器 */
+.plus-button-container {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 2001;
+  overflow: visible;
+}
+
+/* 加号按钮样式 */
+.plus-button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.plus-button:hover:not(:disabled) {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.plus-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 下拉菜单样式 */
+.dropdown-menu {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 8px 0;
+  min-width: 160px;
+  z-index: 2000;
+  animation: dropdownFadeIn 0.2s ease-out;
+  transform: translateY(0);
+  position: absolute;
+  pointer-events: auto;
+  bottom: calc(100% + 8px);
+  right: 0;
+  top: auto;
+}
+
+[data-theme="dark"] .dropdown-menu {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 下拉菜单项样式 */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.dropdown-item svg {
+  flex-shrink: 0;
+  color: var(--text-secondary);
 }
 
 .send-button {
@@ -208,31 +366,184 @@
     left: 0;
     right: 0;
     width: 100vw;
-    padding: 12px 16px;
-    background: var(--bg-primary);
+    padding: 8px 12px;
+    /* background: var(--bg-primary); */
     /* border-top: 1px solid var(--border-color); */
-    z-index: 50;
+    z-index: 1000;
+    /* box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); */
   }
   
   .input-wrapper-clean {
-    padding: 10px 12px;
-    min-height: 44px;
+    min-height: 40px;
     max-width: 100%;
     width: 100%;
+    border-radius: 12px;
+  }
+  
+  .input-main-area {
+    padding: 8px 12px;
+    gap: 8px;
   }
   
   .message-textarea-clean {
     font-size: 16px;
-    min-height: 20px;
-    max-height: 100px;
+    min-height: 18px;
+    max-height: 80px;
     width: 100%;
+    padding: 6px 0;
+  }
+  
+  .send-button,
+  .stop-button {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 8px;
+  }
+  
+  .send-button svg,
+  .stop-button svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .input-hint {
+    font-size: 11px;
+    margin-top: 6px;
+    padding: 0 4px;
+  }
+  
+  /* 移动端底部工具栏 */
+  .bottom-toolbar {
+    padding: 6px 12px;
+    border-top: 1px solid var(--border-color);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+  }
+  
+  /* 移动端快速响应按钮 */
+  .quick-response-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 4px;
+    border-radius: 6px;
+    min-height: 36px;
+  }
+  
+  /* 移动端加号按钮 */
+  .plus-button {
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+    border-radius: 6px;
+  }
+  
+  /* 移动端下拉菜单 */
+.dropdown-menu {
+  min-width: 140px;
+  margin-bottom: 6px;
+  z-index: 2000;
+}
+
+/* 确保下拉菜单在移动端正确显示 */
+@media (max-width: 768px) {
+  .dropdown-menu {
+    position: absolute;
+    right: 0;
+    z-index: 2000;
+    max-width: calc(100vw - 24px);
+  }
+}
+  
+  .dropdown-item {
+    padding: 10px 12px;
+    font-size: 13px;
+    gap: 10px;
+  }
+}
+
+/* 中等屏幕优化 */
+@media (max-width: 640px) {
+  .message-input-container {
+    padding: 10px 14px;
+  }
+  
+  .input-wrapper-clean {
+    min-height: 42px;
+    border-radius: 14px;
+  }
+  
+  .input-main-area {
+    padding: 9px 14px;
+    gap: 10px;
+  }
+  
+  .message-textarea-clean {
+    padding: 7px 0;
+    min-height: 19px;
+    max-height: 90px;
+  }
+  
+  .send-button,
+  .stop-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+  
+  .send-button svg,
+  .stop-button svg {
+    width: 19px;
+    height: 19px;
+  }
+  
+  .bottom-toolbar {
+    padding: 5px 14px;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+  }
+  
+  .quick-response-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+    gap: 3px;
+    min-height: 34px;
+  }
+  
+  .plus-button {
+    width: 34px;
+    height: 34px;
+    padding: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .message-input-container {
+    padding: 6px 8px;
+  }
+  
+  .input-wrapper-clean {
+    min-height: 36px;
+    border-radius: 10px;
+  }
+  
+  .input-main-area {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  
+  .message-textarea-clean {
+    padding: 4px 0;
+    min-height: 16px;
+    max-height: 60px;
+    font-size: 15px;
   }
   
   .send-button,
   .stop-button {
     width: 32px;
     height: 32px;
-    flex-shrink: 0;
+    border-radius: 6px;
   }
   
   .send-button svg,
@@ -242,29 +553,213 @@
   }
   
   .input-hint {
+    font-size: 10px;
+    margin-top: 4px;
+    padding: 0 2px;
+  }
+  
+  .bottom-toolbar {
+    padding: 4px 8px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+  }
+  
+  .quick-response-btn {
+    padding: 4px 6px;
+    font-size: 10px;
+    gap: 2px;
+    border-radius: 4px;
+    min-height: 32px;
+  }
+  
+  .plus-button {
+    width: 32px;
+    height: 32px;
+    padding: 4px;
+    border-radius: 4px;
+  }
+  
+  .dropdown-menu {
+    min-width: 120px;
+    margin-bottom: 4px;
+  }
+  
+  .dropdown-item {
+    padding: 8px 10px;
     font-size: 12px;
-    margin-top: 8px;
+    gap: 8px;
   }
 }
 
-@media (max-width: 480px) {
-  .message-input-container {
-    padding: 8px 12px 8px; /* 超小屏幕更小的内边距 */
+/* 文件预览容器 */
+.file-preview-container {
+  margin: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+/* 图片预览 */
+.image-preview {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-image {
+  max-width: 300px;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* 文件信息 */
+.file-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.file-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-details svg {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.file-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.file-size {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+/* 删除文件按钮 */
+.remove-file-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.remove-file-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: scale(1.1);
+}
+
+.remove-file-btn:active {
+  transform: scale(0.95);
+}
+
+/* 图片预览中的删除按钮 */
+.image-preview .remove-file-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.image-preview .remove-file-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .file-preview-container {
+    margin: 6px;
+    padding: 10px;
+    border-radius: 10px;
   }
   
-  .input-wrapper-clean {
-    padding: 6px 10px; /* 更小的内边距 */
-    min-height: 40px; /* 更小的最小高度 */
+  .preview-image {
+    max-width: 100%;
+    max-height: 150px;
+  }
+  
+  .file-info {
+    padding: 8px 12px;
+  }
+  
+  .file-name {
+    max-width: 150px;
+    font-size: 13px;
+  }
+  
+  .file-size {
+    font-size: 11px;
+  }
+  
+  .remove-file-btn {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .image-preview .remove-file-btn {
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* 移动端输入框适配 */
+@media (max-width: 768px) {
+  .input-main-area {
+    padding: 10px 14px;
+    gap: 10px;
   }
   
   .message-textarea-clean {
-    padding: 6px 0; /* 更小的内边距 */
-    min-height: 18px;
+    font-size: 16px; /* 防止iOS缩放 */
+    padding: 4px 0;
+    min-height: 20px;
     max-height: 100px;
   }
   
-  .input-hint {
-    font-size: 10px;
-    margin-top: 4px;
+  .bottom-toolbar {
+    padding: 6px 14px;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+  }
+  
+  .input-wrapper-clean {
+    border-radius: 14px;
   }
 }

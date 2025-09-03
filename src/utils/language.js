@@ -94,6 +94,20 @@ export const translations = {
     // 时间轴
     timeline: "时间轴",
     questions: "个问题",
+    
+    // 对话框工具
+    quickResponse: "快速响应",
+    moreOptions: "更多选项",
+    upload: "上传",
+    addTab: "添加选项卡",
+    newChat: "新建对话",
+    typeMessageWithFile: "输入消息或直接发送文件...",
+    
+    // 删除确认
+    deleteConversation: "删除对话",
+    deleteConversationConfirm: "确定要删除这个对话吗？",
+    deleteConversationWithTitle: "确定要删除对话\"{title}\"吗？",
+    deleteConversationWarning: "此操作无法撤销，对话中的所有消息将被永久删除。",
   },
   en: {
     // 应用标题
@@ -150,6 +164,20 @@ export const translations = {
     // 时间轴
     timeline: "Timeline",
     questions: "questions",
+    
+    // 对话框工具
+    quickResponse: "Quick Response",
+    moreOptions: "More Options",
+    upload: "Upload",
+    addTab: "Add Tab",
+    newChat: "New Chat",
+    typeMessageWithFile: "Type a message or send file directly...",
+    
+    // 删除确认
+    deleteConversation: "Delete Conversation",
+    deleteConversationConfirm: "Are you sure you want to delete this conversation?",
+    deleteConversationWithTitle: "Are you sure you want to delete conversation \"{title}\"?",
+    deleteConversationWarning: "This action cannot be undone. All messages in this conversation will be permanently deleted.",
   },
 };
 
