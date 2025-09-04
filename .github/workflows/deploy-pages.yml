@@ -40,11 +40,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm run build
+        run: pnpm run build:mobile
         env:
           GENERATE_SOURCEMAP: false
           INLINE_RUNTIME_CHUNK: false
           IMAGE_INLINE_SIZE_LIMIT: 1000
+          REACT_APP_OPTIMIZE_IMAGES: true
+          REACT_APP_ENABLE_CODE_SPLITTING: true
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
