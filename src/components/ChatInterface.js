@@ -656,7 +656,14 @@ const ChatInterface = ({
                 {getRoleById(conversation.role || currentRole).avatar}
               </div>
               <div className="conversation-details">
-                <div className="conversation-role">
+                <div 
+                  className="conversation-role"
+                  style={{ 
+                    color: getRoleById(conversation.role || currentRole).color,
+                    borderColor: getRoleById(conversation.role || currentRole).color + '40',
+                    backgroundColor: getRoleById(conversation.role || currentRole).color + '20'
+                  }}
+                >
                   {getRoleById(conversation.role || currentRole).name}
                 </div>
                 <h1 className="conversation-title">
