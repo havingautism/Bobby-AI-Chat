@@ -1639,7 +1639,7 @@
   line-height: 1.4; /* 改善行间距 */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif; /* 与对话UI字体一致 */
   margin-bottom: 3px;
-  margin-left: 3px;
+  margin-left: 1px;
 }
 
 .title-edit-input {

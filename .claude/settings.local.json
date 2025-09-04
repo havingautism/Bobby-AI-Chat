@@ -9,7 +9,15 @@
       "Bash(npm run build:*)",
       "Bash(npm run start:*)",
       "Bash(npm test:*)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Read(/E:\\Git Projects\\AI chat\\src\\components/**)",
+      "Read(/E:\\Git Projects\\AI chat\\src/**)",
+      "Read(/E:\\Git Projects\\AI chat\\src\\components/**)",
+      "Read(/E:\\Git Projects\\AI chat\\src\\components/**)",
+      "Read(/E:\\Git Projects\\AI chat\\src\\components/**)",
+      "Read(/E:\\Git Projects\\AI chat\\src\\components/**)",
+      "Read(/E:\\Git Projects\\AI chat\\src\\components/**)",
+      "Read(/E:\\Git Projects\\AI chat\\src\\components/**)"
     ],
     "deny": [],
     "ask": []
