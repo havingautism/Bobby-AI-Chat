@@ -4,7 +4,7 @@ import ChatInput from "./ChatInput";
 import WelcomeScreen from "./WelcomeScreen";
 import ModelSelector from "./ModelSelector";
 import ConversationTimeline from "./ConversationTimeline";
-import { sendMessage, sendMessageStream, isApiConfigured, generateChatTitleStream } from "../utils/api";
+import { sendMessage, sendMessageStream, isApiConfigured, generateChatTitleStream, getApiConfig } from "../utils/api";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
 import { getCurrentLanguage, t } from "../utils/language";
 import { initMobileOptimizer } from "../utils/mobileOptimizer";
@@ -208,8 +208,25 @@ const ChatInterface = ({
 
     onUpdateConversation(currentConversationId, updates);
 
-    // 使用流式输出，传递对话的模型信息
-    await sendMessageWithStream(updatedMessages, { ...options, model: conversation.model }, currentConversationId);
+    // 使用流式输出，优先使用对话的模型信息，否则使用全局默认模型
+    const apiConfig = getApiConfig();
+    let modelToUse = conversation.model || apiConfig.model;
+    
+    // 如果这是对话的第一条用户消息且对话模型与全局默认不同，则更新对话模型
+    if (conversation.messages.length === 0 && conversation.model !== apiConfig.model) {
+      modelToUse = apiConfig.model;
+      onUpdateConversation(currentConversationId, { model: apiConfig.model });
+    }
+    
+    // 获取当前角色的system prompt
+    const roleToUse = conversation.role || currentRole;
+    const roleInfo = getRoleById(roleToUse);
+    const systemPrompt = roleInfo.systemPrompt;
+    
+    // 添加角色的temperature参数
+    const roleTemperature = roleInfo.temperature;
+    
+    await sendMessageWithStream(updatedMessages, { ...options, model: modelToUse, systemPrompt, temperature: roleTemperature }, currentConversationId);
   };
 
   // 流式消息发送
@@ -545,8 +562,13 @@ const ChatInterface = ({
       messages: messagesWithoutError,
     });
 
-    // 使用流式版本重新发送消息，而不是非流式版本，传递对话的模型信息
-    await sendMessageWithStream(messages, { ...options, model: conversation.model }, conversationId);
+    // 使用流式版本重新发送消息，添加角色信息
+    const roleToUse = conversation.role || currentRole;
+    const roleInfo = getRoleById(roleToUse);
+    const systemPrompt = roleInfo.systemPrompt;
+    const roleTemperature = roleInfo.temperature;
+    
+    await sendMessageWithStream(messages, { ...options, model: conversation.model, systemPrompt, temperature: roleTemperature }, conversationId);
   };
 
   // 重新生成消息
@@ -581,10 +603,15 @@ const ChatInterface = ({
       .find(msg => msg.role === "user");
 
     if (lastUserMessage) {
-      // 重新生成回复，传递对话的模型信息
+      // 重新生成回复，添加角色信息
+      const roleToUse = conversation.role || currentRole;
+      const roleInfo = getRoleById(roleToUse);
+      const systemPrompt = roleInfo.systemPrompt;
+      const roleTemperature = roleInfo.temperature;
+      
       await sendMessageWithStream(
         updatedMessages,
-        { ...lastUserMessage.options, model: conversation.model },
+        { ...lastUserMessage.options, model: conversation.model, systemPrompt, temperature: roleTemperature },
         conversation.id
       );
     }
