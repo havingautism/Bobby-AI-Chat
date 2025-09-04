@@ -182,11 +182,15 @@
 
 /* 明色模式竖线为黑色，暗色模式竖线为白色 */
 [data-theme="light"] .reasoning-inner::before {
-  background: #000000;
+  background: var(--text-secondary);
+  max-height: calc(100% - 30px);
+  margin-top: 15px;
 }
 
 [data-theme="dark"] .reasoning-inner::before {
-  background: #ffffff;
+  background: var(--text-secondary);
+    max-height: calc(100% - 30px);
+      margin-top: 15px;
 }
 
 /* 响应式设计 */

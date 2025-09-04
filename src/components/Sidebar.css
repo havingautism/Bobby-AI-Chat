@@ -62,13 +62,14 @@
 
 .sidebar {
   width: 260px;
-  /* background: var(--bg-secondary); */ /* Replaced by glass-pane */
+  background: var(--bg-secondary);
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 1001;
   transform: translateX(-100%);
   transition: all 0.3s ease;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   /* border-right: 1px solid var(--border-color); */ /* Replaced by glass-pane */
   /* box-shadow: var(--shadow-md); */ /* Replaced by glass-pane */
 }
@@ -102,7 +103,7 @@
 .header-top {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  /* margin-bottom: 12px; */
 }
 
 .new-chat-btn {
@@ -1080,11 +1081,11 @@
   border-bottom: 1px solid var(--border-color);
 }
 
-.header-top {
+/* .header-top {
   display: flex;
   align-items: center;
   margin-bottom: 12px;
-}
+} */
 
 
 
@@ -1638,6 +1639,7 @@
   line-height: 1.4; /* 改善行间距 */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif; /* 与对话UI字体一致 */
   margin-bottom: 3px;
+  margin-left: 3px;
 }
 
 .title-edit-input {
