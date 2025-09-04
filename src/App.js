@@ -5,6 +5,8 @@ import Settings from "./components/Settings";
 import { loadChatHistory, saveChatHistory, migrateFromLocalStorage } from "./utils/storage";
 import { initTheme } from "./utils/theme";
 import { getApiConfig } from "./utils/api";
+import { smartCacheCleanup, getCacheStatus } from "./utils/cacheManager";
+import "./utils/mobileCacheOptimizer"; // Import mobile cache optimizer
 import { v4 as uuidv4 } from "uuid";
 import "./App.css";
 import "./styles/theme.css";
@@ -69,6 +71,9 @@ function App() {
       try {
         // 初始化主题
         initTheme();
+
+        // 智能清理过期缓存（保护IndexedDB数据）
+        await smartCacheCleanup();
 
         // 获取默认模型配置
         const apiConfig = getApiConfig();
