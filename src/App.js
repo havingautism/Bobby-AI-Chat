@@ -19,10 +19,26 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [defaultModel, setDefaultModel] = useState("deepseek-ai/DeepSeek-V3.1");
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [lastResponseMode, setLastResponseMode] = useState(() => {
     // 从 localStorage 读取保存的响应模式，默认为 "normal"
     return localStorage.getItem('lastResponseMode') || "normal";
   });
+
+  // 监听窗口大小变化
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      // 在移动端时，如果侧边栏是展开状态，自动收起
+      if (mobile && sidebarOpen && !sidebarCollapsed) {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sidebarOpen, sidebarCollapsed]);
 
   // 同步默认模型与API配置
   useEffect(() => {
@@ -267,13 +283,13 @@ function App() {
         onOpenSettings={() => setSettingsOpen(true)}
       />
       {/* 移动端侧边栏遮罩层：仅宽栏打开时显示 */}
-      {sidebarOpen && !sidebarCollapsed && window.innerWidth <= 768 && (
+      {sidebarOpen && !sidebarCollapsed && isMobile && (
         <div 
           className="sidebar-overlay" 
           onClick={() => setSidebarOpen(false)}
         />
       )}
-      <div className={`glass-pane chat-interface ${window.innerWidth <= 768 && sidebarOpen && sidebarCollapsed ? 'with-collapsed-sidebar' : ''} ${window.innerWidth <= 768 && sidebarOpen && !sidebarCollapsed ? 'pushed-by-sidebar' : ''}`}>
+      <div className={`glass-pane chat-interface ${isMobile && sidebarOpen && sidebarCollapsed ? 'with-collapsed-sidebar' : ''}`}>
         {currentConversation && (
           <ChatInterface
             conversation={currentConversation}

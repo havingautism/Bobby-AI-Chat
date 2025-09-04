@@ -80,6 +80,16 @@ const Sidebar = ({
     setDeleteModalOpen(true);
   };
 
+  // 处理移动端会话选择（自动关闭侧边栏）
+  const handleMobileConversationSelect = (conversationId) => {
+    onSelectConversation(conversationId);
+    // 在移动端且侧边栏展开时，选择会话后立即关闭侧边栏
+    // 移除延迟逻辑，优化移动端性能
+    if (window.innerWidth <= 768 && isOpen && !isCollapsed) {
+      onToggle();
+    }
+  };
+
   // 确认删除
   const confirmDelete = () => {
     if (conversationToDelete) {
@@ -330,7 +340,7 @@ const Sidebar = ({
                       className={`conversation-item collapsed ${
                         currentConversationId === conversation.id ? "active" : ""
                       }`}
-                      onClick={() => onSelectConversation(conversation.id)}
+                      onClick={() => handleMobileConversationSelect(conversation.id)}
                       title={conversation.title}
                     >
                       <div className="role-avatar" style={{ color: getRoleById(conversation.role)?.color }}>
@@ -357,7 +367,7 @@ const Sidebar = ({
                       className={`conversation-item collapsed ${
                         currentConversationId === conversation.id ? "active" : ""
                       }`}
-                      onClick={() => onSelectConversation(conversation.id)}
+                      onClick={() => handleMobileConversationSelect(conversation.id)}
                       title={conversation.title}
                     >
                       <div className="role-avatar" style={{ color: getRoleById(conversation.role)?.color }}>
@@ -409,7 +419,7 @@ const Sidebar = ({
                       key={conversation.id}
                       conversation={conversation}
                       isActive={currentConversationId === conversation.id}
-                      onSelect={onSelectConversation}
+                      onSelect={handleMobileConversationSelect}
                       onDelete={handleDeleteConfirm}
                       onUpdateTitle={(id, title) => onUpdateConversation(id, { title })}
                       searchQuery={searchQuery}
@@ -432,7 +442,7 @@ const Sidebar = ({
                       key={conversation.id}
                       conversation={conversation}
                       isActive={currentConversationId === conversation.id}
-                      onSelect={onSelectConversation}
+                      onSelect={handleMobileConversationSelect}
                       onDelete={handleDeleteConfirm}
                       onUpdateTitle={(id, title) => onUpdateConversation(id, { title })}
                       searchQuery={searchQuery}

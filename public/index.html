@@ -29,15 +29,15 @@
     <div id="root"></div>
     
     <script>
-      // PWA安装支持 - 最小化Service Worker
-      if ('serviceWorker' in navigator) {
+      // PWA安装支持 - 仅在生产环境启用
+      if ('serviceWorker' in navigator && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
+          navigator.serviceWorker.register('./service-worker.js')
             .then(registration => {
               console.log('PWA Service Worker registered:', registration);
             })
             .catch(error => {
-              console.error('PWA Service Worker registration failed:', error);
+              console.warn('PWA Service Worker registration failed:', error);
             });
         });
       }

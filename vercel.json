@@ -18,6 +18,22 @@
       }
     },
     {
+      "src": "/service-worker.js",
+      "dest": "/service-worker.js",
+      "headers": {
+        "Content-Type": "application/javascript",
+        "cache-control": "s-maxage=0,no-cache"
+      }
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/manifest.json",
+      "headers": {
+        "Content-Type": "application/manifest+json",
+        "cache-control": "s-maxage=0,no-cache"
+      }
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }

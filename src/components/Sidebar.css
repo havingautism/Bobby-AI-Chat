@@ -4,8 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.25);
-  z-index: 998;
+  z-index: 9998; /* 提高z-index，确保在header和输入框之上 */
   display: none;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -56,7 +55,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 998;
+  z-index: 9998; /* 提高z-index，确保在header和输入框之上 */
   display: none;
 }
 
@@ -827,7 +826,7 @@
 @media (max-width: 768px) {
   .sidebar-overlay {
     display: block;
-    z-index: 998;
+    z-index: 9998; /* 提高z-index，确保在header和输入框之上 */
     position: fixed;
     top: 0;
     left: 0;
@@ -842,7 +841,7 @@
     height: 100vh;
     height: 100dvh; /* 动态视口高度 */
     width: 280px; /* 减小移动端宽度，从260px调整到280px */
-    z-index: 999;
+    z-index: 9999; /* 提高z-index，确保在最上层 */
     transform: none;
     transition: left 0.3s ease;
     background: var(--bg-secondary); /* 使用不透明的背景色 */

@@ -2,12 +2,12 @@
   "name": "Bobby - AI Chat",
   "short_name": "Bobby",
   "description": "你的可爱AI猫咪助手 🐱",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
   "orientation": "portrait-primary",
-  "scope": ".",
+  "scope": "./",
   "lang": "zh-CN",
   "icons": [
     {
@@ -34,7 +34,7 @@
       "name": "新建聊天",
       "short_name": "新建",
       "description": "开始新的对话",
-      "url": "/new-chat",
+      "url": "./new-chat",
       "icons": [{ "src": "favicon.png", "sizes": "192x192" }]
     }
   ]
