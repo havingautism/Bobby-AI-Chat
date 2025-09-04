@@ -400,14 +400,16 @@
   .chat-interface.with-collapsed-sidebar {
     margin-left: 62px; /* 56px rail + 6px gutter */
     width: calc(100% - 62px);
-    border-top-left-radius: var(--border-radius-main);
-    border-bottom-left-radius: var(--border-radius-main);
+    /* border-top-left-radius: var(--border-radius-sm); */
+    border-bottom-left-radius: var(--border-radius-sm);
   }
 
   /* 收起但未打开时保持隐藏（默认 left: -100%），打开时放到左侧 */
   .sidebar.collapsed.open {
     left: 0;
     width: 56px;
+      border-top-right-radius: var(--border-radius-sm);
+        border-bottom-right-radius: var(--border-radius-sm);
   }
 
   .sidebar {
@@ -425,8 +427,8 @@
   }
 
   .sidebar.open {
-    border-top-right-radius:var(--border-radius-main) ;
-    border-bottom-right-radius:var(--border-radius-main) ;
+    border-top-right-radius:var(--border-radius-sm) ;
+    border-bottom-right-radius:var(--border-radius-sm) ;
     left: 0;
     max-width: 70%;
   }
