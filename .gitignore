@@ -1,5 +1,8 @@
 ﻿node_modules
 /build
+/.claude
+/.vscode
+/.kiro
 # Chat history and development notes (exclude all .md files except README.md)
 *.md
 !README.md
