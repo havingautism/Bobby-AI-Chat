@@ -1719,84 +1719,6 @@
 }
 
 @media (max-width: 768px) {
-  /* 移动端性能优化：禁用昂贵的backdrop-filter效果 */
-  .sidebar-overlay {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background-color: rgba(0, 0, 0, 0.5) !important;
-  }
-
-  .sidebar {
-    /* 移动端优化：减少阴影复杂度 */
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-    /* 移动端优化：使用更快的过渡 */
-    transition: left 0.25s ease-out, transform 0.25s ease-out;
-  }
-
-  .sidebar.open {
-    /* 移动端优化：确保平滑渲染 */
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-  }
-
-  /* 移动端优化：简化玻璃态效果 */
-  .search-input,
-  .role-filter-trigger,
-  .new-chat-btn,
-  .settings-btn,
-  .theme-toggle-btn,
-  .language-toggle-btn,
-  .collapse-toggle-btn {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background: var(--bg-tertiary) !important;
-    transition: all 0.2s ease !important;
-  }
-
-  /* 移动端优化：减少动画复杂度 */
-  .conversation-item,
-  .conversation-item:hover,
-  .conversation-item.collapsed:hover {
-    transition: background-color 0.1s ease !important;
-    transform: none !important;
-  }
-
-  /* 移动端优化：简化阴影效果 */
-  .new-chat-btn:hover,
-  .search-input:focus,
-  .role-filter-trigger:hover,
-  .settings-btn:hover,
-  .theme-toggle-btn:hover,
-  .language-toggle-btn:hover,
-  .collapse-toggle-btn:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-    transform: translateY(-1px) !important;
-  }
-
-  /* 移动端优化：减少动画 */
-  .conversation-item:hover .conversation-role,
-  .conversation-item:hover .cat-chat-icon,
-  .conversation-item.collapsed:hover .role-avatar {
-    transform: none !important;
-    transition: none !important;
-  }
-
-  /* 移动端优化：简化液态效果 */
-  .new-chat-btn::before {
-    display: none !important;
-  }
-
-  /* 移动端优化：简化头像效果 */
-  .user-avatar {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-    transition: all 0.2s ease !important;
-  }
-
-  .user-avatar-btn:hover .user-avatar {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
-  }
-
   /* 收起状态默认隐藏，仅当同时具有 .open 才显示为窄竖条 */
   .sidebar.collapsed {
     left: -100% !important;
@@ -1839,20 +1761,6 @@
 
   .sidebar.collapsed.open ~ .sidebar-overlay {
     display: none !important;
-  }
-
-  /* 移动端优化：禁用复杂的加载动画 */
-  .title-loading-dots span {
-    animation: none !important;
-    transform: none !important;
-    opacity: 1 !important;
-  }
-
-  /* 移动端优化：简化下拉菜单动画 */
-  .role-filter-dropdown,
-  .conversation-menu {
-    animation: none !important;
-    transition: opacity 0.15s ease !important;
   }
 }
 
