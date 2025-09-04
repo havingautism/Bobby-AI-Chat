@@ -728,7 +728,7 @@
 /* 错误消息样式增强 */
 .message.error {
   background: rgba(239, 68, 68, 0.05);
-  border-left: 4px solid var(--error-color);
+  border-radius: var(--border-radius-sm);
 }
 
 
@@ -828,10 +828,7 @@
 
 .message.error .message-content {
   color: var(--error-color);
-  background: var(--error-bg);
-  padding: 16px 20px;
   border-radius: 12px;
-  border-left: 4px solid var(--error-color);
 }
 
 /* 流式输出效果 */
