@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bobby-ai-chat-v1';
+const CACHE_NAME = 'bobby-ai-chat-v2';
 const urlsToCache = [
   '/',
   '/index.html',

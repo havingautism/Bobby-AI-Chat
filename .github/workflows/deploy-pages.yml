@@ -51,6 +51,12 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
+      - name: Update Service Worker Version
+        run: |
+          # 生成基于commit hash的版本号
+          VERSION=$(git rev-parse --short HEAD)
+          sed -i "s/bobby-ai-chat-v[0-9]/bobby-ai-chat-v$VERSION/g" build/service-worker.js
+          
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
