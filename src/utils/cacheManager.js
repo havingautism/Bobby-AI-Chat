@@ -1,204 +1,116 @@
-/**
- * PWA缓存管理工具
- * 用于处理Service Worker缓存更新，保护IndexedDB数据
- */
-
+// 缓存管理工具 - 保护IndexedDB数据
 class CacheManager {
   constructor() {
-    this.registration = null;
-    this.isUpdateAvailable = false;
+    this.cacheVersion = 'v1.0.1';
   }
 
-  /**
-   * 初始化Service Worker监听
-   */
-  async init() {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        // Service Worker已更新，可以提示用户刷新
-        this.showUpdateNotification();
-      });
-
-      // 检查是否有新版本
-      this.checkForUpdates();
-    }
-  }
-
-  /**
-   * 检查是否有新版本
-   */
-  async checkForUpdates() {
+  // 清理浏览器缓存，但保护IndexedDB
+  async clearBrowserCache() {
     try {
-      if (navigator.serviceWorker.controller) {
-        const version = await this.getServiceWorkerVersion();
-        console.log('Current Service Worker version:', version);
-        
-        // 这里可以比较版本号，如果有新版本就提示用户
-        this.listenForWaitingServiceWorker();
-      }
-    } catch (error) {
-      console.error('Error checking for updates:', error);
-    }
-  }
-
-  /**
-   * 获取当前Service Worker版本
-   */
-  async getServiceWorkerVersion() {
-    return new Promise((resolve, reject) => {
-      if (!navigator.serviceWorker.controller) {
-        reject('No active service worker');
-        return;
-      }
-
-      const messageChannel = new MessageChannel();
-      messageChannel.port1.onmessage = (event) => {
-        resolve(event.data.version);
-      };
-
-      navigator.serviceWorker.controller.postMessage(
-        { type: 'GET_VERSION' },
-        [messageChannel.port2]
-      );
-    });
-  }
-
-  /**
-   * 监听等待中的Service Worker
-   */
-  listenForWaitingServiceWorker() {
-    navigator.serviceWorker.getRegistration().then(registration => {
-      if (registration.waiting) {
-        this.registration = registration;
-        this.isUpdateAvailable = true;
-        this.showUpdateNotification();
-      }
-
-      // 监听新Service Worker安装
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            this.registration = registration;
-            this.isUpdateAvailable = true;
-            this.showUpdateNotification();
-          }
-        });
-      });
-    });
-  }
-
-  /**
-   * 显示更新提示
-   */
-  showUpdateNotification() {
-    // 创建更新提示DOM元素
-    const notification = document.createElement('div');
-    notification.id = 'pwa-update-notification';
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #007bff;
-      color: white;
-      padding: 15px 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 10000;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      animation: slideIn 0.3s ease;
-    `;
-    
-    notification.innerHTML = `
-      <span>有新版本可用，立即更新？</span>
-      <button onclick="cacheManager.updateNow()" style="
-        background: white;
-        color: #007bff;
-        border: none;
-        padding: 5px 10px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-      ">立即更新</button>
-      <button onclick="cacheManager.dismissNotification()" style="
-        background: transparent;
-        color: white;
-        border: 1px solid white;
-        padding: 5px 10px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-      ">稍后</button>
-    `;
-
-    document.body.appendChild(notification);
-  }
-
-  /**
-   * 立即更新
-   */
-  async updateNow() {
-    if (this.registration && this.registration.waiting) {
-      this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    }
-    this.dismissNotification();
-  }
-
-  /**
-   * 关闭通知
-   */
-  dismissNotification() {
-    const notification = document.getElementById('pwa-update-notification');
-    if (notification) {
-      notification.remove();
-    }
-  }
-
-  /**
-   * 强制清理所有缓存（用于调试）
-   */
-  async clearAllCaches() {
-    try {
-      if (navigator.serviceWorker.controller) {
-        return new Promise((resolve, reject) => {
-          const messageChannel = new MessageChannel();
-          messageChannel.port1.onmessage = (event) => {
-            if (event.data.success) {
-              resolve(true);
-            } else {
-              reject('Failed to clear caches');
-            }
-          };
-
-          navigator.serviceWorker.controller.postMessage(
-            { type: 'CLEAR_ALL_CACHES' },
-            [messageChannel.port2]
-          );
-        });
-      } else {
-        // 如果没有Service Worker，直接清理缓存
+      // 清理Service Worker缓存
+      if ('caches' in window) {
         const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(name => caches.delete(name)));
-        return true;
+        await Promise.all(
+          cacheNames.map(cacheName => {
+            if (cacheName.includes('static-') || cacheName.includes('dynamic-')) {
+              console.log('Clearing cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
       }
+
+      // 清理localStorage（可选）
+      // localStorage.clear();
+
+      // 清理sessionStorage
+      sessionStorage.clear();
+
+      console.log('Browser cache cleared successfully');
+      return true;
     } catch (error) {
-      console.error('Error clearing caches:', error);
-      throw error;
+      console.error('Failed to clear cache:', error);
+      return false;
     }
   }
 
-  /**
-   * 清理缓存并重新加载页面
-   */
-  async hardRefresh() {
+  // 强制更新Service Worker
+  async updateServiceWorker() {
     try {
-      await this.clearAllCaches();
-      window.location.reload(true);
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          // 发送更新消息
+          registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+          
+          // 重新加载页面
+          window.location.reload();
+        }
+      }
     } catch (error) {
-      console.error('Error during hard refresh:', error);
+      console.error('Failed to update service worker:', error);
+    }
+  }
+
+  // 检查缓存状态
+  async getCacheStatus() {
+    try {
+      const cacheNames = await caches.keys();
+      const cacheInfo = await Promise.all(
+        cacheNames.map(async (cacheName) => {
+          const cache = await caches.open(cacheName);
+          const keys = await cache.keys();
+          return {
+            name: cacheName,
+            size: keys.length,
+            keys: keys.map(req => req.url)
+          };
+        })
+      );
+      return cacheInfo;
+    } catch (error) {
+      console.error('Failed to get cache status:', error);
+      return [];
+    }
+  }
+
+  // 智能缓存清理 - 只清理过期的缓存
+  async smartCacheCleanup() {
+    try {
+      const cacheNames = await caches.keys();
+      const currentVersion = this.cacheVersion;
+      
+      await Promise.all(
+        cacheNames.map(cacheName => {
+          // 删除不包含当前版本的缓存
+          if (!cacheName.includes(currentVersion)) {
+            console.log('Deleting outdated cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+      
+      console.log('Smart cache cleanup completed');
+    } catch (error) {
+      console.error('Failed to perform smart cache cleanup:', error);
+    }
+  }
+
+  // 获取IndexedDB使用情况（不删除数据）
+  async getIndexedDBInfo() {
+    try {
+      if ('indexedDB' in window) {
+        // 这里可以添加获取IndexedDB信息的逻辑
+        // 但不删除任何数据
+        return {
+          available: true,
+          message: 'IndexedDB数据已保护'
+        };
+      }
+      return { available: false };
+    } catch (error) {
+      console.error('Failed to get IndexedDB info:', error);
+      return { available: false, error: error.message };
     }
   }
 }
@@ -206,11 +118,11 @@ class CacheManager {
 // 创建全局实例
 const cacheManager = new CacheManager();
 
-// 自动初始化
-if (typeof window !== 'undefined') {
-  window.addEventListener('load', () => {
-    cacheManager.init();
-  });
-}
+// 导出工具函数
+export const clearBrowserCache = () => cacheManager.clearBrowserCache();
+export const updateServiceWorker = () => cacheManager.updateServiceWorker();
+export const getCacheStatus = () => cacheManager.getCacheStatus();
+export const smartCacheCleanup = () => cacheManager.smartCacheCleanup();
+export const getIndexedDBInfo = () => cacheManager.getIndexedDBInfo();
 
 export default cacheManager;

@@ -12,9 +12,21 @@
   ],
   "routes": [
     {
-      "src": "/static/(.*)",
+      "src": "/static/js/(.*)",
       "headers": {
-        "cache-control": "s-maxage=31536000,immutable"
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/static/css/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/static/media/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
       }
     },
     {
@@ -22,7 +34,7 @@
       "dest": "/service-worker.js",
       "headers": {
         "Content-Type": "application/javascript",
-        "cache-control": "s-maxage=0,no-cache"
+        "cache-control": "no-cache, no-store, must-revalidate"
       }
     },
     {
@@ -30,7 +42,13 @@
       "dest": "/manifest.json",
       "headers": {
         "Content-Type": "application/manifest+json",
-        "cache-control": "s-maxage=0,no-cache"
+        "cache-control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
+      "src": "/index.html",
+      "headers": {
+        "cache-control": "no-cache, no-store, must-revalidate"
       }
     },
     {
