@@ -1,5 +1,5 @@
 ﻿node_modules
-
+/build
 # Chat history and development notes (exclude all .md files except README.md)
 *.md
 !README.md
