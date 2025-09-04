@@ -29,15 +29,15 @@
     <div id="root"></div>
     
     <script>
-      // Service Worker 注册
+      // PWA安装支持 - 最小化Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js')
             .then(registration => {
-              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+              console.log('PWA Service Worker registered:', registration);
             })
             .catch(error => {
-              console.log('ServiceWorker registration failed: ', error);
+              console.error('PWA Service Worker registration failed:', error);
             });
         });
       }
@@ -47,14 +47,11 @@
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        
-        // 可以在这里显示安装按钮
-        console.log('PWA can be installed');
+        console.log('PWA install prompt ready');
       });
 
-      // 处理PWA安装
-      window.addEventListener('appinstalled', (evt) => {
-        console.log('PWA was installed');
+      window.addEventListener('appinstalled', () => {
+        console.log('PWA installed successfully');
       });
     </script>
   </body>
