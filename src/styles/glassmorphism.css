@@ -330,7 +330,11 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  /* 移除复杂的过渡动画，优化移动端性能 */
+  transition: none;
 }
+
+/* 移除桌面端推挤动画，优化性能 */
 
 /* --- Message List --- */
 .message-list {
@@ -418,9 +422,10 @@
     left: -100%;
     height: 100vh;
     width: 280px; /* 与Sidebar.css保持一致 */
-    z-index: 1000;
+    z-index: 9999; /* 提高z-index，确保在最上层 */
     transform: none;
-    transition: left 0.3s ease;
+    /* 优化移动端动画性能，使用更简单的过渡 */
+    transition: left 0.2s ease;
     background: var(--bg-secondary) !important;
     background-image: none !important;
     backdrop-filter: none !important;
@@ -446,14 +451,12 @@
     width: 100%;
     height: 100vh;
     border-radius: 0;
-    transition: transform 0.3s ease, width 0.3s ease, margin-left 0.3s ease; /* 平滑过渡 */
+    /* 移除复杂的过渡动画，优化移动端性能 */
+    transition: none;
     box-sizing: border-box; /* 使 padding 参与总宽度计算 */
   }
 
-  /* 宽侧边栏打开时，聊天界面被“推挤”向右 */
-  .pushed-by-sidebar {
-    transform: translateX(280px); /* 与移动端宽侧边栏宽度一致 */
-  }
+  /* 移除推挤动画，优化移动端性能 */
 
   .glass-pane {
     border-radius: 0;

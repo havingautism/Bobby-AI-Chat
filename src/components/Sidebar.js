@@ -83,7 +83,8 @@ const Sidebar = ({
   // 处理移动端会话选择（自动关闭侧边栏）
   const handleMobileConversationSelect = (conversationId) => {
     onSelectConversation(conversationId);
-    // 在移动端且侧边栏展开时，选择会话后自动关闭侧边栏
+    // 在移动端且侧边栏展开时，选择会话后立即关闭侧边栏
+    // 移除延迟逻辑，优化移动端性能
     if (window.innerWidth <= 768 && isOpen && !isCollapsed) {
       onToggle();
     }
