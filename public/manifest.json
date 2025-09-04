@@ -2,7 +2,7 @@
   "name": "Bobby - AI Chat",
   "short_name": "Bobby",
   "description": "你的可爱AI猫咪助手 🐱",
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
