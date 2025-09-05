@@ -11,9 +11,6 @@ lerna-debug.log*
 /dist
 /out
 *.tsbuildinfo
-/.claude
-/.vscode
-/.kiro
 # Environment variables
 .env
 .env.local
@@ -110,9 +107,9 @@ temp/
 Cargo.lock
 
 # AI Assistant files
-/.claude/
-/.kiro/
-/.cursor/
+.claude/
+.kiro/
+.cursor/
 
 # Chat history and development notes (exclude all .md files except README.md)
 *.md
