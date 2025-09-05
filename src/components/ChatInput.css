@@ -1,7 +1,5 @@
 .chat-input-container {
-  padding-bottom: 24px;
-  background: var(--bg-primary);
-  /* border-top: 1px solid var(--border-color); */
+  padding-bottom: 0;
   position: relative;
   z-index: 1000;
   overflow: visible;
@@ -9,7 +7,6 @@
 
 /* 暗色模式下的输入框容器背景 */
 [data-theme="dark"] .chat-input-container {
-  background: var(--bg-secondary);
   border-top-color: var(--border-color);
 }
 
@@ -27,25 +24,29 @@
 .input-wrapper-clean {
   display: flex;
   flex-direction: column;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-lg);
+  transition: var(--transition-smooth);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
   overflow: visible;
   position: relative;
 }
 
 .input-main-area {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   padding: 12px 16px;
   gap: 12px;
 }
 
 .input-wrapper-clean:focus-within {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.3), var(--shadow-lg);
+  /* 保持原有样式，不添加背景变化或位移 */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05) !important;
 }
 
 .message-textarea-clean {
@@ -58,7 +59,7 @@
   line-height: 1.5;
   resize: none;
   font-family: inherit;
-  padding: 6px 0; /* 减小基础内边距 */
+  padding: 0;
   min-height: 24px;
   max-height: 120px;
   box-shadow: none !important;
@@ -77,6 +78,48 @@
   -moz-box-shadow: none !important;
 }
 
+/* Remove all blue outlines */
+.send-button:focus,
+.send-button:focus-visible,
+.stop-button:focus,
+.stop-button:focus-visible,
+.plus-button:focus,
+.plus-button:focus-visible,
+.quick-response-btn:focus,
+.quick-response-btn:focus-visible,
+.dropdown-item:focus,
+.dropdown-item:focus-visible,
+.remove-file-btn:focus,
+.remove-file-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+/* Remove blue selection highlights */
+.send-button::selection,
+.stop-button::selection,
+.plus-button::selection,
+.quick-response-btn::selection,
+.dropdown-item::selection,
+.remove-file-btn::selection {
+  background: transparent;
+}
+
+/* Remove tap highlights on mobile */
+.send-button,
+.stop-button,
+.plus-button,
+.quick-response-btn,
+.dropdown-item,
+.remove-file-btn {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .message-textarea-clean::placeholder {
   color: var(--text-tertiary);
 }
@@ -93,12 +136,24 @@
   justify-content: space-between;
   padding: 8px 16px;
   margin-top: 0;
-  border-top: 1px solid var(--border-color);
-  background: var(--bg-primary);
+  border-top: 1px solid var(--glass-border-light);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   position: relative;
   overflow: visible;
-  border-bottom-left-radius: 16px;
-  border-bottom-right-radius: 16px;
+  border-bottom-left-radius: var(--border-radius-lg);
+  border-bottom-right-radius: var(--border-radius-lg);
+}
+
+/* 暗夜模式底部工具栏 */
+[data-theme="dark"] .bottom-toolbar {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.02) 100%);
 }
 
 .quick-response-btn {
@@ -121,6 +176,7 @@
   color: var(--text-primary);
 }
 
+
 .quick-response-btn svg {
   width: 14px;
   height: 14px;
@@ -129,6 +185,133 @@
 
 .quick-response-btn.open svg {
   transform: rotate(180deg);
+}
+
+/* 快速响应容器 */
+.quick-response-container {
+  position: relative;
+}
+
+/* 响应模式下拉菜单 */
+.quick-response-dropdown {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(248, 250, 252, 0.9) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 9999999;
+  overflow: hidden;
+  width: 220px;
+  margin-bottom: 8px;
+}
+
+/* 暗夜模式响应模式下拉菜单 */
+[data-theme="dark"] .quick-response-dropdown {
+  background: linear-gradient(135deg, 
+    rgba(30, 30, 30, 0.95) 0%, 
+    rgba(20, 20, 20, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 下拉菜单箭头 */
+.quick-response-dropdown::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 16px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"] .quick-response-dropdown::before {
+  border-top: 6px solid rgba(30, 30, 30, 0.95);
+}
+
+/* 响应模式项 */
+.quick-response-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  position: relative;
+}
+
+.quick-response-item:hover {
+  background: var(--bg-hover);
+}
+
+.quick-response-item.active {
+  background: var(--bg-hover);
+}
+
+/* 响应模式图标 */
+.response-mode-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.quick-response-item .response-mode-icon svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-secondary);
+}
+
+
+/* 响应模式信息 */
+.response-mode-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.response-mode-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  color: var(--text-primary);
+}
+
+
+.response-mode-desc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.3;
+}
+
+
+/* 选中标记 */
+.quick-response-item .check-mark {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.quick-response-item.active .check-mark svg {
+  width: 14px;
+  height: 14px;
+  color: var(--accent-color, #8b5cf6);
 }
 
 .plus-button-container {
@@ -155,17 +338,50 @@
   color: var(--text-primary);
 }
 
-/* 下拉菜单样式 */
-.dropdown-menu {
-  position: fixed;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+
+.chat-input-container .dropdown-menu {
+  
+  /* 改为向上展开 */
+  bottom: calc(100% + 8px);
+  top: auto;
+  right: 0;
+  background: linear-gradient(2deg, rgb(242 242 242) 0%, rgb(255 255 255 / 84%) 100%);
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  box-shadow: var(--shadow-lg);
-  z-index: 99999;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 9999999;
   overflow: hidden;
+  width: 100%;
+  max-width: 150px;
+  /* 去掉下方间距，使用 bottom 偏移 */
+  margin-top: 0;
   /* 确保下拉菜单可见 */
   pointer-events: auto;
+}
+/* 下拉菜单箭头：移动到底部并指向下方 */
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  right: 20px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #ffffff;
+}
+
+.dropdown-menu::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  right: 20px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #e5e7eb;
+  z-index: -1;
 }
 
 .dropdown-item {
@@ -185,6 +401,34 @@
 
 /* 移动端样式 */
 @media (max-width: 768px) {
+  .quick-response-dropdown {
+    width: 260px;
+    left: -20px;
+  }
+  
+  .quick-response-item {
+    padding: 16px;
+    gap: 14px;
+  }
+  
+  .response-mode-icon {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .quick-response-item .response-mode-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .response-mode-title {
+    font-size: 16px;
+  }
+  
+  .response-mode-desc {
+    font-size: 13px;
+  }
+  
   .dropdown-item {
     padding: 12px 16px;
     font-size: 16px;
@@ -194,6 +438,11 @@
   .dropdown-item svg {
     width: 18px;
     height: 18px;
+  }
+  
+  /* 移动端设置更宽的固定宽度 */
+  .dropdown-menu {
+    width: 240px;
   }
 }
 
@@ -208,35 +457,57 @@
 
 /* 发送按钮样式 */
 .send-button {
-  background: var(--text-primary);
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
   border: none;
-  border-radius: 12px;
-  color: var(--bg-primary);
+  border-radius: 8px;
+  color: white;
   cursor: pointer;
-  padding: 12px;
+  padding: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+  position: relative;
 }
 
 .send-button:hover:not(:disabled) {
-  background: var(--text-secondary);
   transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+}
+
+.send-button:active:not(:disabled) {
+  transform: scale(0.98);
+  box-shadow: 0 1px 2px rgba(0, 123, 255, 0.3);
 }
 
 .send-button:disabled {
   background: var(--bg-tertiary);
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
+  box-shadow: none;
 }
 
 .send-button:disabled svg {
   color: var(--text-tertiary);
 }
+
+/* 暗夜模式发送按钮 */
+[data-theme="dark"] .send-button {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+[data-theme="dark"] .send-button:hover:not(:disabled) {
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4);
+}
+
+[data-theme="dark"] .send-button:active:not(:disabled) {
+  box-shadow: 0 1px 2px rgba(139, 92, 246, 0.3);
+}
+
 
 /* 停止按钮样式 */
 .stop-button {
@@ -412,7 +683,7 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .chat-input-container {
-    padding-bottom: 16px;
+    padding-bottom: 0;
   }
   
   .input-main-area {
@@ -422,9 +693,9 @@
   
   .send-button,
   .stop-button {
-    width: 40px;
-    height: 40px;
-    padding: 8px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
   }
   
   .send-button svg,
@@ -483,9 +754,9 @@
   
   .send-button,
   .stop-button {
-    width: 36px;
-    height: 36px;
-    padding: 6px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
   }
   
   .send-button svg,

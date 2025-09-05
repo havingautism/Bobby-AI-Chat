@@ -13,23 +13,38 @@ const ChatInput = ({
   expandDirection = "auto", // "up", "down", "auto"
   className = "",
   onNewChat = () => {},
-  onAddTab = () => {}
+  onAddTab = () => {},
+  responseMode: externalResponseMode,
+  onResponseModeChange,
 }) => {
   const [message, setMessage] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showQuickResponseDropdown, setShowQuickResponseDropdown] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [uploadedFile, setUploadedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [responseMode, setResponseMode] = useState(externalResponseMode || "normal"); // normal 或 thinking
   const dropdownRef = useRef(null);
+  const quickResponseRef = useRef(null);
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
+  const [inputHeight, setInputHeight] = useState(0);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if ((message.trim() || uploadedFile) && !disabled) {
-      onSendMessage(message, uploadedFile);
+      onSendMessage(message, uploadedFile, { responseMode });
       setMessage("");
       setUploadedFile(null);
       setFilePreview(null);
+      
+      // 发送消息后重置输入框高度
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "24px";
+          window.dispatchEvent(new CustomEvent('inputHeightChange'));
+        }
+      }, 100);
     }
   };
 
@@ -58,65 +73,84 @@ const ChatInput = ({
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
+      if (quickResponseRef.current && !quickResponseRef.current.contains(event.target)) {
+        setShowQuickResponseDropdown(false);
+      }
     };
 
-    if (showDropdown) {
+    if (showDropdown || showQuickResponseDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [showDropdown]);
+  }, [showDropdown, showQuickResponseDropdown]);
+
+  // 动态调整chat-messages的padding-bottom以适应输入框高度
+  useEffect(() => {
+    const updateMessagesPadding = () => {
+      if (textareaRef.current) {
+        const isMobile = window.innerWidth <= 768;
+        const inputContainer = textareaRef.current.closest('.chat-input-container');
+        const chatMessages = document.querySelector('.chat-messages');
+        
+        if (inputContainer && chatMessages) {
+          // 获取输入框的实际高度
+          const containerHeight = inputContainer.offsetHeight;
+          
+          // 移除所有padding bottom，不预留空白
+          chatMessages.style.paddingBottom = '0px';
+          setInputHeight(containerHeight);
+        }
+      }
+    };
+
+    // 初始化时设置一次
+    updateMessagesPadding();
+
+    // 监听窗口大小变化
+    const handleResize = () => {
+      updateMessagesPadding();
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    // 监听输入框内容变化（通过自定义事件）
+    const handleInputChange = () => {
+      setTimeout(updateMessagesPadding, 10); // 延迟10ms确保DOM已更新
+    };
+
+    window.addEventListener('inputHeightChange', handleInputChange);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('inputHeightChange', handleInputChange);
+    };
+  }, [className]); // 添加className依赖
+
+  // 监听message状态变化，当消息被清空时重置输入框高度
+  useEffect(() => {
+    if (!message.trim() && textareaRef.current) {
+      // 延迟重置以确保DOM更新完成
+      setTimeout(() => {
+        if (textareaRef.current && !textareaRef.current.value.trim()) {
+          textareaRef.current.style.height = "24px";
+          window.dispatchEvent(new CustomEvent('inputHeightChange'));
+        }
+      }, 50);
+    }
+  }, [message]);
+
+  // 同步外部 responseMode 的变化
+  useEffect(() => {
+    if (externalResponseMode !== undefined) {
+      setResponseMode(externalResponseMode);
+    }
+  }, [externalResponseMode]);
 
   const toggleDropdown = () => {
-    console.log('toggleDropdown clicked, current state:', showDropdown);
     const newShowState = !showDropdown;
     setShowDropdown(newShowState);
-    
-    if (newShowState) {
-      // 延迟设置位置，确保DOM已更新
-      setTimeout(() => {
-        const button = document.querySelector('.plus-button');
-        const dropdown = document.querySelector('.dropdown-menu');
-        
-                 if (button && dropdown) {
-           const buttonRect = button.getBoundingClientRect();
-           const isMobile = window.innerWidth <= 768;
-          
-                     if (isMobile) {
-             // 移动端：使用合适的固定宽度，向上展开
-             const containerRect = document.querySelector('.input-wrapper-clean').getBoundingClientRect();
-             
-             // 移动端使用固定宽度，但比PC端稍宽一些
-             const mobileWidth = 240; // 移动端固定宽度
-             dropdown.style.width = `${mobileWidth}px`;
-             
-             // 右对齐，与PC端保持一致
-             dropdown.style.left = `${buttonRect.right - mobileWidth}px`;
-             
-             // 计算下拉菜单的高度
-             const itemHeight = 44; // 移动端菜单项更高
-             const itemCount = 3;
-             const dropdownHeight = itemHeight * itemCount;
-             
-             dropdown.style.top = `${buttonRect.top - dropdownHeight - 8}px`;
-             dropdown.style.bottom = 'auto';
-           } else {
-            // PC端：固定宽度，右对齐
-            dropdown.style.width = '200px';
-            
-            // 计算下拉菜单的高度
-            const itemHeight = 36; // PC端菜单项稍矮
-            const itemCount = 3;
-            const dropdownHeight = itemHeight * itemCount;
-            
-            dropdown.style.left = `${buttonRect.right - 200}px`; // 右对齐
-            dropdown.style.top = `${buttonRect.top - dropdownHeight - 8}px`;
-            dropdown.style.bottom = 'auto';
-          }
-        }
-      }, 0);
-    }
   };
 
   // 处理文件上传
@@ -249,6 +283,7 @@ const ChatInput = ({
               placeholder={placeholder || (uploadedFile ? t("typeMessageWithFile", currentLanguage) : t("typeMessage", currentLanguage))}
               disabled={disabled}
               rows={1}
+              ref={textareaRef}
               className="message-textarea-clean"
               style={{
                 height: "auto",
@@ -283,6 +318,42 @@ const ChatInput = ({
                     container.classList.remove('expand-upward');
                   }
                 }
+                
+                // 触发自定义事件通知输入框高度变化
+                window.dispatchEvent(new CustomEvent('inputHeightChange'));
+                
+                // 简化的移动端键盘处理
+                if (isMobile && document.activeElement === e.target && !className.includes('welcome-chat-input')) {
+                  // 简单的滚动到输入框，让CSS处理视口适配
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  }, 100);
+                }
+              }}
+              
+              // 添加失焦事件处理
+              onBlur={(e) => {
+                // 重置输入框高度为单行高度
+                e.target.style.height = "auto";
+                
+                // 移除键盘打开的类（如果需要）
+                const isMobile = window.innerWidth <= 768;
+                if (isMobile && !className.includes('welcome-chat-input')) {
+                  document.body.classList.remove('keyboard-open');
+                  
+                  // 移动端失焦时触发padding更新
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('inputHeightChange'));
+                  }, 50);
+                }
+                
+                // 如果输入框内容为空，确保重置为最小高度
+                if (!e.target.value.trim()) {
+                  e.target.style.height = "24px";
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('inputHeightChange'));
+                  }, 50);
+                }
               }}
             />
 
@@ -313,17 +384,13 @@ const ChatInput = ({
                 title={t("send", currentLanguage)}
               >
                 <svg
-                  width="20"
-                  height="20"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  fill="currentColor"
+                  stroke="none"
                 >
-                  <path d="m3 3 3 9-3 9 19-9Z" />
-                  <path d="m6 12 13 0" />
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                 </svg>
               </button>
             )}
@@ -332,30 +399,94 @@ const ChatInput = ({
           {/* 底部工具栏 */}
           {showBottomToolbar && (
             <div className="bottom-toolbar">
-              {/* 快速响应按钮 */}
-              <button 
-                type="button" 
-                className="quick-response-btn" 
-                disabled={disabled}
-                title={t("quickResponse", currentLanguage)}
-              >
-                <span>{t("quickResponse", currentLanguage)}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
+              {/* 快速响应下拉框 */}
+              <div className="quick-response-container" ref={quickResponseRef}>
+                <button 
+                  type="button" 
+                  className={`quick-response-btn ${showQuickResponseDropdown ? 'open' : ''}`} 
+                  disabled={disabled}
+                  onClick={() => setShowQuickResponseDropdown(!showQuickResponseDropdown)}
+                  title="选择响应模式"
+                >
+                  <span>
+                    {responseMode === "thinking" ? "思考模式" : "快速响应"}
+                  </span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+
+                {/* 响应模式下拉菜单 */}
+                {showQuickResponseDropdown && (
+                  <div className="quick-response-dropdown">
+                    <div 
+                      className={`quick-response-item ${responseMode === "normal" ? "active" : ""}`}
+                      onClick={() => {
+                        const newMode = "normal";
+                        setResponseMode(newMode);
+                        setShowQuickResponseDropdown(false);
+                        if (onResponseModeChange) {
+                          onResponseModeChange(newMode);
+                        }
+                      }}
+                    >
+                      <div className="response-mode-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                      </div>
+                      <div className="response-mode-info">
+                        <div className="response-mode-title">快速响应</div>
+                        <div className="response-mode-desc">标准模式，快速生成回复</div>
+                      </div>
+                      <div className="check-mark">
+                        {responseMode === "normal" && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`quick-response-item ${responseMode === "thinking" ? "active" : ""}`}
+                      onClick={() => {
+                        const newMode = "thinking";
+                        setResponseMode(newMode);
+                        setShowQuickResponseDropdown(false);
+                        if (onResponseModeChange) {
+                          onResponseModeChange(newMode);
+                        }
+                      }}
+                    >
+                      <div className="response-mode-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                          <path d="M12 8v4M12 16h.01"/>
+                        </svg>
+                      </div>
+                      <div className="response-mode-info">
+                        <div className="response-mode-title">思考模式</div>
+                        <div className="response-mode-desc">展示AI的推理过程</div>
+                      </div>
+                      <div className="check-mark">
+                        {responseMode === "thinking" && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* 加号按钮和下拉菜单 */}
               <div className="plus-button-container" ref={dropdownRef}>
                 <button
                   type="button"
                   className="plus-button"
-                  onClick={(e) => {
-                    console.log('Plus button clicked');
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleDropdown();
-                  }}
+                  onClick={toggleDropdown}
                   disabled={disabled}
                   title={t("moreOptions", currentLanguage)}
                 >
@@ -367,7 +498,6 @@ const ChatInput = ({
                 {/* 简化的下拉菜单 */}
                 {showDropdown && (
                   <div className="dropdown-menu">
-                    {console.log('Dropdown menu rendered, showDropdown:', showDropdown)}
                     <div className="dropdown-item" onClick={handleNewChat}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
@@ -417,12 +547,12 @@ const ChatInput = ({
         </div>
       </form>
       
-      <div className="input-hint">
+      {/* <div className="input-hint">
         {currentLanguage === "zh" 
           ? "Bobby 可能会犯错。请核查重要信息。" 
           : "Bobby may make mistakes. Please verify important information."
         }
-      </div>
+      </div> */}
     </div>
   );
 };

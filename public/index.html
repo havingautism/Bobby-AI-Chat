@@ -2,20 +2,57 @@
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.svg" type="image/svg+xml" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/favicon.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="Bobby - 你的可爱AI猫咪助手 🐱" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Bobby">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#000000">
+    <meta name="msapplication-config" content="%PUBLIC_URL%/browserconfig.xml">
     
     <!-- 优化字体加载 - 仅加载必要字重 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Google Sans Code 字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500;700&display=swap" rel="stylesheet">
     
     <title>Bobby</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    
+    <script>
+      // PWA安装支持 - 仅在生产环境启用
+      if ('serviceWorker' in navigator && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js')
+            .then(registration => {
+              console.log('PWA Service Worker registered:', registration);
+            })
+            .catch(error => {
+              console.warn('PWA Service Worker registration failed:', error);
+            });
+        });
+      }
+
+      // 检测PWA安装提示
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        console.log('PWA install prompt ready');
+      });
+
+      window.addEventListener('appinstalled', () => {
+        console.log('PWA installed successfully');
+      });
+    </script>
   </body>
 </html>

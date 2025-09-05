@@ -8,6 +8,10 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
   const [selectedRole, setSelectedRole] = useState(loadSelectedRole());
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+  const [responseMode, setResponseMode] = useState(() => {
+    // 从 localStorage 读取保存的响应模式
+    return localStorage.getItem('lastResponseMode') || "normal";
+  });
   const dropdownRef = useRef(null);
 
   // 点击外部关闭下拉菜单
@@ -40,14 +44,14 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
   const quickPrompts = currentLanguage === "zh" ? [
     "🤔 解释一个复杂的概念",
-    "💻 帮我写一段代码",
+    "👨🏻‍💻 帮我写一段代码",
     "📈 分析当前趋势",
     "✨ 创意写作帮助",
     "😸 和Bobby聊天",
     "🎯 制定学习计划",
   ] : [
     "🤔 Explain a complex concept",
-    "💻 Help me write some code",
+    "👨🏻‍💻 Help me write some code",
     "📈 Analyze current trends",
     "✨ Creative writing help",
     "😸 Chat with Bobby",
@@ -61,8 +65,15 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
         role: selectedRole,
         temperature: selectedRoleData.temperature,
         systemPrompt: selectedRoleData.systemPrompt,
+        responseMode: responseMode,
       });
     }
+  };
+
+  const handleResponseModeChange = (newMode) => {
+    setResponseMode(newMode);
+    // 保存到 localStorage
+    localStorage.setItem('lastResponseMode', newMode);
   };
 
   const handleRoleChange = (roleId) => {
@@ -79,6 +90,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
       role: selectedRole,
       temperature: selectedRoleData.temperature,
       systemPrompt: selectedRoleData.systemPrompt,
+      responseMode: responseMode,
     });
   };
 
@@ -192,6 +204,8 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
             }
             expandDirection="down"
             className="welcome-chat-input"
+            responseMode={responseMode}
+            onResponseModeChange={handleResponseModeChange}
           />
         </div>
 

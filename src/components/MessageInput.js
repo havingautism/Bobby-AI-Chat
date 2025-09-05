@@ -334,12 +334,12 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
         </div>
       </form>
       
-      <div className="input-hint">
+      {/* <div className="input-hint">
         {currentLanguage === "zh" 
           ? "Bobby 可能会犯错。请核查重要信息。" 
           : "Bobby may make mistakes. Please verify important information."
         }
-      </div>
+      </div> */}
     </div>
   );
 };

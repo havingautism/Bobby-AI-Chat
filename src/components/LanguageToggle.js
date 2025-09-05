@@ -31,7 +31,7 @@ const LanguageToggle = () => {
   return (
     <div className="language-toggle">
       <button
-        className="language-toggle-button"
+        className="theme-toggle-btn"
         onClick={() => setIsOpen(!isOpen)}
         title="切换语言 / Switch Language"
       >

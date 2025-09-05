@@ -2,8 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { AI_ROLES, getRoleById } from "../utils/roles";
 import { getCurrentTheme, toggleTheme } from "../utils/theme";
 import { getCurrentLanguage, t } from "../utils/language";
-import LanguageToggle from "./LanguageToggle";
 import DeleteConfirmModal from "./DeleteConfirmModal";
+import LanguageToggle from "./LanguageToggle";
 import "./Sidebar.css";
 
 const Sidebar = ({
@@ -80,6 +80,16 @@ const Sidebar = ({
     setDeleteModalOpen(true);
   };
 
+  // 处理移动端会话选择（自动关闭侧边栏）
+  const handleMobileConversationSelect = (conversationId) => {
+    onSelectConversation(conversationId);
+    // 在移动端且侧边栏展开时，选择会话后立即关闭侧边栏
+    // 移除延迟逻辑，优化移动端性能
+    if (window.innerWidth <= 768 && isOpen && !isCollapsed) {
+      onToggle();
+    }
+  };
+
   // 确认删除
   const confirmDelete = () => {
     if (conversationToDelete) {
@@ -87,6 +97,13 @@ const Sidebar = ({
     }
     setDeleteModalOpen(false);
     setConversationToDelete(null);
+    
+    // 移动端优化：删除后立即关闭侧边栏，避免卡顿
+    if (window.innerWidth <= 768 && isOpen && !isCollapsed) {
+      setTimeout(() => {
+        onToggle();
+      }, 50);
+    }
   };
 
   // 取消删除
@@ -142,9 +159,9 @@ const Sidebar = ({
 
   return (
     <>
-      {isOpen && <div className="sidebar-overlay" onClick={onToggle} />}
+      {isOpen && !isCollapsed && <div className="sidebar-overlay" onClick={onToggle} />}
       <div
-        className={`sidebar ${isOpen ? "open" : ""} ${
+        className={`sidebar glass-pane ${isOpen ? "open" : ""} ${
           isCollapsed ? "collapsed" : ""
         }`}
       >
@@ -319,29 +336,54 @@ const Sidebar = ({
           {isCollapsed ? (
             // 收起状态：只显示图标
             <div className="collapsed-conversations">
-              {filteredConversations.slice(0, 10).map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className={`conversation-item collapsed ${
-                    currentConversationId === conversation.id ? "active" : ""
-                  }`}
-                  onClick={() => onSelectConversation(conversation.id)}
-                  title={conversation.title}
-                >
-                  <div className="conversation-icon">
-                    {conversation.role ? (
-                      <span
-                        className="role-avatar"
-                        style={{ color: getRoleById(conversation.role).color }}
-                      >
-                        {getRoleById(conversation.role).avatar}
-                      </span>
-                    ) : (
-                      <span className="cat-chat-icon">💬</span>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {/* 今日 */}
+              {groupedConversations.today.length > 0 && (
+                <>
+                  {([...groupedConversations.today]
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .slice(0, 50)).map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className={`conversation-item collapsed ${
+                        currentConversationId === conversation.id ? "active" : ""
+                      }`}
+                      onClick={() => handleMobileConversationSelect(conversation.id)}
+                      title={conversation.title}
+                    >
+                      <div className="role-avatar" style={{ color: getRoleById(conversation.role)?.color }}>
+                        {conversation.role ? (getRoleById(conversation.role)?.avatar) : "💬"}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* 分割线，仅当两组都存在时显示 */}
+              {groupedConversations.today.length > 0 && groupedConversations.previous.length > 0 && (
+                <div className="collapsed-divider" />
+              )}
+
+              {/* 之前 */}
+              {groupedConversations.previous.length > 0 && (
+                <>
+                  {([...groupedConversations.previous]
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .slice(0, 50)).map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className={`conversation-item collapsed ${
+                        currentConversationId === conversation.id ? "active" : ""
+                      }`}
+                      onClick={() => handleMobileConversationSelect(conversation.id)}
+                      title={conversation.title}
+                    >
+                      <div className="role-avatar" style={{ color: getRoleById(conversation.role)?.color }}>
+                        {conversation.role ? (getRoleById(conversation.role)?.avatar) : "💬"}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           ) : (
             // 展开状态：显示完整内容
@@ -384,7 +426,7 @@ const Sidebar = ({
                       key={conversation.id}
                       conversation={conversation}
                       isActive={currentConversationId === conversation.id}
-                      onSelect={onSelectConversation}
+                      onSelect={handleMobileConversationSelect}
                       onDelete={handleDeleteConfirm}
                       onUpdateTitle={(id, title) => onUpdateConversation(id, { title })}
                       searchQuery={searchQuery}
@@ -407,7 +449,7 @@ const Sidebar = ({
                       key={conversation.id}
                       conversation={conversation}
                       isActive={currentConversationId === conversation.id}
-                      onSelect={onSelectConversation}
+                      onSelect={handleMobileConversationSelect}
                       onDelete={handleDeleteConfirm}
                       onUpdateTitle={(id, title) => onUpdateConversation(id, { title })}
                       searchQuery={searchQuery}
@@ -437,7 +479,17 @@ const Sidebar = ({
               onClick={onOpenSettings}
               title={t("settings", currentLanguage)}
             >
-              <div className="bobby-avatar">🐱</div>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+              </svg>
             </button>
 
             {/* 主题切换按钮 */}

@@ -4,10 +4,10 @@ import ChatInput from "./ChatInput";
 import WelcomeScreen from "./WelcomeScreen";
 import ModelSelector from "./ModelSelector";
 import ConversationTimeline from "./ConversationTimeline";
-import { sendMessage, sendMessageStream, isApiConfigured, generateChatTitleStream } from "../utils/api";
+import { sendMessage, sendMessageStream, isApiConfigured, generateChatTitleStream, getApiConfig } from "../utils/api";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
 import { getCurrentLanguage, t } from "../utils/language";
-
+import { initMobileOptimizer } from "../utils/mobileOptimizer";
 
 import "./ChatInterface.css";
 //
@@ -18,6 +18,8 @@ const ChatInterface = ({
   onToggleSidebar,
   onOpenSettings,
 }) => {
+  // 获取当前会话的响应模式，默认为 normal
+  const [responseMode, setResponseMode] = useState(conversation.responseMode || "normal");
   // 不再需要独立的加载状态管理
   // const [loadingConversations, setLoadingConversations] = useState(new Set());
   const [currentRole, setCurrentRole] = useState(() => loadSelectedRole());
@@ -43,6 +45,12 @@ const ChatInterface = ({
     }
   };
 
+  // 处理响应模式变化
+  const handleResponseModeChange = (newMode) => {
+    setResponseMode(newMode);
+    onUpdateConversation(conversation.id, { responseMode: newMode });
+  };
+
   // 不再需要独立的加载状态，使用流式输出的内联指示器
   // const isLoading = loadingConversations.has(conversation.id) || (isStreaming && streamingConversationId === conversation.id);
 
@@ -66,6 +74,34 @@ const ChatInterface = ({
   useEffect(() => {
     scrollToBottom();
   }, [conversation.messages]);
+
+  // 初始化移动端优化器
+  useEffect(() => {
+    const mobileOptimizer = initMobileOptimizer();
+    
+    // 添加滚动性能优化类
+    const chatMessages = document.querySelector('.chat-messages');
+    if (chatMessages) {
+      chatMessages.classList.add('optimized-scrolling');
+    }
+    
+    // 组件卸载时清理
+    return () => {
+      if (mobileOptimizer && mobileOptimizer.disable) {
+        mobileOptimizer.disable();
+      }
+      if (chatMessages) {
+        chatMessages.classList.remove('optimized-scrolling');
+      }
+    };
+  }, []);
+
+  // 同步会话的响应模式
+  useEffect(() => {
+    if (conversation.responseMode !== undefined) {
+      setResponseMode(conversation.responseMode);
+    }
+  }, [conversation.responseMode]);
 
   // 监听角色变化
   useEffect(() => {
@@ -143,7 +179,7 @@ const ChatInterface = ({
       role: "user",
       content: fullContent,
       timestamp: new Date().toISOString(),
-      options, // 保存模式和个性选择
+      options: { ...options, responseMode }, // 保存模式和个性选择，包括响应模式
       uploadedFile: uploadedFile ? {
         name: uploadedFile.name,
         type: uploadedFile.type,
@@ -158,15 +194,39 @@ const ChatInterface = ({
       // 不在这里设置标题，让AI在回复后自动生成
     };
 
-    // 如果是第一条消息且有角色信息，保存角色到对话中
-    if (conversation.messages.length === 0 && options.role) {
-      updates.role = options.role;
+    // 如果是第一条消息，保存角色和响应模式到对话中
+    if (conversation.messages.length === 0) {
+      if (options.role) {
+        updates.role = options.role;
+      }
+      if (options.responseMode) {
+        updates.responseMode = options.responseMode;
+        // 同时更新本地状态
+        setResponseMode(options.responseMode);
+      }
     }
 
     onUpdateConversation(currentConversationId, updates);
 
-    // 使用流式输出，传递对话的模型信息
-    await sendMessageWithStream(updatedMessages, { ...options, model: conversation.model }, currentConversationId);
+    // 使用流式输出，优先使用对话的模型信息，否则使用全局默认模型
+    const apiConfig = getApiConfig();
+    let modelToUse = conversation.model || apiConfig.model;
+    
+    // 如果这是对话的第一条用户消息且对话模型与全局默认不同，则更新对话模型
+    if (conversation.messages.length === 0 && conversation.model !== apiConfig.model) {
+      modelToUse = apiConfig.model;
+      onUpdateConversation(currentConversationId, { model: apiConfig.model });
+    }
+    
+    // 获取当前角色的system prompt
+    const roleToUse = conversation.role || currentRole;
+    const roleInfo = getRoleById(roleToUse);
+    const systemPrompt = roleInfo.systemPrompt;
+    
+    // 添加角色的temperature参数
+    const roleTemperature = roleInfo.temperature;
+    
+    await sendMessageWithStream(updatedMessages, { ...options, model: modelToUse, systemPrompt, temperature: roleTemperature }, currentConversationId);
   };
 
   // 流式消息发送
@@ -502,8 +562,13 @@ const ChatInterface = ({
       messages: messagesWithoutError,
     });
 
-    // 使用流式版本重新发送消息，而不是非流式版本，传递对话的模型信息
-    await sendMessageWithStream(messages, { ...options, model: conversation.model }, conversationId);
+    // 使用流式版本重新发送消息，添加角色信息
+    const roleToUse = conversation.role || currentRole;
+    const roleInfo = getRoleById(roleToUse);
+    const systemPrompt = roleInfo.systemPrompt;
+    const roleTemperature = roleInfo.temperature;
+    
+    await sendMessageWithStream(messages, { ...options, model: conversation.model, systemPrompt, temperature: roleTemperature }, conversationId);
   };
 
   // 重新生成消息
@@ -538,10 +603,15 @@ const ChatInterface = ({
       .find(msg => msg.role === "user");
 
     if (lastUserMessage) {
-      // 重新生成回复，传递对话的模型信息
+      // 重新生成回复，添加角色信息
+      const roleToUse = conversation.role || currentRole;
+      const roleInfo = getRoleById(roleToUse);
+      const systemPrompt = roleInfo.systemPrompt;
+      const roleTemperature = roleInfo.temperature;
+      
       await sendMessageWithStream(
         updatedMessages,
-        { ...lastUserMessage.options, model: conversation.model },
+        { ...lastUserMessage.options, model: conversation.model, systemPrompt, temperature: roleTemperature },
         conversation.id
       );
     }
@@ -550,7 +620,7 @@ const ChatInterface = ({
   // 如果没有消息，显示欢迎界面
   if (conversation.messages.length === 0) {
     return (
-      <div className="chat-interface">
+      <>
         <div className="chat-header">
           <div className="header-left">
             <button className="sidebar-toggle" onClick={onToggleSidebar}>
@@ -566,28 +636,41 @@ const ChatInterface = ({
           onJumpToMessage={handleJumpToMessage}
           currentMessageId={currentMessageId}
         />
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="chat-interface">
+    <>
       <div className="chat-header">
         <div className="header-left">
           <button className="sidebar-toggle" onClick={onToggleSidebar}>
             ☰
           </button>
           <div className="conversation-header">
-            <h1 className="conversation-title">
-              {conversation.title || "新对话"}
-            </h1>
-            <button
-              className="logo-button"
-              style={{ color: getRoleById(currentRole).color, display: 'none' }}
-              title={getRoleById(currentRole).name}
-            >
-              {getRoleById(currentRole).avatar}
-            </button>
+            <div className="conversation-info">
+              <div 
+                className="conversation-avatar"
+                style={{ color: getRoleById(conversation.role || currentRole).color }}
+              >
+                {getRoleById(conversation.role || currentRole).avatar}
+              </div>
+              <div className="conversation-details">
+                <div 
+                  className="conversation-role"
+                  style={{ 
+                    color: getRoleById(conversation.role || currentRole).color,
+                    borderColor: getRoleById(conversation.role || currentRole).color + '40',
+                    backgroundColor: getRoleById(conversation.role || currentRole).color + '20'
+                  }}
+                >
+                  {getRoleById(conversation.role || currentRole).name}
+                </div>
+                <h1 className="conversation-title">
+                  {conversation.title || "新对话"}
+                </h1>
+              </div>
+            </div>
           </div>
         </div>
         <div className="header-actions">
@@ -600,22 +683,24 @@ const ChatInterface = ({
             className="header-model-selector"
           />
           
-          {/* 移动端时间线按钮 */}
-          <button
-            className="timeline-toggle mobile-only"
-            onClick={() => {
-              const timeline = document.querySelector('.conversation-timeline');
-              if (timeline) {
-                timeline.classList.toggle('timeline-visible');
-              }
-            }}
-            title={t("timeline", currentLanguage)}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2v6l-4 4 4 4v6"/>
-              <path d="M12 2v6l4 4-4 4v6"/>
-            </svg>
-          </button>
+          {/* 移动端时间线按钮 - 只在有2条以上用户消息时显示 */}
+          {conversation.messages && conversation.messages.filter(msg => msg.role === "user").length > 1 && (
+            <button
+              className="timeline-toggle mobile-only"
+              onClick={() => {
+                const timeline = document.querySelector('.conversation-timeline');
+                if (timeline) {
+                  timeline.classList.toggle('timeline-visible');
+                }
+              }}
+              title={t("timeline", currentLanguage)}
+            >
+             
+
+    <svg xmlns="http://www.w3.org/2000/svg" width="25px" height="25px" viewBox="0 0 24 24" >{/* Icon from Google Material Icons by Material Design Authors - https://github.com/material-icons/material-icons/blob/master/LICENSE */}<path fill="currentColor" d="M6 15h6v2H6zm6-8h6v2h-6zm-3 4h6v2H9z" /><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m0 16H5V5h14z" /></svg>
+  
+            </button>
+          )}
         </div>
       </div>
 
@@ -642,6 +727,8 @@ const ChatInterface = ({
         showFileUpload={true}
         expandDirection="up"
         className="chat-interface-input"
+        responseMode={responseMode}
+        onResponseModeChange={handleResponseModeChange}
         onNewChat={() => {
           // 新建对话的逻辑
           console.log('新建对话');
@@ -656,7 +743,7 @@ const ChatInterface = ({
         onJumpToMessage={handleJumpToMessage}
         currentMessageId={currentMessageId}
       />
-    </div>
+    </>
   );
 };
 

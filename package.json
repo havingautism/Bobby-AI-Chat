@@ -1,7 +1,8 @@
 {
   "name": "ai-chat-app",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
+  "homepage": "https://havingautism.github.io/Bobby-AI-Chat/",
   "license": "CC-BY-NC-SA-4.0",
   "description": "A modern AI chat application built with React, supporting multiple AI models",
   "keywords": [
@@ -27,14 +28,16 @@
     "react-scripts": "5.0.1",
     "react-syntax-highlighter": "^15.6.6",
     "react-textarea-autosize": "^8.5.9",
-    "streamdown": "^1.1.6",
-    "tailwindcss": "^4.1.12",
+    "streamdown": "^1.1.7",
+    "tailwindcss": "^3.4.4",
     "uuid": "^9.0.0",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "CI=false react-scripts build --profile --stats",
+    "build:mobile": "CI=false GENERATE_SOURCEMAP=false INLINE_RUNTIME_CHUNK=false IMAGE_INLINE_SIZE_LIMIT=1000 react-scripts build",
+    "analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

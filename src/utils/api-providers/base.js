@@ -77,30 +77,51 @@ export class BaseApiProvider {
     const modelToUse = options.model || this.config.model;
     const temperature = options.temperature !== undefined ? options.temperature : this.config.temperature;
     
-    return {
+    const requestBody = {
       model: modelToUse,
       messages: messages,
       temperature: temperature,
       max_tokens: this.config.maxTokens,
       stream: options.stream || false,
     };
+    
+    // 如果用户选择了思考模式，添加enable_thinking参数
+    if (options.responseMode === "thinking") {
+      requestBody.enable_thinking = true;
+      // 对于思考模式，调整默认参数以获得更好的推理效果
+      if (requestBody.max_tokens < 4000) {
+        requestBody.max_tokens = 4000;
+      }
+      if (requestBody.temperature > 0.3) {
+        requestBody.temperature = 0.3;
+      }
+      if (!requestBody.top_p) {
+        requestBody.top_p = 0.8;
+      }
+    }
+    
+    return requestBody;
   }
 
   // 处理模型特定参数（子类可重写）
   processModelSpecificParams(requestBody, options = {}) {
     const modelToUse = requestBody.model;
-    
-    // 检查是否为推理模型
-    const isReasoningModel = this.isReasoningModel(modelToUse);
     const isMultimodalModel = this.isMultimodalModel(modelToUse);
     
-    if (isReasoningModel) {
-      requestBody.max_tokens = Math.max(requestBody.max_tokens, 4000);
+    // 如果是推理模型且用户没有选择思考模式，自动应用推理参数
+    if (this.isReasoningModel(modelToUse) && options.responseMode !== "thinking") {
+      if (!requestBody.enable_thinking) {
+        requestBody.enable_thinking = true;
+      }
+      if (requestBody.max_tokens < 4000) {
+        requestBody.max_tokens = 4000;
+      }
       if (requestBody.temperature > 0.3) {
         requestBody.temperature = 0.3;
       }
-      requestBody.top_p = 0.8;
-      requestBody.thinking_budget = 4096;
+      if (!requestBody.top_p) {
+        requestBody.top_p = 0.8;
+      }
     }
 
     if (isMultimodalModel) {

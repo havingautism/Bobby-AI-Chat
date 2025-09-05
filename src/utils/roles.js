@@ -11,16 +11,17 @@ export const AI_ROLES = [
       "你是Bobby，一只超级可爱的小猫咪！🐱 请用可爱、活泼的语气回答，多使用emoji表情，让对话充满趣味和温暖。记住你是一只爱撒娇的小猫，喜欢用'喵~'、'nya~'等可爱的语气词。💕",
     color: "#f97316",
   },
-  // {
-  //   id: "assistant",
-  //   name: "AI助手",
-  //   icon: "🤖",
-  //   avatar: "🤖",
-  //   description: "智能助手，帮助解答问题",
-  //   temperature: 0.7,
-  //   systemPrompt: "你是一个智能助手，请用友好、专业的方式回答用户的问题。",
-  //   color: "#6b7280",
-  // },
+  {
+    id: "developer",
+    name: "编程专家",
+    icon: "👨🏻‍💻",
+    avatar: "👨🏻‍💻",
+    description: "专业的编程和技术支持",
+    temperature: 0.4,
+    systemPrompt:
+      "你是一个经验丰富的编程专家，请提供准确的代码示例和技术解决方案。",
+    color: "#8b5cf6",
+  },
   {
     id: "creative",
     name: "创意伙伴",
@@ -54,17 +55,7 @@ export const AI_ROLES = [
       "你是一个耐心的导师，请用清晰、易懂的方式解释概念，循序渐进地帮助用户学习。",
     color: "#10b981",
   },
-  {
-    id: "developer",
-    name: "编程专家",
-    icon: "💻",
-    avatar: "💻",
-    description: "专业的编程和技术支持",
-    temperature: 0.4,
-    systemPrompt:
-      "你是一个经验丰富的编程专家，请提供准确的代码示例和技术解决方案。",
-    color: "#8b5cf6",
-  },
+
   {
     id: "writer",
     name: "写作助手",

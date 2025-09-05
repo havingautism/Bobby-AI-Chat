@@ -12,14 +12,14 @@ const StreamdownRenderer = ({ children, className }) => {
           const language = match ? match[1] : "text";
           const content = String(children).replace(/\n$/, "");
 
-          // 对于简单的文本内容（如单个单词、短语），使用简洁的显示方式
+          // 对于简单的文本内容（如单个单词、短语），使用span而不是div
           const isSimpleText = content.length <= 50 && !content.includes('\n') && !content.includes(';') && !content.includes('{') && !content.includes('}');
           
           return !inline ? (
             isSimpleText ? (
-              <div className="simple-text-block">
+              <span className="simple-text-block">
                 <span className="simple-text-content">{content}</span>
-              </div>
+              </span>
             ) : (
               <CodeBlock language={language}>
                 {content}
@@ -31,6 +31,18 @@ const StreamdownRenderer = ({ children, className }) => {
             </code>
           );
         },
+        // 确保段落内不会出现块级元素
+        p: ({ children, ...props }) => (
+          <p {...props}>
+            {React.Children.map(children, child => {
+              // 如果子元素是块级元素，将其包装在span中
+              if (React.isValidElement(child) && child.type === 'div') {
+                return <span key={child.key || Math.random()}>{child}</span>;
+              }
+              return child;
+            })}
+          </p>
+        ),
       }}
     >
       {children}

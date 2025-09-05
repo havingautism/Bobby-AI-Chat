@@ -4,8 +4,17 @@
   align-items: flex-start;
   height: 100vh;
   padding: 40px 20px 120px 20px; /* 增加底部内边距，为对话框留出空间 */
-  background: var(--bg-primary);
   overflow-y: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .welcome-screen {
+    /* 为固定header留出空间 */
+    padding-top: 80px;
+    /* 为固定输入框留出空间 */
+    padding-bottom: 140px;
+  }
 }
 
 .welcome-content {
@@ -105,21 +114,34 @@
 
 .role-dropdown-trigger {
   width: 100%;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-md);
   padding: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  box-shadow: var(--glass-shadow-light);
 }
 
 .role-dropdown-trigger:hover {
-  border-color: var(--border-hover);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--glass-shadow-dark);
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+}
+
+.role-dropdown-trigger:focus {
+  outline: none;
+  box-shadow: var(--glass-shadow-dark);
 }
 
 .role-dropdown-trigger:disabled {
@@ -168,39 +190,62 @@
 }
 
 .role-dropdown-menu {
+  overflow-x: hidden;
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: var(--shadow-lg);
-  z-index: 1001; /* 确保在对话框之上 */
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--glass-shadow-dark);
+  z-index: 9999; /* 确保在对话框之上 */
   margin-top: 4px;
   max-height: 300px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-border-light) transparent;
 }
 
 .role-option {
   width: 100%;
-  background: none;
+  background: transparent;
   border: none;
   padding: 12px 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
   display: flex;
   align-items: center;
   gap: 12px;
   text-align: left;
+  margin: 2px 8px;
+  border-radius: var(--border-radius-sm);
+  position: relative;
 }
 
 .role-option:hover {
-  background: var(--bg-tertiary);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  transform: translateX(4px);
+}
+
+.role-option:focus {
+  outline: none;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
 }
 
 .role-option.selected {
-  background: var(--bg-secondary);
+  background: transparent;
+  color: var(--text-primary);
 }
 
 .role-option:first-child {
@@ -216,8 +261,14 @@
 }
 
 .check-icon {
-  color: var(--text-secondary);
+  color: var(--accent-primary);
   flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.role-option.selected .check-icon {
+  opacity: 1;
 }
 
 /* 输入框 */
@@ -265,22 +316,58 @@
 }
 
 .prompt-card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--border-radius-md);
   padding: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
   text-align: left;
   font-size: 14px;
   color: var(--text-primary);
   line-height: 1.4;
+  box-shadow: var(--glass-shadow-light);
+  position: relative;
+  overflow: hidden;
 }
 
 .prompt-card:hover:not(:disabled) {
-  border-color: var(--border-hover);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  box-shadow: var(--glass-shadow-dark);
+  transform: translateY(-4px);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+}
+
+.prompt-card:focus {
+  outline: none;
+  box-shadow: var(--glass-shadow-dark);
+}
+
+/* 液态光晕效果 */
+.prompt-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(59, 130, 246, 0.1) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.prompt-card:hover::before {
+  opacity: 1;
 }
 
 .prompt-card:disabled {
