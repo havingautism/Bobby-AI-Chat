@@ -5,6 +5,31 @@ import { getStorageInfo, clearChatHistory, getDataDirectoryInfo } from "../utils
 import { isTauriEnvironment } from "../utils/tauriDetector";
 import "./Settings.css";
 
+// Tooltip组件
+const Tooltip = ({ children, content, position = "top" }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const tooltipRef = useRef(null);
+
+  const showTooltip = () => setIsVisible(true);
+  const hideTooltip = () => setIsVisible(false);
+
+  return (
+    <div 
+      className="tooltip-container"
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
+      ref={tooltipRef}
+    >
+      {children}
+      {isVisible && (
+        <div className={`tooltip tooltip-${position}`}>
+          {content}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Settings = ({ isOpen, onClose, onModelChange }) => {
   const [config, setConfig] = useState({
     baseURL: "",
@@ -12,9 +37,12 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
     model: "",
     temperature: 0.7,
     maxTokens: 2000,
+    topP: 1.0,
+    thinkingBudget: 1000,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [isTesting, setIsTesting] = useState(false);
   const [testMessage, setTestMessage] = useState("");
@@ -25,6 +53,19 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
   const [dataDirectoryInfo, setDataDirectoryInfo] = useState(null);
   const dropdownRef = useRef(null);
   const [dropdownWidth, setDropdownWidth] = useState(undefined);
+
+  // 获取会话数量的函数
+  const getConversationCount = () => {
+    if (!storageInfo) return 0;
+    
+    if (isTauriEnvironment()) {
+      // Tauri环境：从JSON文件读取
+      return storageInfo.conversations?.count || 0;
+    } else {
+      // 移动端/Web环境：从IndexedDB读取
+      return storageInfo.conversationCount || 0;
+    }
+  };
 
   // 硅基流动模型列表，按类型排序（与ModelSelector保持一致）
   const siliconFlowModels = {
@@ -222,6 +263,7 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
   const handleSave = async () => {
     setIsSaving(true);
     setSaveMessage("");
+    setSaveSuccess(false);
 
     try {
       // 验证必填字段
@@ -237,13 +279,18 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
         onModelChange(config.model);
       }
 
-      setSaveMessage("设置保存成功！");
+      setSaveSuccess(true);
+      // 3秒后关闭设置窗口
       setTimeout(() => {
-        setSaveMessage("");
+        setSaveSuccess(false);
         onClose();
-      }, 1500);
+      }, 3000);
     } catch (error) {
       setSaveMessage(`保存失败: ${error.message}`);
+      // 5秒后清除错误消息
+      setTimeout(() => {
+        setSaveMessage("");
+      }, 5000);
     } finally {
       setIsSaving(false);
     }
@@ -339,13 +386,28 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
           {/* API密钥 */}
           <div className="setting-group">
             <label>API密钥 *</label>
-            <input
-              type="password"
-              value={config.apiKey}
-              onChange={(e) => handleInputChange("apiKey", e.target.value)}
-              placeholder="请输入硅基流动API密钥"
-              className="setting-input"
-            />
+            <div className="api-key-container">
+              <input
+                type="password"
+                value={config.apiKey}
+                onChange={(e) => handleInputChange("apiKey", e.target.value)}
+                placeholder="请输入硅基流动API密钥"
+                className="setting-input api-key-input"
+              />
+              <button
+                className={`test-button ${testSuccess ? 'success' : ''}`}
+                onClick={handleTestConnection}
+                disabled={
+                  isTesting || 
+                  !config.baseURL || 
+                  !config.apiKey || 
+                  !config.model ||
+                  testSuccess
+                }
+              >
+                {isTesting ? "测试中..." : testSuccess ? "连接成功 ✓" : "测试连接"}
+              </button>
+            </div>
           </div>
 
           {/* 模型选择 */}
@@ -460,12 +522,19 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
             </div>
           </div>
 
+
           {/* 高级设置 */}
           <details className="advanced-settings">
             <summary>高级设置</summary>
             <div className="advanced-content">
+              {/* API地址 */}
               <div className="setting-group">
-                <label>API地址</label>
+                <label>
+                  API地址
+                  <Tooltip content="硅基流动API服务地址，通常不需要修改">
+                    <span className="tooltip-trigger">?</span>
+                  </Tooltip>
+                </label>
                 <input
                   type="text"
                   value={config.baseURL}
@@ -473,14 +542,17 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
                   placeholder="https://api.siliconflow.cn/v1"
                   className="setting-input"
                 />
-                <div className="setting-hint">
-                  硅基流动API地址
-                </div>
               </div>
               
+              {/* 第一行：温度和Top P */}
               <div className="setting-row">
                 <div className="setting-group">
-                  <label>温度 (0-2)</label>
+                  <label>
+                    温度 (0-2)
+                    <Tooltip content="控制回复的随机性，值越高越随机，值越低越确定">
+                      <span className="tooltip-trigger">?</span>
+                    </Tooltip>
+                  </label>
                   <input
                     type="number"
                     min="0"
@@ -495,7 +567,55 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
                 </div>
 
                 <div className="setting-group">
-                  <label>最大令牌数</label>
+                  <label>
+                    Top P (0-1)
+                    <Tooltip content="控制输出的多样性，值越小越保守，值越大越随机">
+                      <span className="tooltip-trigger">?</span>
+                    </Tooltip>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={config.topP}
+                    onChange={(e) =>
+                      handleInputChange("topP", parseFloat(e.target.value))
+                    }
+                    className="setting-input"
+                  />
+                </div>
+              </div>
+
+              {/* 第二行：Thinking Budget和最大令牌数 */}
+              <div className="setting-row">
+                <div className="setting-group">
+                  <label>
+                    Thinking Budget
+                    <Tooltip content="思考模式的预算限制，控制AI推理过程的长度，仅对支持思考链的模型有效">
+                      <span className="tooltip-trigger">?</span>
+                    </Tooltip>
+                  </label>
+                  <input
+                    type="number"
+                    min="100"
+                    max="10000"
+                    step="100"
+                    value={config.thinkingBudget}
+                    onChange={(e) =>
+                      handleInputChange("thinkingBudget", parseInt(e.target.value))
+                    }
+                    className="setting-input"
+                  />
+                </div>
+
+                <div className="setting-group">
+                  <label>
+                    最大令牌数
+                    <Tooltip content="单次对话的最大输出长度，影响回复的详细程度">
+                      <span className="tooltip-trigger">?</span>
+                    </Tooltip>
+                  </label>
                   <input
                     type="number"
                     min="1"
@@ -515,7 +635,7 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
                 {storageInfo ? (
                   <div className="storage-info">
                     <div className="storage-stats">
-                      <p>对话数量: {storageInfo.conversations?.count || 0}</p>
+                      <p>对话数量: {getConversationCount()}</p>
                       <p>总大小: {storageInfo.totalSize}</p>
                     </div>
                     
@@ -562,50 +682,37 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
               {saveMessage}
             </div>
           )}
-          {testMessage && (
-            <div
-              className={`save-message ${
-                testMessage.includes("成功") ? "success" : "error"
-              }`}
-            >
-              {testMessage}
-            </div>
-          )}
         </div>
 
         <div className="settings-footer">
-          <div className="test-buttons">
-            <button
-              className={`test-button ${testSuccess ? 'success' : ''}`}
-              onClick={handleTestConnection}
-              disabled={
-                isTesting || 
-                !config.baseURL || 
-                !config.apiKey || 
-                !config.model ||
-                testSuccess
-              }
-            >
-              {isTesting ? "测试中..." : testSuccess ? "连接成功 ✓" : "测试连接"}
-            </button>
-            {testMessage && !testSuccess && (
-              <div className="save-message error">
-                {testMessage}
+          {/* 状态信息显示区域 */}
+          <div className="status-section">
+            {saveMessage && (
+              <div className={`status-message ${
+                saveMessage.includes("成功") ? "success" : "error"
+              }`}>
+                {saveMessage}
               </div>
             )}
+           
           </div>
+          
           <div className="footer-buttons">
             <button className="cancel-button" onClick={onClose}>
               取消
             </button>
             <button
-              className="save-button"
+              className={`save-button ${saveSuccess ? 'success' : ''}`}
               onClick={handleSave}
               disabled={
-                isSaving || !config.baseURL || !config.apiKey || !config.model
+                isSaving || 
+                !config.baseURL || 
+                !config.apiKey || 
+                !config.model ||
+                saveSuccess
               }
             >
-              {isSaving && !saveMessage.includes("测试") ? "保存中..." : "保存"}
+              {isSaving ? "保存中..." : saveSuccess ? "保存成功 ✓" : "保存"}
             </button>
           </div>
         </div>

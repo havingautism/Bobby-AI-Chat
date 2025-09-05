@@ -45,7 +45,10 @@ export class OpenAIProvider extends BaseApiProvider {
     
     // OpenAI特定参数
     if (modelToUse.includes('gpt-4')) {
-      requestBody.top_p = 1;
+      // 保持用户设置的top_p值，如果没有设置则使用默认值1
+      if (requestBody.top_p === undefined) {
+        requestBody.top_p = 1;
+      }
       requestBody.frequency_penalty = 0;
       requestBody.presence_penalty = 0;
     }

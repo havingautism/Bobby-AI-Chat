@@ -48,7 +48,10 @@ export class SiliconFlowProvider extends BaseApiProvider {
       if (requestBody.temperature > 0.3) {
         requestBody.temperature = 0.3;
       }
-      requestBody.top_p = 0.8;
+      // 推理模型使用更保守的top_p值
+      if (requestBody.top_p > 0.8) {
+        requestBody.top_p = 0.8;
+      }
       requestBody.thinking_budget = 4096;
     }
 

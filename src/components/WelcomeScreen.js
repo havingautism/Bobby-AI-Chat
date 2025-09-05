@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AI_ROLES, saveSelectedRole, loadSelectedRole } from "../utils/roles";
 import { getCurrentLanguage } from "../utils/language";
+import { getApiConfig } from "../utils/api";
 import ChatInput from "./ChatInput";
 import "./WelcomeScreen.css";
 
@@ -12,7 +13,21 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
     // 从 localStorage 读取保存的响应模式
     return localStorage.getItem('lastResponseMode') || "normal";
   });
+  const [defaultModel, setDefaultModel] = useState("");
   const dropdownRef = useRef(null);
+
+  // 获取默认模型
+  useEffect(() => {
+    const loadDefaultModel = async () => {
+      try {
+        const config = await getApiConfig();
+        setDefaultModel(config.model || "");
+      } catch (error) {
+        console.error("获取默认模型失败:", error);
+      }
+    };
+    loadDefaultModel();
+  }, []);
 
   // 点击外部关闭下拉菜单
   useEffect(() => {
@@ -206,6 +221,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
             className="welcome-chat-input"
             responseMode={responseMode}
             onResponseModeChange={handleResponseModeChange}
+            currentModel={defaultModel}
           />
         </div>
 

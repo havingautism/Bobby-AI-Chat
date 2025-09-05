@@ -478,6 +478,11 @@ const ChatInterface = ({
             timestamp: new Date().toISOString(),
             isStreaming: false,
             isError: true,
+            retryData: {
+              messages,
+              options,
+              conversationId,
+            },
           };
 
           const errorMessages = [...messages];
@@ -508,6 +513,11 @@ const ChatInterface = ({
         timestamp: new Date().toISOString(),
         isStreaming: false,
         isError: true,
+        retryData: {
+          messages,
+          options,
+          conversationId,
+        },
       };
 
       const errorMessages = [...messages];
@@ -793,6 +803,7 @@ const ChatInterface = ({
         className="chat-interface-input"
         responseMode={responseMode}
         onResponseModeChange={handleResponseModeChange}
+        currentModel={conversation.model}
         onNewChat={() => {
           console.log("新建对话");
         }}
