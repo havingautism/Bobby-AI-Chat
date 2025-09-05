@@ -16,14 +16,17 @@ input, textarea, [contenteditable] {
 @media (max-width: 768px) {
   html, body {
     height: 100%;
-    overflow: hidden;
-    /* 防止页面级别的下拉刷新 */
-    overscroll-behavior-y: none;
+    /* 允许垂直滚动，但防止水平滚动 */
+    overflow-x: hidden;
+    overflow-y: auto;
+    /* 防止页面级别的下拉刷新，但允许正常滚动 */
+    overscroll-behavior-y: contain;
   }
   
   #root {
     height: 100%;
-    overflow: hidden;
+    /* 允许滚动 */
+    overflow: visible;
   }
 }
 *:focus,

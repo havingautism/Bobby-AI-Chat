@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getCurrentLanguage, t } from "../utils/language";
+import { isModelSupportResponseModes } from "../utils/modelUtils";
 import "./ChatInput.css";
 
 const ChatInput = ({ 
   onSendMessage, 
   disabled, 
-  isStreaming = false, 
+  isStreaming = false,
   onStopStreaming = () => {},
   showBottomToolbar = true,
   showFileUpload = true,
@@ -16,6 +17,7 @@ const ChatInput = ({
   onAddTab = () => {},
   responseMode: externalResponseMode,
   onResponseModeChange,
+  currentModel = "", // 当前选择的模型
 }) => {
   const [message, setMessage] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -29,6 +31,9 @@ const ChatInput = ({
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const [inputHeight, setInputHeight] = useState(0);
+
+  // 判断当前模型是否支持响应模式
+  const supportsResponseModes = isModelSupportResponseModes(currentModel);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -399,22 +404,23 @@ const ChatInput = ({
           {/* 底部工具栏 */}
           {showBottomToolbar && (
             <div className="bottom-toolbar">
-              {/* 快速响应下拉框 */}
-              <div className="quick-response-container" ref={quickResponseRef}>
-                <button 
-                  type="button" 
-                  className={`quick-response-btn ${showQuickResponseDropdown ? 'open' : ''}`} 
-                  disabled={disabled}
-                  onClick={() => setShowQuickResponseDropdown(!showQuickResponseDropdown)}
-                  title="选择响应模式"
-                >
-                  <span>
-                    {responseMode === "thinking" ? "思考模式" : "快速响应"}
-                  </span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
+              {/* 快速响应下拉框 - 只有支持的模型才显示 */}
+              {supportsResponseModes && (
+                <div className="quick-response-container" ref={quickResponseRef}>
+                  <button 
+                    type="button" 
+                    className={`quick-response-btn ${showQuickResponseDropdown ? 'open' : ''}`} 
+                    disabled={disabled}
+                    onClick={() => setShowQuickResponseDropdown(!showQuickResponseDropdown)}
+                    title="选择响应模式"
+                  >
+                    <span>
+                      {responseMode === "thinking" ? "思考模式" : "快速响应"}
+                    </span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
 
                 {/* 响应模式下拉菜单 */}
                 {showQuickResponseDropdown && (
@@ -479,10 +485,11 @@ const ChatInput = ({
                     </div>
                   </div>
                 )}
-              </div>
+                </div>
+              )}
 
-              {/* 加号按钮和下拉菜单 */}
-              <div className="plus-button-container" ref={dropdownRef}>
+              {/* 加号按钮和下拉菜单 - 暂时隐藏 */}
+              {/* <div className="plus-button-container" ref={dropdownRef}>
                 <button
                   type="button"
                   className="plus-button"
@@ -495,42 +502,56 @@ const ChatInput = ({
                   </svg>
                 </button>
 
-                {/* 简化的下拉菜单 */}
-                {showDropdown && (
-                  <div className="dropdown-menu">
-                    <div className="dropdown-item" onClick={handleNewChat}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                        <polyline points="14,2 14,8 20,8" />
-                        <line x1="16" y1="13" x2="8" y2="13" />
-                        <line x1="16" y1="17" x2="8" y2="17" />
-                        <polyline points="10,9 9,9 8,9" />
-                      </svg>
-                      <span>{t("newChat", currentLanguage)}</span>
-                    </div>
-                    
-                    {showFileUpload && (
-                      <div className="dropdown-item" onClick={triggerFileUpload}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                        </svg>
-                        <span>{t("upload", currentLanguage)}</span>
-                      </div>
-                    )}
-                    
-                    <div className="dropdown-item" onClick={handleAddTab}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                        <line x1="9" y1="1" x2="9" y2="23" />
-                        <line x1="15" y1="1" x2="15" y2="23" />
-                        <line x1="1" y1="9" x2="23" y2="9" />
-                        <line x1="1" y1="15" x2="23" y2="15" />
-                      </svg>
-                      <span>{t("addTab", currentLanguage)}</span>
-                    </div>
+                <div className="dropdown-menu">
+                  <div className="dropdown-item" onClick={handleNewChat}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                      <polyline points="14,2 14,8 20,8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10,9 9,9 8,9" />
+                    </svg>
+                    <span>{t("newChat", currentLanguage)}</span>
                   </div>
-                )}
-              </div>
+                  
+                  {showFileUpload && (
+                    <div className="dropdown-item" onClick={triggerFileUpload}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                      </svg>
+                      <span>{t("upload", currentLanguage)}</span>
+                    </div>
+                  )}
+                  
+                  <div className="dropdown-item" onClick={handleAddTab}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <line x1="9" y1="1" x2="9" y2="23" />
+                      <line x1="15" y1="1" x2="15" y2="23" />
+                      <line x1="1" y1="9" x2="23" y2="9" />
+                      <line x1="1" y1="15" x2="23" y2="15" />
+                    </svg>
+                    <span>{t("addTab", currentLanguage)}</span>
+                  </div>
+                </div>
+              </div> */}
+
+              {/* 单独的上传按钮 */}
+              {showFileUpload && (
+                <div className="upload-button-container">
+                  <button
+                    type="button"
+                    className="upload-button"
+                    onClick={triggerFileUpload}
+                    disabled={disabled}
+                    title={t("upload", currentLanguage)}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

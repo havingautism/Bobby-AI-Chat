@@ -93,6 +93,8 @@
 .stop-button:focus-visible,
 .plus-button:focus,
 .plus-button:focus-visible,
+.upload-button:focus,
+.upload-button:focus-visible,
 .quick-response-btn:focus,
 .quick-response-btn:focus-visible,
 .dropdown-item:focus,
@@ -109,6 +111,7 @@
 .send-button::selection,
 .stop-button::selection,
 .plus-button::selection,
+.upload-button::selection,
 .quick-response-btn::selection,
 .dropdown-item::selection,
 .remove-file-btn::selection {
@@ -119,6 +122,7 @@
 .send-button,
 .stop-button,
 .plus-button,
+.upload-button,
 .quick-response-btn,
 .dropdown-item,
 .remove-file-btn {
@@ -341,6 +345,36 @@
   color: var(--text-primary);
 }
 
+/* 上传按钮样式 */
+.upload-button-container {
+  position: relative;
+}
+
+.upload-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.upload-button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.upload-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 
 .chat-input-container .dropdown-menu {
   
@@ -348,7 +382,9 @@
   bottom: calc(100% + 8px);
   top: auto;
   right: 0;
-  background: linear-gradient(2deg, rgb(242 242 242) 0%, rgb(255 255 255 / 84%) 100%);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(248, 250, 252, 0.948) 100%);
   border: 1px solid #e5e7eb;
   border-radius: var(--border-radius-lg);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
@@ -706,6 +742,11 @@
     height: 24px;
   }
   
+  .upload-button {
+    width: 24px;
+    height: 24px;
+  }
+  
   .dropdown-menu {
     min-width: 140px;
   }
@@ -796,6 +837,11 @@
   }
   
   .plus-button {
+    width: 22px;
+    height: 22px;
+  }
+  
+  .upload-button {
     width: 22px;
     height: 22px;
   }

@@ -15,7 +15,9 @@ const DEFAULT_CONFIG = {
   apiKey: "",
   model: "deepseek-ai/DeepSeek-V3.1",
   temperature: 0.7,
-  maxTokens: 2000,
+  maxTokens: 4096,
+  topP: 1.0,
+  thinkingBudget: 4096,
 };
 
 // 从localStorage加载配置

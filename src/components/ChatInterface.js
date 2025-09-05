@@ -144,7 +144,22 @@ const ChatInterface = ({
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      // 移动端使用更流畅的滚动方式
+      if (window.innerWidth <= 768) {
+        const chatMessages = document.querySelector('.chat-messages');
+        if (chatMessages) {
+          // 使用scrollTo而不是scrollIntoView，在移动端更流畅
+          chatMessages.scrollTo({
+            top: chatMessages.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      } else {
+        // PC端使用scrollIntoView
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    }
   };
 
   // 处理跳转到指定消息
@@ -161,21 +176,73 @@ const ChatInterface = ({
 
   useEffect(() => {
     scrollToBottom();
+    
+    // 移动端滚动性能优化
+    if (window.innerWidth <= 768) {
+      const chatMessages = document.querySelector('.chat-messages');
+      if (chatMessages) {
+        // 使用requestAnimationFrame确保滚动优化在下一帧执行
+        requestAnimationFrame(() => {
+          chatMessages.style.willChange = 'scroll-position';
+          // 滚动完成后移除will-change以节省性能
+          setTimeout(() => {
+            chatMessages.style.willChange = 'auto';
+          }, 300);
+        });
+      }
+    }
   }, [conversation.messages]);
 
   // 初始化移动端优化器
   useEffect(() => {
     const mobileOptimizer = initMobileOptimizer();
     const chatMessages = document.querySelector('.chat-messages');
-    if (chatMessages) {
-      chatMessages.classList.add('optimized-scrolling');
-    }
+    
+    // 移动端滚动修复函数
+    const fixMobileScrolling = () => {
+      if (chatMessages) {
+        chatMessages.classList.add('optimized-scrolling');
+        // 确保滚动容器在移动端正常工作
+        chatMessages.style.overflowY = 'auto';
+        chatMessages.style.webkitOverflowScrolling = 'touch';
+        chatMessages.style.touchAction = 'pan-y';
+        chatMessages.style.overscrollBehaviorY = 'contain';
+        chatMessages.style.overscrollBehaviorX = 'none';
+        // 优化滚动性能
+        chatMessages.style.willChange = 'scroll-position';
+        chatMessages.style.transform = 'translateZ(0)';
+        chatMessages.style.scrollBehavior = 'smooth';
+        // 减少重绘
+        chatMessages.style.contain = 'layout style paint';
+        
+        // 强制重新计算样式，确保滚动正常工作
+        void chatMessages.offsetHeight;
+      }
+    };
+    
+    // 立即执行修复
+    fixMobileScrolling();
+    
+    // 延迟执行，确保DOM完全加载
+    const timeoutId = setTimeout(fixMobileScrolling, 100);
+    
     return () => {
+      clearTimeout(timeoutId);
       if (mobileOptimizer && mobileOptimizer.disable) {
         mobileOptimizer.disable();
       }
       if (chatMessages) {
         chatMessages.classList.remove('optimized-scrolling');
+        // 清理内联样式
+        chatMessages.style.overflowY = '';
+        chatMessages.style.webkitOverflowScrolling = '';
+        chatMessages.style.touchAction = '';
+        chatMessages.style.overscrollBehaviorY = '';
+        chatMessages.style.overscrollBehaviorX = '';
+        chatMessages.style.willChange = '';
+        chatMessages.style.transform = '';
+        chatMessages.style.scrollBehavior = '';
+        chatMessages.style.contain = '';
       }
     };
   }, []);
@@ -411,6 +478,11 @@ const ChatInterface = ({
             timestamp: new Date().toISOString(),
             isStreaming: false,
             isError: true,
+            retryData: {
+              messages,
+              options,
+              conversationId,
+            },
           };
 
           const errorMessages = [...messages];
@@ -441,6 +513,11 @@ const ChatInterface = ({
         timestamp: new Date().toISOString(),
         isStreaming: false,
         isError: true,
+        retryData: {
+          messages,
+          options,
+          conversationId,
+        },
       };
 
       const errorMessages = [...messages];
@@ -726,6 +803,7 @@ const ChatInterface = ({
         className="chat-interface-input"
         responseMode={responseMode}
         onResponseModeChange={handleResponseModeChange}
+        currentModel={conversation.model}
         onNewChat={() => {
           console.log("新建对话");
         }}

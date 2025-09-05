@@ -20,18 +20,9 @@ class MobileInteractionOptimizer {
     // 只监听窗口大小变化
     window.addEventListener('resize', this.handleResize.bind(this));
     
-    // 使用CSS overscroll-behavior替代JavaScript事件监听
-    if (this.scrollContainer) {
-      // 只保留touchstart用于记录位置，不阻塞滚动
-      this.scrollContainer.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: true });
-    }
+    // 完全移除触摸事件监听，让浏览器原生处理滚动
+    // 这样可以避免任何可能的滚动干扰
   }
-  
-  handleTouchStart(e) {
-    this.touchStartY = e.touches[0].clientY;
-  }
-  
-  // 移除touchmove处理，使用CSS overscroll-behavior替代
   
   handleResize() {
     this.isMobile = window.innerWidth <= 768;
@@ -50,9 +41,7 @@ class MobileInteractionOptimizer {
   
   disable() {
     window.removeEventListener('resize', this.handleResize);
-    if (this.scrollContainer) {
-      this.scrollContainer.removeEventListener('touchstart', this.handleTouchStart);
-    }
+    // 移除所有事件监听器
   }
   
   refresh() {

@@ -7,6 +7,8 @@ export class BaseApiProvider {
       model: '',
       temperature: 0.7,
       maxTokens: 2000,
+      topP: 1.0,
+      thinkingBudget: 1000,
       ...config
     };
   }
@@ -76,11 +78,14 @@ export class BaseApiProvider {
   buildRequestBody(messages, options = {}) {
     const modelToUse = options.model || this.config.model;
     const temperature = options.temperature !== undefined ? options.temperature : this.config.temperature;
+    const topP = options.topP !== undefined ? options.topP : this.config.topP;
+    const thinkingBudget = options.thinkingBudget !== undefined ? options.thinkingBudget : this.config.thinkingBudget;
     
     const requestBody = {
       model: modelToUse,
       messages: messages,
       temperature: temperature,
+      top_p: topP,
       max_tokens: this.config.maxTokens,
       stream: options.stream || false,
     };
@@ -88,6 +93,7 @@ export class BaseApiProvider {
     // 如果用户选择了思考模式，添加enable_thinking参数
     if (options.responseMode === "thinking") {
       requestBody.enable_thinking = true;
+      requestBody.thinking_budget = thinkingBudget;
       // 对于思考模式，调整默认参数以获得更好的推理效果
       if (requestBody.max_tokens < 4000) {
         requestBody.max_tokens = 4000;
@@ -95,7 +101,8 @@ export class BaseApiProvider {
       if (requestBody.temperature > 0.3) {
         requestBody.temperature = 0.3;
       }
-      if (!requestBody.top_p) {
+      // 思考模式使用更保守的top_p值
+      if (requestBody.top_p > 0.8) {
         requestBody.top_p = 0.8;
       }
     }

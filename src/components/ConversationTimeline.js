@@ -94,6 +94,8 @@ const ConversationTimeline = ({ messages, onJumpToMessage, currentMessageId }) =
     setIsVisible(!isVisible);
   };
 
+
+
   // 点击外部关闭时间轴（仅移动端）
   useEffect(() => {
     const handleClickOutside = (event) => {
