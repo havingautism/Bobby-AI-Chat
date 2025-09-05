@@ -199,7 +199,7 @@ const Sidebar = ({
                 </svg>
                 <input
                   type="text"
-                  placeholder="搜索Bobby的记忆... 🔍"
+                  placeholder="搜索Bobby的记忆... 🔮"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="search-input"

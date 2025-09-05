@@ -395,6 +395,10 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1),
       0 2px 8px rgba(0, 0, 0, 0.05);
   }
+
+  [data-theme="dark"] .chat-header {
+    border-top-left-radius: var(--border-radius-sm);
+  }
   
   .chat-messages {
     flex: 1;
