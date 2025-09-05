@@ -37,12 +37,24 @@
   z-index: 1001;
   transform: translateX(-100%);
   transition: transform 0.3s ease;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
 }
 
 [data-theme="dark"] .sidebar {
-  box-shadow: 0px 4px 14px rgb(0 0 0 / 48%);
-  
+  box-shadow: 0px 4px 14px rgb(0 0 0 / 48%) !important;
+}
+
+/* 确保侧边栏在所有状态下都保持阴影 */
+.sidebar:focus,
+.sidebar:active,
+.sidebar:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="dark"] .sidebar:focus,
+[data-theme="dark"] .sidebar:active,
+[data-theme="dark"] .sidebar:hover {
+  box-shadow: 0px 4px 14px rgb(0 0 0 / 48%) !important;
 }
 
 .sidebar.collapsed {
@@ -113,9 +125,6 @@
 .new-chat-btn:focus-visible {
   outline: none !important;
   background: rgba(255, 255, 255, 0.15);
-  box-shadow: none !important;
-  -webkit-box-shadow: none !important;
-  -moz-box-shadow: none !important;
 }
 
 .new-chat-btn:hover {
@@ -128,9 +137,6 @@
 .new-chat-btn:focus-visible {
   outline: none !important;
   background: rgba(255, 255, 255, 0.15);
-  box-shadow: none !important;
-  -webkit-box-shadow: none !important;
-  -moz-box-shadow: none !important;
 }
 
 .new-chat-btn svg {
@@ -174,9 +180,6 @@
   outline: none !important;
   border-color: rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: none !important;
-  -webkit-box-shadow: none !important;
-  -moz-box-shadow: none !important;
 }
 
 

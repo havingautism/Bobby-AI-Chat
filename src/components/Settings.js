@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getApiConfig, updateApiConfig } from "../utils/api";
 import { getCurrentLanguage, t } from "../utils/language";
-import { getStorageInfo, clearChatHistory, getDataDirectoryInfo, setCustomDataDir } from "../utils/storageAdapter";
-import { apiSessionManager } from "../utils/apiSessionManager";
+import { getStorageInfo, clearChatHistory, getDataDirectoryInfo } from "../utils/storageAdapter";
+import { isTauriEnvironment } from "../utils/tauriDetector";
 import "./Settings.css";
 
 const Settings = ({ isOpen, onClose, onModelChange }) => {
@@ -23,10 +23,6 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
   const [dropdownPosition, setDropdownPosition] = useState('bottom');
   const [storageInfo, setStorageInfo] = useState(null);
   const [dataDirectoryInfo, setDataDirectoryInfo] = useState(null);
-  const [customDataPath, setCustomDataPath] = useState("");
-  const [showCustomPathInput, setShowCustomPathInput] = useState(false);
-  const [apiSessionHistory, setApiSessionHistory] = useState([]);
-  const [showApiSessions, setShowApiSessions] = useState(false);
   const dropdownRef = useRef(null);
   const [dropdownWidth, setDropdownWidth] = useState(undefined);
 
@@ -131,10 +127,6 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
         // 加载数据目录信息
         const dirInfo = getDataDirectoryInfo();
         setDataDirectoryInfo(dirInfo);
-        
-        // 加载API会话历史
-        const sessions = await apiSessionManager.getSessions();
-        setApiSessionHistory(sessions);
         
         // 自动初始化为硅基流动配置
         if (!currentConfig.baseURL) {
@@ -295,48 +287,24 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
     }
   };
 
-  const handleCustomPathChange = (path) => {
-    setCustomDataPath(path);
-  };
 
-  const handleApplyCustomPath = async () => {
+  const handleOpenDataDirectory = async () => {
     try {
-      await setCustomDataDir(customDataPath);
-      setSaveMessage("自定义路径设置成功！");
-      
-      // 重新加载数据目录信息
-      const dirInfo = getDataDirectoryInfo();
-      setDataDirectoryInfo(dirInfo);
-      
-      // 重新加载存储信息
-      const info = await getStorageInfo();
-      setStorageInfo(info);
-      
-      setTimeout(() => setSaveMessage(""), 3000);
+      // 仅在Tauri环境中打开文件管理器
+      if (isTauriEnvironment()) {
+        const { open } = await import('@tauri-apps/plugin-shell');
+        const dirInfo = getDataDirectoryInfo();
+        if (dirInfo && dirInfo.path) {
+          await open(dirInfo.path);
+        } else {
+          setSaveMessage("无法获取数据目录路径");
+          setTimeout(() => setSaveMessage(""), 3000);
+        }
+      }
     } catch (error) {
-      setSaveMessage(`路径设置失败: ${error.message}`);
+      setSaveMessage(`打开目录失败: ${error.message}`);
       setTimeout(() => setSaveMessage(""), 5000);
     }
-  };
-
-  const handleClearApiSessions = async () => {
-    try {
-      await apiSessionManager.clearHistory();
-      setApiSessionHistory([]);
-      setSaveMessage("API会话历史已清除");
-      setTimeout(() => setSaveMessage(""), 3000);
-    } catch (error) {
-      setSaveMessage(`清除失败: ${error.message}`);
-      setTimeout(() => setSaveMessage(""), 5000);
-    }
-  };
-
-  const handleToggleApiSessions = () => {
-    setShowApiSessions(!showApiSessions);
-  };
-
-  const handleToggleCustomPath = () => {
-    setShowCustomPathInput(!showCustomPathInput);
   };
 
   if (!isOpen) return null;
@@ -549,70 +517,24 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
                     <div className="storage-stats">
                       <p>对话数量: {storageInfo.conversations?.count || 0}</p>
                       <p>总大小: {storageInfo.totalSize}</p>
-                      {storageInfo.apiSessions && (
-                        <p>API会话: {storageInfo.apiSessions.count} 个</p>
-                      )}
-                      {dataDirectoryInfo && (
-                        <p>数据目录: {dataDirectoryInfo.path}</p>
-                      )}
                     </div>
                     
-                    {/* 自定义数据路径 */}
-                    <div className="data-path-section">
-                      <button 
-                        className="secondary-button" 
-                        onClick={handleToggleCustomPath}
-                      >
-                        {showCustomPathInput ? '隐藏' : '设置'}自定义数据路径
-                      </button>
-                      
-                      {showCustomPathInput && (
-                        <div className="custom-path-input">
-                          <input
-                            type="text"
-                            value={customDataPath}
-                            onChange={(e) => handleCustomPathChange(e.target.value)}
-                            placeholder="例如: Documents/AIChat 或 C:\\MyData\\AIChat"
-                            className="path-input"
-                          />
-                          <button 
-                            className="apply-button" 
-                            onClick={handleApplyCustomPath}
-                          >
-                            应用
-                          </button>
-                          <div className="path-help">
-                            <small>留空使用默认路径，相对路径相对于用户主目录</small>
+                    {/* 打开数据目录 - 仅在Tauri环境中显示 */}
+                    {isTauriEnvironment() && (
+                      <div className="data-directory-section">
+                        <button 
+                          className="secondary-button" 
+                          onClick={handleOpenDataDirectory}
+                        >
+                          📁 打开数据目录
+                        </button>
+                        {dataDirectoryInfo && (
+                          <div className="directory-info">
+                            <small>数据目录: {dataDirectoryInfo.path}</small>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* API会话历史 */}
-                    <div className="api-sessions-section">
-                      <button 
-                        className="secondary-button" 
-                        onClick={handleToggleApiSessions}
-                      >
-                        {showApiSessions ? '隐藏' : '查看'}API会话历史
-                      </button>
-                      
-                      {showApiSessions && (
-                        <div className="api-sessions-info">
-                          <p>总会话数: {apiSessionHistory.length}</p>
-                          <p>最近会话: {apiSessionHistory.length > 0 
-                            ? new Date(apiSessionHistory[0].startTime).toLocaleString()
-                            : '无'}
-                          </p>
-                          <button 
-                            className="danger-button small" 
-                            onClick={handleClearApiSessions}
-                          >
-                            清除API会话历史
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
                     
                     <button 
                       className="danger-button" 

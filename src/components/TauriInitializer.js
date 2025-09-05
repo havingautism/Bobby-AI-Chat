@@ -69,7 +69,7 @@ const TauriInitializer = ({ children }) => {
     <>
       {children}
       {/* 显示存储类型指示器 */}
-      {storageType === 'tauri' && (
+      {/* {storageType === 'tauri' && (
         <div className="fixed bottom-4 right-4 z-50">
           <div className="badge badge-success gap-2 shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-4 h-4 stroke-current">
@@ -78,7 +78,7 @@ const TauriInitializer = ({ children }) => {
             桌面版 - 本地存储
           </div>
         </div>
-      )}
+      )} */}
     </>
   );
 };

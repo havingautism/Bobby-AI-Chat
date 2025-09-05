@@ -906,79 +906,34 @@
   color: var(--text-secondary);
 }
 
-.data-path-section {
+.data-directory-section {
   margin: 16px 0;
   padding: 12px;
-  background: var(--glass-bg-light);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border-radius: var(--border-radius-md);
+  border: 1px solid var(--glass-border-light);
+  box-shadow: var(--glass-shadow-light);
+}
+
+.directory-info {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  border-radius: var(--border-radius-sm);
   border: 1px solid var(--glass-border-light);
 }
 
-.custom-path-input {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.path-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  background: var(--input-bg);
-  color: var(--text-primary);
-  font-size: 14px;
-}
-
-.path-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-.apply-button {
-  padding: 8px 16px;
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius-sm);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  align-self: flex-start;
-}
-
-.apply-button:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-}
-
-.path-help {
+.directory-info small {
   color: var(--text-secondary);
   font-size: 12px;
-}
-
-.api-sessions-section {
-  margin: 16px 0;
-  padding: 12px;
-  background: var(--glass-bg-light);
-  border-radius: var(--border-radius-md);
-  border: 1px solid var(--glass-border-light);
-}
-
-.api-sessions-info {
-  margin-top: 12px;
-  padding: 12px;
-  background: var(--glass-bg-dark);
-  border-radius: var(--border-radius-sm);
-  border: 1px solid var(--glass-border-light);
-}
-
-.api-sessions-info p {
-  margin: 6px 0;
-  font-size: 14px;
-  color: var(--text-secondary);
+  word-break: break-all;
+  line-height: 1.4;
 }
 
 .secondary-button {
@@ -1007,21 +962,19 @@
 
 /* 移动端适配 */
 @media (max-width: 768px) {
-  .data-path-section,
-  .api-sessions-section {
+  .data-directory-section {
     padding: 8px;
   }
   
-  .custom-path-input {
-    gap: 6px;
+  .directory-info {
+    padding: 6px 10px;
   }
   
-  .path-input {
-    font-size: 12px;
+  .directory-info small {
+    font-size: 11px;
   }
   
-  .secondary-button,
-  .apply-button {
+  .secondary-button {
     padding: 6px 12px;
     font-size: 12px;
   }
