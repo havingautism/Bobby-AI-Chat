@@ -365,26 +365,29 @@ const ChatInterface = ({
   };
 
   // 流式消息发送
-  const sendMessageWithStream = async (messages, options, conversationId) => {
+  const sendMessageWithStream = async (messages, options, conversationId, customMessageId = null) => {
     setIsStreaming(true);
     setStreamingConversationId(conversationId);
 
     const controller = new AbortController();
     setAbortController(controller);
 
-    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessageId = customMessageId || (Date.now() + 1).toString();
 
-    const initialAssistantMessage = {
-      id: assistantMessageId,
-      role: "assistant",
-      content: "",
-      timestamp: new Date().toISOString(),
-      isStreaming: true,
-    };
+    // 如果提供了自定义消息ID，说明消息已经存在于列表中，不需要添加
+    if (!customMessageId) {
+      const initialAssistantMessage = {
+        id: assistantMessageId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date().toISOString(),
+        isStreaming: true,
+      };
 
-    onUpdateConversation(conversationId, {
-      messages: [...messages, initialAssistantMessage],
-    });
+      onUpdateConversation(conversationId, {
+        messages: [...messages, initialAssistantMessage],
+      });
+    }
 
     let finalMessages = [];
     try {
@@ -414,7 +417,8 @@ const ChatInterface = ({
             isStreaming: true,
           };
 
-          const currentMessages = [...messages];
+          // 获取当前对话的消息列表并更新
+          const currentMessages = [...conversation.messages];
           const existingMessageIndex = currentMessages.findIndex(
             (msg) => msg.id === assistantMessageId
           );
@@ -422,6 +426,7 @@ const ChatInterface = ({
           if (existingMessageIndex >= 0) {
             currentMessages[existingMessageIndex] = updatedMessage;
           } else {
+            // 如果找不到消息，说明可能是新消息，添加到末尾
             currentMessages.push(updatedMessage);
           }
 
@@ -441,7 +446,8 @@ const ChatInterface = ({
             isStreaming: false,
           };
 
-          finalMessages = [...messages];
+          // 获取当前对话的消息列表并更新
+          finalMessages = [...conversation.messages];
           const existingMessageIndex = finalMessages.findIndex(
             (msg) => msg.id === assistantMessageId
           );
@@ -449,6 +455,7 @@ const ChatInterface = ({
           if (existingMessageIndex >= 0) {
             finalMessages[existingMessageIndex] = finalMessage;
           } else {
+            // 如果找不到消息，说明可能是新消息，添加到末尾
             finalMessages.push(finalMessage);
           }
 
@@ -485,7 +492,8 @@ const ChatInterface = ({
             },
           };
 
-          const errorMessages = [...messages];
+          // 获取当前对话的消息列表并更新
+          const errorMessages = [...conversation.messages];
           const existingMessageIndex = errorMessages.findIndex(
             (msg) => msg.id === assistantMessageId
           );
@@ -493,6 +501,7 @@ const ChatInterface = ({
           if (existingMessageIndex >= 0) {
             errorMessages[existingMessageIndex] = errorMessage;
           } else {
+            // 如果找不到消息，说明可能是新消息，添加到末尾
             errorMessages.push(errorMessage);
           }
 
@@ -520,7 +529,8 @@ const ChatInterface = ({
         },
       };
 
-      const errorMessages = [...messages];
+      // 获取当前对话的消息列表并更新
+      const errorMessages = [...conversation.messages];
       const existingMessageIndex = errorMessages.findIndex(
         (msg) => msg.id === assistantMessageId
       );
@@ -528,6 +538,7 @@ const ChatInterface = ({
       if (existingMessageIndex >= 0) {
         errorMessages[existingMessageIndex] = errorMessage;
       } else {
+        // 如果找不到消息，说明可能是新消息，添加到末尾
         errorMessages.push(errorMessage);
       }
 
@@ -627,7 +638,7 @@ const ChatInterface = ({
 
     await sendMessageWithStream(
       messages,
-      { ...options, model: conversation.model, systemPrompt, temperature: roleTemperature },
+      { ...options, model: conversation.model, systemPrompt, temperature: roleTemperature, responseMode: responseMode },
       conversationId
     );
   };
@@ -645,36 +656,59 @@ const ChatInterface = ({
 
     if (messageIndex === -1) return;
 
-    const messagesBeforeAssistant = conversation.messages.slice(0, messageIndex);
+    // 找到对应的用户消息
+    const userMessageIndex = messageIndex - 1;
+    if (userMessageIndex < 0 || conversation.messages[userMessageIndex].role !== "user") {
+      console.error("找不到对应的用户消息");
+      return;
+    }
 
-    const updatedMessages = messagesBeforeAssistant;
+    const userMessage = conversation.messages[userMessageIndex];
+    
+    // 获取到当前助手消息之前的所有消息（包括用户消息）
+    const messagesUpToUser = conversation.messages.slice(0, messageIndex);
+
+    // 使用原来的消息ID，直接替换内容
+    const originalMessageId = assistantMessage.id;
+
+    // 先更新消息为流式状态
+    const updatedMessages = [...conversation.messages];
+    const messageIndexToUpdate = updatedMessages.findIndex(msg => msg.id === originalMessageId);
+    
+    if (messageIndexToUpdate >= 0) {
+      updatedMessages[messageIndexToUpdate] = {
+        ...updatedMessages[messageIndexToUpdate],
+        content: "",
+        reasoning: undefined,
+        hasReasoning: false,
+        isStreaming: true,
+        isError: false,
+        timestamp: new Date().toISOString(),
+      };
+    }
 
     onUpdateConversation(conversation.id, {
       messages: updatedMessages,
     });
 
-    const lastUserMessage = messagesBeforeAssistant
-      .slice()
-      .reverse()
-      .find((msg) => msg.role === "user");
+    const roleToUse = conversation.role || currentRole;
+    const roleInfo = getRoleById(roleToUse);
+    const systemPrompt = roleInfo.systemPrompt;
+    const roleTemperature = roleInfo.temperature;
 
-    if (lastUserMessage) {
-      const roleToUse = conversation.role || currentRole;
-      const roleInfo = getRoleById(roleToUse);
-      const systemPrompt = roleInfo.systemPrompt;
-      const roleTemperature = roleInfo.temperature;
-
-      await sendMessageWithStream(
-        updatedMessages,
-        {
-          ...lastUserMessage.options,
-          model: conversation.model,
-          systemPrompt,
-          temperature: roleTemperature,
-        },
-        conversation.id
-      );
-    }
+    // 使用到用户消息为止的上下文进行重新生成
+    await sendMessageWithStream(
+      messagesUpToUser,
+      {
+        ...userMessage.options,
+        model: conversation.model,
+        systemPrompt,
+        temperature: roleTemperature,
+        responseMode: responseMode, // 使用当前的响应模式
+      },
+      conversation.id,
+      originalMessageId // 使用原来的消息ID
+    );
   };
 
   if (conversation.messages.length === 0) {
