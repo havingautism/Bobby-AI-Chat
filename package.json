@@ -42,9 +42,12 @@
     "build:mobile": "CI=false GENERATE_SOURCEMAP=false INLINE_RUNTIME_CHUNK=false IMAGE_INLINE_SIZE_LIMIT=1000 react-scripts build",
     "analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
     "test": "react-scripts test",
+    "test:sqlite": "node test_sqlite.js",
+    "check:system": "node check_system.js",
     "eject": "react-scripts eject",
     "tauri": "tauri dev",
-    "tauri:build": "npm run build && tauri build"
+    "tauri:build": "npm run build && tauri build",
+    "install:sqlite": "node -e \"console.log('请运行对应的安装脚本: install_sqlite.bat (Windows) 或 install_sqlite.sh (Linux/macOS)')\""
   },
   "eslintConfig": {
     "extends": [

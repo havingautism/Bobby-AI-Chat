@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getApiConfig, updateApiConfig } from "../utils/api";
 import { getCurrentLanguage, t } from "../utils/language";
-import { getStorageInfo, clearChatHistory, getDataDirectoryInfo } from "../utils/storageAdapter";
+import { storageAdapter } from "../utils/storageAdapter";
 import { isTauriEnvironment } from "../utils/tauriDetector";
 import "./Settings.css";
 
@@ -45,12 +45,14 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [isTesting, setIsTesting] = useState(false);
-  const [testMessage, setTestMessage] = useState("");
   const [testSuccess, setTestSuccess] = useState(false);
+  const [testMessage, setTestMessage] = useState("");
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState('bottom');
   const [storageInfo, setStorageInfo] = useState(null);
   const [dataDirectoryInfo, setDataDirectoryInfo] = useState(null);
+  const [currentStorageType, setCurrentStorageType] = useState(() => storageAdapter.getStorageType());
+  const [isSwitchingStorage, setIsSwitchingStorage] = useState(false);
   const dropdownRef = useRef(null);
   const [dropdownWidth, setDropdownWidth] = useState(undefined);
 
@@ -162,11 +164,27 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
         });
         
         // 加载存储信息
-        const info = await getStorageInfo();
-        setStorageInfo(info);
+        try {
+          console.log('开始加载存储信息...');
+          const info = await storageAdapter.getStorageInfo();
+          console.log('存储信息加载成功:', info);
+          setStorageInfo(info);
+        } catch (error) {
+          console.error('加载存储信息失败:', error);
+          setStorageInfo({
+            error: error.message,
+            dbPath: '加载失败',
+            dbSize: '未知',
+            conversationCount: 0,
+            messageCount: 0,
+            apiSessionCount: 0,
+            knowledgeDocumentCount: 0,
+            settingCount: 0
+          });
+        }
         
         // 加载数据目录信息
-        const dirInfo = getDataDirectoryInfo();
+        const dirInfo = storageAdapter.getDataDirectoryInfo();
         setDataDirectoryInfo(dirInfo);
         
         // 自动初始化为硅基流动配置
@@ -210,11 +228,55 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
 
   const handleClearHistory = async () => {
     if (window.confirm("确定要清除所有聊天历史吗？此操作不可撤销。")) {
-      await clearChatHistory();
+      await storageAdapter.clearChatHistory();
       // 重新加载存储信息
-      const info = await getStorageInfo();
-      setStorageInfo(info);
+      try {
+        const info = await storageAdapter.getStorageInfo();
+        setStorageInfo(info);
+      } catch (error) {
+        console.error('重新加载存储信息失败:', error);
+      }
       alert("聊天历史已清除");
+    }
+  };
+
+  // 切换存储类型
+  const handleSwitchStorage = async (targetType) => {
+    if (isSwitchingStorage) return;
+    
+    setIsSwitchingStorage(true);
+    try {
+      if (targetType === 'sqlite') {
+        await storageAdapter.switchToSQLite();
+        setSaveMessage("已成功切换到SQLite数据库存储");
+      } else if (targetType === 'json') {
+        await storageAdapter.switchToJsonStorage();
+        setSaveMessage("已成功切换到JSON文件存储");
+      }
+      
+      setSaveSuccess(true);
+      setCurrentStorageType(storageAdapter.getStorageType());
+      
+      // 重新加载存储信息
+      try {
+        const info = await storageAdapter.getStorageInfo();
+        setStorageInfo(info);
+      } catch (error) {
+        console.error('重新加载存储信息失败:', error);
+      }
+      
+      setTimeout(() => {
+        setSaveMessage("");
+        setSaveSuccess(false);
+      }, 3000);
+    } catch (error) {
+      setSaveMessage(`切换存储类型失败: ${error.message}`);
+      setSaveSuccess(false);
+      setTimeout(() => {
+        setSaveMessage("");
+      }, 5000);
+    } finally {
+      setIsSwitchingStorage(false);
     }
   };
 
@@ -340,7 +402,7 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
       // 仅在Tauri环境中打开文件管理器
       if (isTauriEnvironment()) {
         const { open } = await import('@tauri-apps/plugin-shell');
-        const dirInfo = getDataDirectoryInfo();
+        const dirInfo = storageAdapter.getDataDirectoryInfo();
         if (dirInfo && dirInfo.path) {
           await open(dirInfo.path);
         } else {
@@ -637,7 +699,36 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
                     <div className="storage-stats">
                       <p>对话数量: {getConversationCount()}</p>
                       <p>总大小: {storageInfo.totalSize}</p>
+                      <p>存储类型: {currentStorageType === 'sqlite' ? 'SQLite数据库' : 
+                                   currentStorageType === 'tauri' ? 'JSON文件' : 'IndexedDB'}</p>
                     </div>
+                    
+                    {/* 存储类型切换 - 仅在Tauri环境中显示 */}
+                    {isTauriEnvironment() && (
+                      <div className="storage-type-section">
+                        <h4>存储类型切换</h4>
+                        <div className="storage-buttons">
+                          <button 
+                            className={`storage-button ${currentStorageType === 'sqlite' ? 'active' : ''}`}
+                            onClick={() => handleSwitchStorage('sqlite')}
+                            disabled={isSwitchingStorage || currentStorageType === 'sqlite'}
+                          >
+                            {isSwitchingStorage && currentStorageType !== 'sqlite' ? '切换中...' : 'SQLite数据库'}
+                          </button>
+                          <button 
+                            className={`storage-button ${currentStorageType === 'tauri' ? 'active' : ''}`}
+                            onClick={() => handleSwitchStorage('json')}
+                            disabled={isSwitchingStorage || currentStorageType === 'tauri'}
+                          >
+                            {isSwitchingStorage && currentStorageType !== 'tauri' ? '切换中...' : 'JSON文件'}
+                          </button>
+                        </div>
+                        <div className="storage-description">
+                          <p><strong>SQLite数据库:</strong> 支持向量搜索，性能更好，适合大量数据</p>
+                          <p><strong>JSON文件:</strong> 简单易用，兼容性好，适合小量数据</p>
+                        </div>
+                      </div>
+                    )}
                     
                     {/* 打开数据目录 - 仅在Tauri环境中显示 */}
                     {isTauriEnvironment() && (

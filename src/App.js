@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import ChatInterface from "./components/ChatInterface";
 import Sidebar from "./components/Sidebar";
 import Settings from "./components/Settings";
+import KnowledgeBase from "./components/KnowledgeBase";
 import TauriInitializer from "./components/TauriInitializer";
-import { loadChatHistory, saveChatHistory, migrateFromLocalStorage } from "./utils/storageAdapter";
+import { storageAdapter } from "./utils/storageAdapter";
 import { initTheme } from "./utils/theme";
 import { getApiConfig } from "./utils/api";
 import { smartCacheCleanup } from "./utils/cacheManager";
@@ -21,6 +22,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [knowledgeBaseOpen, setKnowledgeBaseOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [defaultModel, setDefaultModel] = useState("deepseek-ai/DeepSeek-V3.1");
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -62,11 +64,11 @@ function App() {
     setConversations(prev => prev.map(conv => {
       if (conv.messages.length === 0) {
         // 如果对话是空的，使用新的默认模型
-        return { ...conv, model: defaultModel };
+        return { ...conv, model: defaultModel, responseMode: lastResponseMode };
       }
       return conv;
     }));
-  }, [defaultModel]);
+  }, [defaultModel, lastResponseMode]);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -85,10 +87,10 @@ function App() {
         await initializeApiSessionManager();
 
         // 迁移旧数据
-        await migrateFromLocalStorage();
+        await storageAdapter.migrateFromIndexedDB();
 
         // 加载对话历史
-        const savedConversations = await loadChatHistory();
+        const savedConversations = await storageAdapter.loadChatHistory();
         console.log("加载的对话历史:", savedConversations);
 
         if (savedConversations.length > 0) {
@@ -144,7 +146,7 @@ function App() {
       const saveData = async () => {
         try {
           console.log("保存对话历史:", conversations);
-          await saveChatHistory(conversations);
+          await storageAdapter.saveChatHistory(conversations);
         } catch (error) {
           console.error("保存对话历史失败:", error);
         }
@@ -292,6 +294,7 @@ function App() {
           }
         }}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenKnowledgeBase={() => setKnowledgeBaseOpen(true)}
       />
       {/* 移动端侧边栏遮罩层：仅宽栏打开时显示 */}
       {sidebarOpen && !sidebarCollapsed && isMobile && (
@@ -326,6 +329,11 @@ function App() {
             // 如果对话已有消息，保持当前手动选择的模型不变
           }
         }}
+      />
+
+      <KnowledgeBase 
+        isOpen={knowledgeBaseOpen} 
+        onClose={() => setKnowledgeBaseOpen(false)}
       />
     </div>
     </TauriInitializer>

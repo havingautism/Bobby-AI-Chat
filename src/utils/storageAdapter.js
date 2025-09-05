@@ -1,17 +1,43 @@
 import * as indexedDBStorage from './storage';
 import * as tauriStorage from './tauriStorage';
+import * as simpleSQLiteStorage from './simpleSQLiteStorage';
+import { isTauriEnvironment } from './tauriDetector';
 
-// 检测是否在Tauri环境中
-const isTauriEnvironment = () => {
-  return typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
+// 强制检测Tauri环境 - 使用CSDN文章的方法
+const forceDetectTauri = () => {
+  const isTauri = Boolean(
+    typeof window !== 'undefined' &&
+      window !== undefined &&
+      window.__TAURI_IPC__ !== undefined
+  );
+  
+  if (isTauri) {
+    console.log('检测到Tauri环境，设置SQLite存储');
+    localStorage.setItem('use-sqlite-storage', 'true');
+  }
+  
+  return isTauri;
 };
 
 // 获取当前使用的存储实现
 const getStorage = () => {
-  if (isTauriEnvironment()) {
-    return tauriStorage;
+  try {
+    // 强制检测Tauri环境
+    const isTauri = forceDetectTauri();
+    
+    if (isTauri) {
+      // 在Tauri环境中强制使用SQLite
+      console.log('Tauri环境检测成功，强制使用SQLite存储');
+      // 强制设置localStorage
+      localStorage.setItem('use-sqlite-storage', 'true');
+      return simpleSQLiteStorage;
+    }
+    console.log('非Tauri环境，使用IndexedDB存储');
+    return indexedDBStorage;
+  } catch (error) {
+    console.warn('获取存储实现失败，回退到IndexedDB:', error);
+    return indexedDBStorage;
   }
-  return indexedDBStorage;
 };
 
 // 存储适配器 - 提供统一的API接口
@@ -74,7 +100,55 @@ export const storageAdapter = {
 
   // 获取当前存储类型
   getStorageType: () => {
-    return isTauriEnvironment() ? 'tauri' : 'indexeddb';
+    // 使用强制检测
+    const isTauri = forceDetectTauri();
+    
+    if (isTauri) {
+      // 在Tauri环境中强制返回sqlite
+      console.log('getStorageType: 检测到Tauri环境，返回sqlite');
+      return 'sqlite';
+    }
+    console.log('getStorageType: 非Tauri环境，返回indexeddb');
+    return 'indexeddb';
+  },
+
+  // 切换存储类型（仅Tauri环境）
+  switchToSQLite: async () => {
+    if (!isTauriEnvironment()) {
+      throw new Error('SQLite存储仅在Tauri环境中可用');
+    }
+    
+    try {
+      // 初始化SQLite存储
+      await simpleSQLiteStorage.initialize();
+      
+      // 启用SQLite存储
+      localStorage.setItem('use-sqlite-storage', 'true');
+      
+      console.log('已成功切换到SQLite存储');
+      return true;
+    } catch (error) {
+      console.error('切换到SQLite存储失败:', error);
+      throw error;
+    }
+  },
+
+  // 切换回JSON文件存储
+  switchToJsonStorage: async () => {
+    if (!isTauriEnvironment()) {
+      throw new Error('JSON存储仅在Tauri环境中可用');
+    }
+    
+    try {
+      // 禁用SQLite存储
+      localStorage.setItem('use-sqlite-storage', 'false');
+      
+      console.log('已成功切换回JSON文件存储');
+      return true;
+    } catch (error) {
+      console.error('切换到JSON存储失败:', error);
+      throw error;
+    }
   },
 
   // 检查是否为Tauri环境
@@ -133,7 +207,10 @@ export const {
   setCustomDataDir,
   getDataDirectoryInfo,
   saveApiSessions,
-  loadApiSessions
+  loadApiSessions,
+  getStorageType,
+  switchToSQLite,
+  switchToJsonStorage
 } = storageAdapter;
 
 // 兼容旧版本的函数名

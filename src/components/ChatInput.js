@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getCurrentLanguage, t } from "../utils/language";
 import { isModelSupportResponseModes } from "../utils/modelUtils";
+import { knowledgeBaseManager } from "../utils/knowledgeBase";
 import "./ChatInput.css";
 
 const ChatInput = ({ 
@@ -26,14 +27,38 @@ const ChatInput = ({
   const [uploadedFile, setUploadedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [responseMode, setResponseMode] = useState(externalResponseMode || "normal"); // normal 或 thinking
+  const [knowledgeSearchResults, setKnowledgeSearchResults] = useState([]);
+  const [isSearchingKnowledge, setIsSearchingKnowledge] = useState(false);
+  const [showKnowledgeResults, setShowKnowledgeResults] = useState(false);
   const dropdownRef = useRef(null);
   const quickResponseRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
-  const [inputHeight, setInputHeight] = useState(0);
 
   // 判断当前模型是否支持响应模式
   const supportsResponseModes = isModelSupportResponseModes(currentModel);
+
+  // 知识库搜索功能
+  const handleKnowledgeSearch = async () => {
+    if (!message.trim()) return;
+    
+    setIsSearchingKnowledge(true);
+    try {
+      const results = await knowledgeBaseManager.search(message, {
+        limit: 5,
+        threshold: 0.7,
+        includeContent: true
+      });
+      setKnowledgeSearchResults(results);
+      setShowKnowledgeResults(true);
+    } catch (error) {
+      console.error("知识库搜索失败:", error);
+    } finally {
+      setIsSearchingKnowledge(false);
+    }
+  };
+
+  // 使用知识库结果的功能已内联到onClick处理函数中
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -105,7 +130,7 @@ const ChatInput = ({
           
           // 移除所有padding bottom，不预留空白
           chatMessages.style.paddingBottom = '0px';
-          setInputHeight(containerHeight);
+          // setInputHeight(containerHeight);
         }
       }
     };
@@ -153,10 +178,6 @@ const ChatInput = ({
     }
   }, [externalResponseMode]);
 
-  const toggleDropdown = () => {
-    const newShowState = !showDropdown;
-    setShowDropdown(newShowState);
-  };
 
   // 处理文件上传
   const handleFileUpload = (event) => {
@@ -195,17 +216,6 @@ const ChatInput = ({
     }
   };
 
-  // 处理新建对话
-  const handleNewChat = () => {
-    onNewChat();
-    setShowDropdown(false);
-  };
-
-  // 处理添加选项卡
-  const handleAddTab = () => {
-    onAddTab();
-    setShowDropdown(false);
-  };
 
   // 确定展开方向
   const getExpandDirection = () => {
@@ -536,6 +546,34 @@ const ChatInput = ({
                 </div>
               </div> */}
 
+              {/* 知识库搜索按钮 */}
+              <div className="knowledge-search-container">
+                <button
+                  type="button"
+                  className="knowledge-search-button"
+                  onClick={handleKnowledgeSearch}
+                  disabled={disabled || !message.trim() || isSearchingKnowledge}
+                  title={currentLanguage === "zh" ? "搜索知识库" : "Search Knowledge Base"}
+                >
+                  {isSearchingKnowledge ? (
+                    <svg className="spinner" width="16" height="16" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="31.416" strokeDashoffset="31.416">
+                        <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                        <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                      </circle>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                      <path d="M8 7h8"/>
+                      <path d="M8 11h8"/>
+                      <path d="M8 15h5"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+
               {/* 单独的上传按钮 */}
               {showFileUpload && (
                 <div className="upload-button-container">
@@ -568,6 +606,48 @@ const ChatInput = ({
         </div>
       </form>
       
+      {/* 知识库搜索结果 */}
+      {showKnowledgeResults && knowledgeSearchResults.length > 0 && (
+        <div className="knowledge-search-results">
+          <div className="knowledge-results-header">
+            <h4>{currentLanguage === "zh" ? "知识库搜索结果" : "Knowledge Base Results"}</h4>
+            <button
+              className="close-results-button"
+              onClick={() => setShowKnowledgeResults(false)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18"/>
+                <path d="M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <div className="knowledge-results-list">
+            {knowledgeSearchResults.map((result, index) => (
+              <div key={index} className="knowledge-result-item">
+                <div className="result-header">
+                  <h5>{result.title}</h5>
+                  <span className="similarity-score">
+                    {(result.score * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <p className="result-content">{result.content}</p>
+                <button
+                  className="use-result-button"
+                  onClick={() => {
+                    const knowledgeContext = `基于知识库内容：\n${result.content}\n\n请根据以上信息回答用户的问题。`;
+                    setMessage(knowledgeContext);
+                    setShowKnowledgeResults(false);
+                    textareaRef.current?.focus();
+                  }}
+                >
+                  {currentLanguage === "zh" ? "使用此结果" : "Use this result"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* <div className="input-hint">
         {currentLanguage === "zh" 
           ? "Bobby 可能会犯错。请核查重要信息。" 
