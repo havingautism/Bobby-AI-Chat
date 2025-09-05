@@ -414,11 +414,7 @@
 
 .advanced-content {
   padding: 16px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.3) 0%, 
-    rgba(255, 255, 255, 0.1) 100%);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+ 
   border-top: 1px solid var(--glass-border-light);
 }
 

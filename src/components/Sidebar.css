@@ -1138,10 +1138,8 @@
   left: 0;
   right: 0;
   background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(255, 255, 255, 0.548) 0%, 
     rgba(248, 249, 250, 0.95) 100%);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border-light);
   border-radius: var(--border-radius-md);
   box-shadow: var(--glass-shadow-dark);
@@ -1177,12 +1175,15 @@
 }
 
 .role-filter-option:hover {
+  background: linear-gradient(135deg,
+      var(--glass-bg-light-hover) 0%,
+      var(--glass-bg-dark-hover) 100%);
+  transform: translateX(4px);
+}
+[data-theme="dark"] .role-filter-option:hover {
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.5) 0%, 
     rgba(248, 249, 250, 0.5) 100%);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  transform: translateX(4px);
 }
 
 .role-filter-option.selected {
