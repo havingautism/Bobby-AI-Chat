@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh; /* 动态视口高度，适配移动端键盘弹出 */
   background: var(--bg-primary);
   position: relative;
 }
@@ -377,7 +378,11 @@
 @media (max-width: 768px) {
   .chat-interface {
     height: 100vh;
+    height: 100dvh; /* 动态视口高度，适配移动端键盘弹出 */
     min-height: -webkit-fill-available;
+    /* 确保移动端滚动容器正常工作 */
+    display: flex;
+    flex-direction: column;
   }
   
   .chat-header {
@@ -398,12 +403,43 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    /* 防止边界滚动触发浏览器刷新 */
-    overscroll-behavior: contain;
+    /* 允许正常滚动，但防止边界滚动触发浏览器刷新 */
+    overscroll-behavior-y: contain;
+    overscroll-behavior-x: none;
+    /* 确保触摸滚动正常工作 */
+    touch-action: pan-y;
+    /* 优化滚动性能 */
+    will-change: scroll-position;
+    /* 强制硬件加速 */
+    transform: translateZ(0);
+    /* 优化滚动行为 */
+    scroll-behavior: smooth;
   }
   
   .chat-messages::-webkit-scrollbar {
     display: none;
+  }
+  
+  /* 移动端滚动优化类 */
+  .chat-messages.optimized-scrolling {
+    /* 确保滚动容器正确工作 */
+    position: relative;
+    /* 防止滚动卡顿 */
+    -webkit-overflow-scrolling: touch;
+    /* 确保触摸滚动响应 */
+    touch-action: pan-y;
+    /* 优化滚动性能 */
+    will-change: scroll-position;
+    /* 强制硬件加速 */
+    transform: translateZ(0);
+    /* 优化滚动行为 */
+    scroll-behavior: smooth;
+    /* 减少重绘 */
+    contain: layout style paint;
+    /* iOS Safari 滚动优化 */
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000;
   }
   
   .sidebar-toggle {

@@ -348,7 +348,9 @@
   bottom: calc(100% + 8px);
   top: auto;
   right: 0;
-  background: linear-gradient(2deg, rgb(242 242 242) 0%, rgb(255 255 255 / 84%) 100%);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(248, 250, 252, 0.948) 100%);
   border: 1px solid #e5e7eb;
   border-radius: var(--border-radius-lg);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);

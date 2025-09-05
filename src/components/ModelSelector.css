@@ -282,10 +282,8 @@
     min-width: 180px;
     left: auto;
     right: 0;
-    background: linear-gradient(135deg,
-        var(--glass-bg-light) 0%,
-        var(--glass-bg-dark) 100%);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, rgb(255 255 255 / 49%) 0%, rgb(255 255 255 / 82%) 100%);
+    /* border: 1px solid rgba(0, 0, 0, 0.1); */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
   
@@ -293,7 +291,7 @@
     background: linear-gradient(135deg,
         var(--glass-bg-light) 0%,
         var(--glass-bg-dark) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* border: 1px solid rgba(255, 255, 255, 0.1); */
   }
   
   .model-option {

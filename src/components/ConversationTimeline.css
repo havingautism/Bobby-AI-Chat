@@ -37,10 +37,19 @@
 }
 
 /* 移动端默认隐藏 */
+.conversation-timeline.mobile {
+  display: none;
+}
+
 .conversation-timeline.mobile .timeline-content {
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px) scale(0.95);
+}
+
+.conversation-timeline.mobile.visible,
+.conversation-timeline.mobile.timeline-visible {
+  display: block;
 }
 
 .conversation-timeline.mobile.visible .timeline-content,
@@ -48,6 +57,7 @@
   opacity: 1;
   visibility: visible;
   transform: translateY(0) scale(1);
+  
 }
 
 /* 切换按钮样式 - 仅用于header中的按钮 */
@@ -93,11 +103,9 @@
   top: 0;
   width: 280px;
   max-height: 400px;
-  background: linear-gradient(135deg, 
-    var(--glass-bg-light) 0%, 
-    var(--glass-bg-dark) 100%);
+  background: linear-gradient(135deg, rgb(255 255 255 / 49%) 0%, rgb(255 255 255 / 82%) 100%);
   border-radius: var(--border-radius-lg);
-  box-shadow: var(--glass-shadow-dark);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--glass-border-light);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -105,6 +113,13 @@
   overflow: hidden;
   transform-origin: right center;
   will-change: transform, opacity;
+}
+
+
+[data-theme="dark"] .timeline-content {
+  background: linear-gradient(135deg,
+      var(--glass-bg-light) 0%,
+      var(--glass-bg-dark) 100%);
 }
 
 /* PC端时间轴内容样式调整 */
@@ -429,7 +444,7 @@
   }
 
   .timeline-content {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow:0 4px 12px rgba(0, 0, 0, 0.15);
   }
 }
 
