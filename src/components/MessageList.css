@@ -1245,20 +1245,21 @@
 .message.jump-highlight {
   animation: jumpHighlight 3s ease-in-out;
   border-radius: 25px;
+  max-width: 800px;
 }
 
 @keyframes jumpHighlight {
   0%, 100% {
     background: transparent;
-    transform: scale(1);
+    transform: translateX(2px) scale(1);
   }
   20%, 80% {
-    background: rgba(99, 102, 241, 0.1);
-    transform: scale(1.02);
+    background: rgba(99, 101, 241, 0.055);
+    transform: translateX(2px) scale(1.02);
   }
   50% {
-    background: rgba(99, 102, 241, 0.15);
-    transform: scale(1.01);
+    background: rgba(99, 101, 241, 0.027);
+    transform: translateX(2px) scale(1.01);
   }
 }
 

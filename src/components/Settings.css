@@ -839,6 +839,8 @@
   
   .dropdown-menu {
     max-height: 200px;
+    margin-right: 6px;
+    overflow: hidden;
   }
   
   .dropdown-trigger {

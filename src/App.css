@@ -30,6 +30,12 @@ input, textarea, [contenteditable] {
 *:focus-visible,
 *:focus-within {
   outline: none !important;
+}
+
+/* 移除大部分元素的focus阴影，但保留输入框 */
+*:focus:not(.input-wrapper-clean),
+*:focus-visible:not(.input-wrapper-clean),
+*:focus-within:not(.input-wrapper-clean) {
   box-shadow: none !important;
   -webkit-box-shadow: none !important;
   -moz-box-shadow: none !important;
