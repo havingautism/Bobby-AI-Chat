@@ -894,3 +894,135 @@
 [data-theme="dark"] .dropdown-category-header {
   background: rgba(255, 255, 255, 0.05);
 }
+
+/* 数据目录相关样式 */
+.storage-stats {
+  margin-bottom: 16px;
+}
+
+.storage-stats p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.data-path-section {
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--glass-bg-light);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--glass-border-light);
+}
+
+.custom-path-input {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.path-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.path-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.apply-button {
+  padding: 8px 16px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+
+.apply-button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.path-help {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.api-sessions-section {
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--glass-bg-light);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--glass-border-light);
+}
+
+.api-sessions-info {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--glass-bg-dark);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--glass-border-light);
+}
+
+.api-sessions-info p {
+  margin: 6px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.secondary-button {
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+}
+
+.secondary-button:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.danger-button.small {
+  padding: 6px 12px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .data-path-section,
+  .api-sessions-section {
+    padding: 8px;
+  }
+  
+  .custom-path-input {
+    gap: 6px;
+  }
+  
+  .path-input {
+    font-size: 12px;
+  }
+  
+  .secondary-button,
+  .apply-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}

@@ -10,7 +10,14 @@
       "Bash(npm run start:*)",
       "Bash(npm test:*)",
       "Bash(npm start)",
-      "Read(/E:\\Git Projects\\AI chat\\src/**)"
+      "Read(/E:\\Git Projects\\AI chat\\src/**)",
+      "Bash(npm install:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(yarn add:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx:*)",
+      "Bash(npm run tauri:*)",
+      "Bash(cargo check:*)"
     ],
     "deny": [],
     "ask": []

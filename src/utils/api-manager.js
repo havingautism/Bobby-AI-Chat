@@ -1,5 +1,6 @@
 import { SiliconFlowProvider } from './api-providers/siliconflow.js';
 import { OpenAIProvider } from './api-providers/openai.js';
+import { apiSessionManager } from './apiSessionManager.js';
 
 // 支持的API提供者类型
 export const API_PROVIDERS = {
@@ -75,28 +76,178 @@ const getProviderClassName = (providerType) => {
 };
 
 // 流式输出支持
-export const sendMessageStream = async (messages, options = {}, onChunk = null, onComplete = null, onError = null, abortController = null) => {
+export const sendMessageStream = async (messages, options = {}, onChunk = null, onComplete = null, onError = null, abortController = null, conversationId = null) => {
   const provider = getCurrentProvider();
-  return provider.sendMessageStream(messages, options, onChunk, onComplete, onError, abortController);
+  apiSessionManager.startSession(conversationId, API_CONFIG.model, API_CONFIG.provider, options);
+  
+  try {
+    // 记录请求
+    apiSessionManager.recordRequest({
+      messages,
+      model: API_CONFIG.model,
+      provider: API_CONFIG.provider,
+      options
+    });
+    
+    const startTime = Date.now();
+    let tokenCount = 0;
+    let hasReasoning = false;
+    
+    const wrappedOnChunk = (chunk) => {
+      if (chunk.type === 'content' && chunk.content) {
+        tokenCount += chunk.content.length / 4; // 粗略估算token数
+      }
+      if (chunk.type === 'reasoning' && chunk.content) {
+        hasReasoning = true;
+        tokenCount += chunk.content.length / 4;
+      }
+      if (onChunk) onChunk(chunk);
+    };
+    
+    const wrappedOnComplete = (result) => {
+      const duration = Date.now() - startTime;
+      apiSessionManager.recordResponse({
+        content: result.content,
+        hasReasoning: result.hasReasoning || hasReasoning,
+        reasoning: result.reasoning,
+        tokenCount: Math.round(tokenCount),
+        duration,
+        success: true
+      });
+      
+      apiSessionManager.endSession({
+        tokenCount: Math.round(tokenCount),
+        finalContent: result.content
+      });
+      
+      if (onComplete) onComplete(result);
+    };
+    
+    const wrappedOnError = (error) => {
+      const duration = Date.now() - startTime;
+      apiSessionManager.recordError(error, {
+        conversationId,
+        duration,
+        model: API_CONFIG.model,
+        provider: API_CONFIG.provider
+      });
+      
+      apiSessionManager.endSession({
+        tokenCount: Math.round(tokenCount),
+        success: false
+      });
+      
+      if (onError) onError(error);
+    };
+    
+    return provider.sendMessageStream(messages, options, wrappedOnChunk, wrappedOnComplete, wrappedOnError, abortController);
+  } catch (error) {
+    apiSessionManager.recordError(error, { conversationId });
+    apiSessionManager.endSession({ success: false });
+    throw error;
+  }
 };
 
 // 非流式消息发送
-export const sendMessage = async (messages, options = {}) => {
+export const sendMessage = async (messages, options = {}, conversationId = null) => {
   const provider = getCurrentProvider();
-  return provider.sendMessage(messages, options);
+  apiSessionManager.startSession(conversationId, API_CONFIG.model, API_CONFIG.provider, options);
+  
+  try {
+    // 记录请求
+    apiSessionManager.recordRequest({
+      messages,
+      model: API_CONFIG.model,
+      provider: API_CONFIG.provider,
+      options: { ...options, stream: false }
+    });
+    
+    const startTime = Date.now();
+    const result = await provider.sendMessage(messages, options);
+    const duration = Date.now() - startTime;
+    
+    // 记录响应
+    let tokenCount = 0;
+    let hasReasoning = false;
+    let content = '';
+    
+    if (typeof result === 'string') {
+      content = result;
+      tokenCount = Math.round(content.length / 4);
+    } else if (result && result.content) {
+      content = result.content;
+      hasReasoning = result.hasReasoning || false;
+      tokenCount = Math.round(content.length / 4);
+    }
+    
+    apiSessionManager.recordResponse({
+      content,
+      hasReasoning,
+      reasoning: result?.reasoning,
+      tokenCount,
+      duration,
+      success: true
+    });
+    
+    apiSessionManager.endSession({
+      tokenCount,
+      finalContent: content
+    });
+    
+    return result;
+  } catch (error) {
+    apiSessionManager.recordError(error, { conversationId });
+    apiSessionManager.endSession({ success: false });
+    throw error;
+  }
 };
 
 // 生成对话标题
-export const generateChatTitle = async (messages, options = {}) => {
+export const generateChatTitle = async (messages, options = {}, conversationId = null) => {
   const provider = getCurrentProvider();
-  return provider.generateChatTitle(messages, options);
+  apiSessionManager.startSession(conversationId, API_CONFIG.model, API_CONFIG.provider, { ...options, titleGeneration: true });
+  
+  try {
+    // 记录请求
+    apiSessionManager.recordRequest({
+      messages,
+      model: API_CONFIG.model,
+      provider: API_CONFIG.provider,
+      options: { ...options, titleGeneration: true }
+    });
+    
+    const startTime = Date.now();
+    const result = await provider.generateChatTitle(messages, options);
+    const duration = Date.now() - startTime;
+    
+    // 记录响应
+    const content = typeof result === 'string' ? result : result?.content || '';
+    const tokenCount = Math.round(content.length / 4);
+    
+    apiSessionManager.recordResponse({
+      content,
+      tokenCount,
+      duration,
+      success: true
+    });
+    
+    apiSessionManager.endSession({
+      tokenCount,
+      finalContent: content
+    });
+    
+    return result;
+  } catch (error) {
+    apiSessionManager.recordError(error, { conversationId, titleGeneration: true });
+    apiSessionManager.endSession({ success: false });
+    throw error;
+  }
 };
 
 // 流式生成对话标题（向后兼容）
-export const generateChatTitleStream = async (messages, onChunk = null, onComplete = null, onError = null) => {
+export const generateChatTitleStream = async (messages, onChunk = null, onComplete = null, onError = null, conversationId = null) => {
   try {
-    const provider = getCurrentProvider();
-    const title = await provider.generateChatTitle(messages, { stream: true });
+    const title = await generateChatTitle(messages, { stream: true }, conversationId);
     
     // 调用完成回调
     if (onComplete) {
