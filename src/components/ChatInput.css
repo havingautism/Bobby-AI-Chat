@@ -182,6 +182,7 @@
 .quick-response-btn:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
+  border-radius: var(--border-radius-lg);
 }
 
 
@@ -207,12 +208,9 @@
   left: 0;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.95) 0%, 
-    rgba(248, 250, 252, 0.9) 100%);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border-light);
+    rgba(248, 250, 252, 0.948) 100%);
   border-radius: var(--border-radius-lg);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px -2px 25px 2px rgba(0, 0, 0, 0.1);
   z-index: 9999999;
   overflow: hidden;
   width: 220px;
@@ -224,7 +222,6 @@
   background: linear-gradient(135deg, 
     rgba(30, 30, 30, 0.95) 0%, 
     rgba(20, 20, 20, 0.9) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* 下拉菜单箭头 */
@@ -264,9 +261,7 @@
   background: var(--bg-hover);
 }
 
-.quick-response-item.active {
-  background: var(--bg-hover);
-}
+
 
 /* 响应模式图标 */
 .response-mode-icon {

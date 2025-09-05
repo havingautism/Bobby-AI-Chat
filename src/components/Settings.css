@@ -882,7 +882,7 @@
   background: linear-gradient(135deg, 
     rgba(30, 30, 35, 0.95) 0%, 
     rgba(20, 20, 25, 0.98) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: none;
 }
 
 [data-theme="dark"] .dropdown-option:hover {
