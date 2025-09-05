@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import ChatInterface from "./components/ChatInterface";
 import Sidebar from "./components/Sidebar";
 import Settings from "./components/Settings";
-import { loadChatHistory, saveChatHistory, migrateFromLocalStorage } from "./utils/storage";
+import TauriInitializer from "./components/TauriInitializer";
+import { loadChatHistory, saveChatHistory, migrateFromLocalStorage } from "./utils/storageAdapter";
 import { initTheme } from "./utils/theme";
 import { getApiConfig } from "./utils/api";
-import { smartCacheCleanup, getCacheStatus } from "./utils/cacheManager";
+import { smartCacheCleanup } from "./utils/cacheManager";
+import { initializeApiSessionManager } from "./utils/apiSessionManager";
 import "./utils/mobileCacheOptimizer"; // Import mobile cache optimizer
 import { v4 as uuidv4 } from "uuid";
 import "./App.css";
@@ -78,6 +80,9 @@ function App() {
         // 获取默认模型配置
         const apiConfig = getApiConfig();
         setDefaultModel(apiConfig.model || "deepseek-ai/DeepSeek-V3.1");
+        
+        // 初始化API会话管理器
+        await initializeApiSessionManager();
 
         // 迁移旧数据
         await migrateFromLocalStorage();
@@ -266,8 +271,9 @@ function App() {
   );
 
   return (
-    <div className="app-container">
-      <Sidebar
+    <TauriInitializer>
+      <div className="app-container">
+        <Sidebar
         conversations={conversations}
         currentConversationId={currentConversationId}
         onSelectConversation={setCurrentConversationId}
@@ -322,6 +328,7 @@ function App() {
         }}
       />
     </div>
+    </TauriInitializer>
   );
 }
 

@@ -18,12 +18,25 @@
   background: var(--bg-primary);
   min-height: 60px;
   z-index: 100;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
 }
 
 [data-theme="dark"] .chat-header {
   background: var(--bg-secondary);
-  box-shadow: 0px 4px 14px rgb(0 0 0 / 48%);
+  box-shadow: 0px 4px 14px rgb(0 0 0 / 48%) !important;
+}
+
+/* 确保header在所有状态下都保持阴影 */
+.chat-header:focus,
+.chat-header:active,
+.chat-header:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="dark"] .chat-header:focus,
+[data-theme="dark"] .chat-header:active,
+[data-theme="dark"] .chat-header:hover {
+  box-shadow: 0px 4px 14px rgb(0 0 0 / 48%) !important;
 }
 
 .header-left {

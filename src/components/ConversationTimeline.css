@@ -87,6 +87,7 @@
 
 /* 时间轴内容 */
 .timeline-content {
+  padding: 5px;
   position: absolute;
   right: 50px;
   top: 0;
@@ -194,22 +195,34 @@
 .timeline-item {
   display: flex;
   align-items: flex-start;
-  padding: 12px 20px;
+  padding: 12px 12px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   position: relative;
-  border-radius: 8px;
-  margin: 0 8px;
+  border-radius: var(--border-radius-lg);
+  margin: 4px 8px;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   outline: none;
+}
+
+/* 添加点击时的微妙效果 */
+.timeline-item:active {
+  transform: translateX(-1px) scale(0.98);
+  transition: all 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .timeline-item:hover {
   background: linear-gradient(135deg, 
     var(--glass-bg-light-hover) 0%, 
     var(--glass-bg-dark-hover) 100%);
-  transform: translateX(-2px);
+  transform: translateX(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-item:hover .timeline-dot {
+  transform: scale(1.05);
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.2);
 }
 
 .timeline-item.active {
@@ -217,13 +230,13 @@
     var(--glass-bg-light-hover) 0%, 
     var(--glass-bg-dark-hover) 100%);
   color: var(--text-primary);
-  transform: translateX(-2px);
+  transform: translateX(-1px);
   /* 优化选中状态的padding，让内容更紧凑 */
-  padding: 10px 18px;
-  margin: 2px 6px;
-  border-radius: 10px;
-  box-shadow: var(--glass-shadow-dark);
-  border: 1px solid var(--glass-border-light);
+  /* padding: 10px 18px; */
+  /* margin: 2px 6px; */
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* border: 1px solid var(--glass-border-light); */
 }
 
 .timeline-item.active .timeline-time,
@@ -234,13 +247,13 @@
 
 .timeline-item.active .timeline-dot {
   background: var(--accent-primary);
-  transform: scale(1.3);
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+  transform: scale(1.2);
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.3);
 }
 
 .timeline-item.active .dot-inner {
   background: white;
-  transform: scale(1.2);
+  transform: scale(1.1);
 }
 
 /* 时间轴圆点 */
@@ -255,7 +268,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .dot-inner {
@@ -263,7 +276,7 @@
   height: 4px;
   border-radius: 50%;
   background: var(--bg-primary);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* 时间轴内容包装器 */
@@ -291,6 +304,7 @@
   overflow-wrap: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -303,7 +317,7 @@
     right: 12px;
     top: 60px; /* 调整到header下方 */
     transform: none;
-    z-index: 99; /* 降低z-index，确保侧边栏能够遮挡 */
+    z-index: 1005; /* 降低z-index，确保侧边栏能够遮挡 */
   }
 
   .timeline-content {
@@ -315,9 +329,7 @@
     transform-origin: right top;
   }
 
-  .timeline-items {
-    margin: 0 -4px;
-  }
+
 
 
 
@@ -335,32 +347,22 @@
     padding: 3px 6px;
   }
 
-  .timeline-item {
+  /* .timeline-item {
     padding: 10px 16px;
     margin: 0 4px;
-  }
+  } */
 
-  .timeline-item.active {
-    /* 移动端选中状态优化 */
-    padding: 8px 14px;
-    margin: 2px 2px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, 
-      var(--glass-bg-light-hover) 0%, 
-      var(--glass-bg-dark-hover) 100%);
-    box-shadow: var(--glass-shadow-dark);
-    border: 1px solid var(--glass-border-light);
-  }
+
 
   .timeline-item.active .timeline-dot {
     /* 移动端选中状态圆点优化 - 增强视觉效果 */
-    transform: scale(1.3);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+    transform: scale(1.2);
+    box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.3);
   }
 
   .timeline-item.active .dot-inner {
     /* 移动端选中状态内圆点优化 */
-    transform: scale(1.2);
+    transform: scale(1.1);
   }
 
   .timeline-dot {
@@ -403,18 +405,12 @@
     right: 0;
   }
 
-  .timeline-item.active {
-    /* 小屏幕选中状态进一步优化 */
-    padding: 6px 12px;
-    margin: 1px 1px;
-    border-radius: 6px;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
-  }
+
 
   .timeline-item.active .timeline-dot {
     /* 小屏幕选中状态圆点优化 */
-    transform: scale(1.4);
-    box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.5);
+    transform: scale(1.2);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
   }
   
   .timeline-header h3 {

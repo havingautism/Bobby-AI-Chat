@@ -437,7 +437,7 @@ const ChatInput = ({
                       </div>
                       <div className="response-mode-info">
                         <div className="response-mode-title">快速响应</div>
-                        <div className="response-mode-desc">标准模式，快速生成回复</div>
+                        <div className="response-mode-desc">标准模式，快速生成</div>
                       </div>
                       <div className="check-mark">
                         {responseMode === "normal" && (
@@ -460,10 +460,10 @@ const ChatInput = ({
                       }}
                     >
                       <div className="response-mode-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                          <path d="M12 8v4M12 16h.01"/>
-                        </svg>
+                       
+
+    <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 48 48" >{/* Icon from IconPark Outline by ByteDance - https://github.com/bytedance/IconPark/blob/master/LICENSE */}<g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4"><path d="m38 21l5 9l-5 1v6h-3l-6-1l-1 7H13l-2-10.381C7.92 29.703 6 25.576 6 21c0-8.837 7.163-16 16-16s16 7.163 16 16" /><path d="M17 19a5 5 0 1 1 5 5v3m0 6v1" /></g></svg>
+
                       </div>
                       <div className="response-mode-info">
                         <div className="response-mode-title">思考模式</div>

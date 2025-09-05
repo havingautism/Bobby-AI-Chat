@@ -414,11 +414,7 @@
 
 .advanced-content {
   padding: 16px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.3) 0%, 
-    rgba(255, 255, 255, 0.1) 100%);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+ 
   border-top: 1px solid var(--glass-border-light);
 }
 
@@ -839,6 +835,8 @@
   
   .dropdown-menu {
     max-height: 200px;
+    margin-right: 6px;
+    overflow: hidden;
   }
   
   .dropdown-trigger {
@@ -884,7 +882,7 @@
   background: linear-gradient(135deg, 
     rgba(30, 30, 35, 0.95) 0%, 
     rgba(20, 20, 25, 0.98) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: none;
 }
 
 [data-theme="dark"] .dropdown-option:hover {
@@ -893,4 +891,89 @@
 
 [data-theme="dark"] .dropdown-category-header {
   background: rgba(255, 255, 255, 0.05);
+}
+
+/* 数据目录相关样式 */
+.storage-stats {
+  margin-bottom: 16px;
+}
+
+.storage-stats p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.data-directory-section {
+  margin: 16px 0;
+  padding: 12px;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--glass-border-light);
+  box-shadow: var(--glass-shadow-light);
+}
+
+.directory-info {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--glass-border-light);
+}
+
+.directory-info small {
+  color: var(--text-secondary);
+  font-size: 12px;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.secondary-button {
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+}
+
+.secondary-button:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.danger-button.small {
+  padding: 6px 12px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .data-directory-section {
+    padding: 8px;
+  }
+  
+  .directory-info {
+    padding: 6px 10px;
+  }
+  
+  .directory-info small {
+    font-size: 11px;
+  }
+  
+  .secondary-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
 }

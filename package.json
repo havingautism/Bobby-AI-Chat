@@ -17,6 +17,9 @@
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "@tauri-apps/api": "^1.5.0",
+    "@tauri-apps/plugin-fs": "^2.4.0",
+    "@tauri-apps/plugin-shell": "^2.3.0",
     "autoprefixer": "^10.4.21",
     "axios": "^1.4.0",
     "daisyui": "^5.0.51",
@@ -39,7 +42,9 @@
     "build:mobile": "CI=false GENERATE_SOURCEMAP=false INLINE_RUNTIME_CHUNK=false IMAGE_INLINE_SIZE_LIMIT=1000 react-scripts build",
     "analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "tauri": "tauri dev",
+    "tauri:build": "npm run build && tauri build"
   },
   "eslintConfig": {
     "extends": [
@@ -58,5 +63,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.8.4"
   }
 }

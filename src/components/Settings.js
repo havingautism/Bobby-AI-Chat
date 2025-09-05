@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getApiConfig, updateApiConfig } from "../utils/api";
 import { getCurrentLanguage, t } from "../utils/language";
-import { getStorageInfo, clearChatHistory } from "../utils/storage";
+import { getStorageInfo, clearChatHistory, getDataDirectoryInfo } from "../utils/storageAdapter";
+import { isTauriEnvironment } from "../utils/tauriDetector";
 import "./Settings.css";
 
 const Settings = ({ isOpen, onClose, onModelChange }) => {
@@ -21,6 +22,7 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState('bottom');
   const [storageInfo, setStorageInfo] = useState(null);
+  const [dataDirectoryInfo, setDataDirectoryInfo] = useState(null);
   const dropdownRef = useRef(null);
   const [dropdownWidth, setDropdownWidth] = useState(undefined);
 
@@ -121,6 +123,10 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
         // 加载存储信息
         const info = await getStorageInfo();
         setStorageInfo(info);
+        
+        // 加载数据目录信息
+        const dirInfo = getDataDirectoryInfo();
+        setDataDirectoryInfo(dirInfo);
         
         // 自动初始化为硅基流动配置
         if (!currentConfig.baseURL) {
@@ -278,6 +284,26 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
       }, 5000);
     } finally {
       setIsTesting(false);
+    }
+  };
+
+
+  const handleOpenDataDirectory = async () => {
+    try {
+      // 仅在Tauri环境中打开文件管理器
+      if (isTauriEnvironment()) {
+        const { open } = await import('@tauri-apps/plugin-shell');
+        const dirInfo = getDataDirectoryInfo();
+        if (dirInfo && dirInfo.path) {
+          await open(dirInfo.path);
+        } else {
+          setSaveMessage("无法获取数据目录路径");
+          setTimeout(() => setSaveMessage(""), 3000);
+        }
+      }
+    } catch (error) {
+      setSaveMessage(`打开目录失败: ${error.message}`);
+      setTimeout(() => setSaveMessage(""), 5000);
     }
   };
 
@@ -488,8 +514,28 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
                 <label>存储信息</label>
                 {storageInfo ? (
                   <div className="storage-info">
-                    <p>对话数量: {storageInfo.conversationCount}</p>
-                    <p>总大小: {storageInfo.totalSize}</p>
+                    <div className="storage-stats">
+                      <p>对话数量: {storageInfo.conversations?.count || 0}</p>
+                      <p>总大小: {storageInfo.totalSize}</p>
+                    </div>
+                    
+                    {/* 打开数据目录 - 仅在Tauri环境中显示 */}
+                    {isTauriEnvironment() && (
+                      <div className="data-directory-section">
+                        <button 
+                          className="secondary-button" 
+                          onClick={handleOpenDataDirectory}
+                        >
+                          📁 打开数据目录
+                        </button>
+                        {dataDirectoryInfo && (
+                          <div className="directory-info">
+                            <small>数据目录: {dataDirectoryInfo.path}</small>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     <button 
                       className="danger-button" 
                       onClick={handleClearHistory}
