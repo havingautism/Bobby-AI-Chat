@@ -97,6 +97,13 @@ const Sidebar = ({
     }
     setDeleteModalOpen(false);
     setConversationToDelete(null);
+    
+    // 移动端优化：删除后立即关闭侧边栏，避免卡顿
+    if (window.innerWidth <= 768 && isOpen && !isCollapsed) {
+      setTimeout(() => {
+        onToggle();
+      }, 50);
+    }
   };
 
   // 取消删除

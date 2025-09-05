@@ -254,7 +254,7 @@
 
 .dropdown-menu.top {
   top: auto;
-  bottom: calc(100% + 4px);
+  /* bottom: calc(100% + 4px); */
 }
 
 

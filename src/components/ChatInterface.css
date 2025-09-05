@@ -6,6 +6,10 @@
   position: relative;
 }
 
+[data-theme="dark"] .chat-interface {
+  background: var(--bg-secondary);
+}
+
 .chat-header {
   display: flex;
   align-items: center;
@@ -19,6 +23,7 @@
 
 [data-theme="dark"] .chat-header {
   background: var(--bg-secondary);
+  box-shadow: 0px 4px 14px rgb(0 0 0 / 48%);
 }
 
 .header-left {
