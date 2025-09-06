@@ -1620,6 +1620,31 @@ background: var(--primary-color);
   margin-bottom: 8px;
 }
 
+/* 初始化状态样式 */
+.initializing-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  color: #666;
+  font-size: 14px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e0e0e0;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .knowledge-base-modal {

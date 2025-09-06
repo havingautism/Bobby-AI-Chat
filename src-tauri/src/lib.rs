@@ -41,11 +41,15 @@ pub fn run() {
       
       // 自动启动Qdrant (使用预编译二进制文件)
       let app_handle = app.handle().clone();
-      tauri::async_runtime::spawn(async move {
+      std::thread::spawn(move || {
         let manager = app_handle.state::<Mutex<QdrantManager>>();
         let mut manager = manager.lock().unwrap();
         
         // 检查预编译的二进制文件是否存在
+        let current_dir = std::env::current_dir().unwrap();
+        println!("🔍 当前工作目录: {}", current_dir.display());
+        println!("🔍 Qdrant文件是否存在: {}", manager.is_installed());
+        
         if manager.is_installed() {
           println!("🚀 启动预编译的Qdrant服务...");
           match manager.start() {

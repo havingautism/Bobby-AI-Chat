@@ -30,25 +30,20 @@ class KnowledgeBaseQdrant {
       // 创建表结构
       await this.createTables();
       
-      // 自动设置Qdrant
-      console.log('🚀 自动设置Qdrant...');
-      const qdrantSetupSuccess = await qdrantManager.autoSetup();
+      // 直接初始化Qdrant服务
+      console.log('🚀 初始化Qdrant服务...');
+      const qdrantInitSuccess = await qdrantService.initialize();
       
-      if (qdrantSetupSuccess) {
-        // 初始化Qdrant服务
-        const qdrantInitSuccess = await qdrantService.initialize();
-        
-        if (qdrantInitSuccess) {
-          this.useQdrant = true;
-          this.qdrantReady = true;
-          console.log('✅ 知识库已初始化 (SQLite + Qdrant)');
-        } else {
-          console.warn('⚠️ Qdrant服务初始化失败，使用SQLite模式');
-          this.useQdrant = false;
-        }
+      if (qdrantInitSuccess) {
+        this.useQdrant = true;
+        this.qdrantReady = true;
+        console.log('✅ 知识库已初始化 (SQLite + Qdrant)');
+        console.log('📊 Qdrant状态: useQdrant=', this.useQdrant, ', qdrantReady=', this.qdrantReady);
       } else {
-        console.warn('⚠️ Qdrant设置失败，使用SQLite模式');
+        console.warn('⚠️ Qdrant服务启动超时，使用SQLite模式');
         this.useQdrant = false;
+        this.qdrantReady = false;
+        console.log('📊 Qdrant状态: useQdrant=', this.useQdrant, ', qdrantReady=', this.qdrantReady);
       }
       
       this.isInitialized = true;
@@ -56,6 +51,28 @@ class KnowledgeBaseQdrant {
       console.error('❌ 知识库初始化失败:', error);
       throw error;
     }
+  }
+
+  // 等待Qdrant服务启动
+  async waitForQdrant(maxAttempts = 30, delay = 1000) {
+    console.log('⏳ 等待Qdrant服务启动...');
+    
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        const success = await qdrantService.initialize();
+        if (success) {
+          console.log('✅ Qdrant服务已启动');
+          return true;
+        }
+      } catch (error) {
+        console.log(`⏳ 等待中... (${i + 1}/${maxAttempts})`);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    
+    console.error('❌ Qdrant服务启动超时');
+    return false;
   }
 
   // 创建数据库表
@@ -163,23 +180,31 @@ class KnowledgeBaseQdrant {
       
       console.log(`📄 找到文档: ${existingDoc[0].title}`);
       
-      // 从Qdrant删除向量
+      // 先删除向量数据（避免外键约束错误）
       if (this.useQdrant && this.qdrantReady) {
-        const success = await qdrantService.deleteDocumentVectors(documentId);
-        if (success) {
-          console.log(`✅ 已从Qdrant删除文档向量: ${documentId}`);
-        } else {
-          console.warn(`⚠️ 从Qdrant删除文档向量失败: ${documentId}`);
+        try {
+          const success = await qdrantService.deleteDocumentVectors(documentId);
+          if (success) {
+            console.log(`✅ 已从Qdrant删除文档向量: ${documentId}`);
+          } else {
+            console.warn(`⚠️ 从Qdrant删除文档向量失败: ${documentId}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ Qdrant删除向量时出错: ${error.message}`);
         }
-      } else {
-        // 从SQLite删除向量
+      }
+      
+      // 从SQLite删除向量（无论是否使用Qdrant都要删除SQLite中的向量记录）
+      try {
         const vectorResult = await this.db.execute(`
           DELETE FROM knowledge_vectors WHERE document_id = ?
         `, [documentId]);
         console.log(`🗑️ 从SQLite删除向量结果:`, vectorResult);
+      } catch (error) {
+        console.warn(`⚠️ 删除SQLite向量时出错: ${error.message}`);
       }
       
-      // 从SQLite删除文档
+      // 最后删除文档
       const docResult = await this.db.execute(`
         DELETE FROM knowledge_documents WHERE id = ?
       `, [documentId]);
@@ -226,8 +251,29 @@ class KnowledgeBaseQdrant {
     }
   }
 
+  // 兼容性方法：getStoredDocuments 调用 getDocuments
+  async getStoredDocuments() {
+    return await this.getDocuments();
+  }
+
+  // 兼容性方法：search 调用 searchDocuments
+  async search(query, options = {}) {
+    const { limit = 10, threshold = 0.3, includeContent = true } = options;
+    return await this.searchDocuments(query, limit, threshold, includeContent);
+  }
+
+  // 兼容性方法：searchSQLite 调用 searchDocuments
+  async searchSQLite(query, limit, threshold, includeContent) {
+    return await this.searchDocuments(query, limit, threshold, includeContent);
+  }
+
+  // 兼容性方法：addDocumentToSQLite 调用 addDocument
+  async addDocumentToSQLite(docData) {
+    return await this.addDocument(docData);
+  }
+
   // 搜索文档
-  async searchDocuments(query, limit = 10, threshold = 0.3, useHybrid = true) {
+  async searchDocuments(query, limit = 10, threshold = 0.01, useHybrid = true) {
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -235,6 +281,8 @@ class KnowledgeBaseQdrant {
     try {
       let results = [];
 
+      console.log('📊 搜索状态检查: useQdrant=', this.useQdrant, ', qdrantReady=', this.qdrantReady);
+      
       if (this.useQdrant && this.qdrantReady) {
         // 使用Qdrant进行向量搜索
         console.log('🔍 使用Qdrant进行向量搜索');
@@ -361,7 +409,7 @@ class KnowledgeBaseQdrant {
               title: vector.title,
               content: vector.chunk_text,
               full_content: vector.content,
-              score: similarity,
+              score: similarity || 0, // 确保score字段总是有值
               chunkIndex: vector.chunk_index,
               fileName: vector.file_name,
               fileSize: vector.file_size,
@@ -403,6 +451,7 @@ class KnowledgeBaseQdrant {
       const content = docs[0].content;
       
       console.log(`🔄 开始为文档 ${documentId} 生成嵌入向量...`);
+      console.log('📊 向量生成状态检查: useQdrant=', this.useQdrant, ', qdrantReady=', this.qdrantReady);
       
       if (this.useQdrant && this.qdrantReady) {
         // 使用Qdrant存储向量
@@ -518,6 +567,8 @@ class KnowledgeBaseQdrant {
       
       console.log(`📊 准备删除 ${docCount[0].count} 个文档`);
       
+      let vectorResult = null;
+      
       if (this.useQdrant && this.qdrantReady) {
         // 清空Qdrant集合
         const success = await qdrantService.clearCollection();
@@ -528,7 +579,7 @@ class KnowledgeBaseQdrant {
         }
       } else {
         // 删除SQLite向量数据
-        const vectorResult = await this.db.execute(`DELETE FROM knowledge_vectors`);
+        vectorResult = await this.db.execute(`DELETE FROM knowledge_vectors`);
         console.log(`🗑️ 删除SQLite向量结果:`, vectorResult);
       }
       
@@ -573,11 +624,18 @@ export const initialize = (...args) => knowledgeBaseQdrantInstance.initialize(..
 export const addDocument = (...args) => knowledgeBaseQdrantInstance.addDocument(...args);
 export const deleteDocument = (...args) => knowledgeBaseQdrantInstance.deleteDocument(...args);
 export const getDocuments = (...args) => knowledgeBaseQdrantInstance.getDocuments(...args);
+export const getStoredDocuments = (...args) => knowledgeBaseQdrantInstance.getStoredDocuments(...args);
+export const search = (...args) => knowledgeBaseQdrantInstance.search(...args);
+export const searchSQLite = (...args) => knowledgeBaseQdrantInstance.searchSQLite(...args);
+export const addDocumentToSQLite = (...args) => knowledgeBaseQdrantInstance.addDocumentToSQLite(...args);
 export const searchDocuments = (...args) => knowledgeBaseQdrantInstance.searchDocuments(...args);
 export const generateDocumentEmbeddings = (...args) => knowledgeBaseQdrantInstance.generateDocumentEmbeddings(...args);
 export const getStatistics = (...args) => knowledgeBaseQdrantInstance.getStatistics(...args);
 export const clearAllDocuments = (...args) => knowledgeBaseQdrantInstance.clearAllDocuments(...args);
 export const getQdrantInfo = (...args) => knowledgeBaseQdrantInstance.getQdrantInfo(...args);
 export const restartQdrant = (...args) => knowledgeBaseQdrantInstance.restartQdrant(...args);
+
+// 导出知识库管理器实例
+export const knowledgeBaseManager = knowledgeBaseQdrantInstance;
 
 export default knowledgeBaseQdrantInstance;

@@ -37,7 +37,6 @@ class SimpleSQLiteStorage {
       // 检查是否在Tauri环境
       if (typeof window !== 'undefined' && window.__TAURI_IPC__) {
         // 使用Tauri API获取用户数据目录
-        const { invoke } = await import('@tauri-apps/api/core');
         const { appDataDir } = await import('@tauri-apps/api/path');
         
         const dataDir = await appDataDir();

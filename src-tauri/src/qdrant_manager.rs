@@ -34,11 +34,14 @@ pub struct QdrantManager {
 
 impl QdrantManager {
     pub fn new() -> Self {
+        // 将数据目录放在项目根目录，避免Tauri监控
         let mut data_path = std::env::current_dir().unwrap();
+        data_path.push(".."); // 向上一级到项目根目录
         data_path.push("qdrant_data");
         
-        // 使用项目根目录下的编译二进制文件
+        // 使用项目根目录下的编译二进制文件（从src-tauri目录向上一级）
         let mut qdrant_path = std::env::current_dir().unwrap();
+        qdrant_path.push(".."); // 向上一级到项目根目录
         if cfg!(target_os = "windows") {
             qdrant_path.push("qdrant.exe");
         } else {
@@ -249,11 +252,9 @@ impl QdrantManager {
 
         // 启动Qdrant进程
         let child = Command::new(&self.qdrant_path)
-            .args(&[
-                "--host", "127.0.0.1",
-                "--port", &self.port.to_string(),
-                "--storage", &self.data_path.to_string_lossy(),
-            ])
+            .env("QDRANT__SERVICE__HTTP_PORT", &self.port.to_string())
+            .env("QDRANT__SERVICE__HOST", "127.0.0.1")
+            .env("QDRANT__STORAGE__STORAGE_PATH", self.data_path.to_string_lossy().to_string())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()

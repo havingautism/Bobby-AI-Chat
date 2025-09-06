@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { knowledgeBaseManager } from "../utils/knowledgeBase";
+import { knowledgeBaseManager } from "../utils/knowledgeBaseQdrant";
 import { getCurrentLanguage } from "../utils/language";
 import pdfParser from "../utils/pdfParser";
 import "./KnowledgeBase.css";
@@ -24,6 +24,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
     vectorCount: 0,
     totalSize: 0
   });
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // 语义搜索测试相关状态
   const [testQueries, setTestQueries] = useState([
@@ -65,13 +66,18 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
   // 加载文档列表
   useEffect(() => {
     if (isOpen) {
-      // 延迟加载，确保Tauri完全初始化
-      const timer = setTimeout(() => {
-        loadDocuments();
-        loadStatistics();
-      }, 1000); // 延迟1秒
+      setIsInitializing(true);
+      // 立即开始加载，不延迟
+      const loadData = async () => {
+        try {
+          await loadDocuments();
+          await loadStatistics();
+        } finally {
+          setIsInitializing(false);
+        }
+      };
       
-      return () => clearTimeout(timer);
+      loadData();
     }
   }, [isOpen]);
 
@@ -173,7 +179,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
           console.log(`📝 描述: ${testCase.description}`);
           
           // 执行混合搜索
-          const results = await knowledgeBaseManager.searchSQLite(testCase.query, 5, 0.3, true);
+          const results = await knowledgeBaseManager.searchSQLite(testCase.query, 5, 0.01, false); // 禁用混合搜索，只使用Qdrant
           totalResults += results.length;
           
           console.log(`📊 结果统计: 找到 ${results.length} 个匹配文档`);
@@ -183,14 +189,15 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
             const maxScore = Math.max(...results.map(r => r.score));
             const minScore = Math.min(...results.map(r => r.score));
             
-            console.log(`   - 平均相似度: ${avgScore.toFixed(4)}`);
-            console.log(`   - 最高相似度: ${maxScore.toFixed(4)}`);
-            console.log(`   - 最低相似度: ${minScore.toFixed(4)}`);
+            console.log(`   - 平均相似度: ${avgScore !== undefined ? avgScore.toFixed(4) : 'N/A'}`);
+            console.log(`   - 最高相似度: ${maxScore !== undefined ? maxScore.toFixed(4) : 'N/A'}`);
+            console.log(`   - 最低相似度: ${minScore !== undefined ? minScore.toFixed(4) : 'N/A'}`);
             
             // 显示前3个最佳匹配
             console.log(`📋 最佳匹配 (前3个):`);
             results.slice(0, 3).forEach((result, index) => {
-              console.log(`   ${index + 1}. "${result.title}" (${result.score.toFixed(4)})`);
+              const score = result.score !== undefined ? result.score.toFixed(4) : 'N/A';
+              console.log(`   ${index + 1}. "${result.title}" (${score})`);
             });
             
             if (results.length > 3) {
@@ -305,7 +312,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       console.log(`⏰ 测试时间: ${new Date().toLocaleString()}`);
       
       // 执行混合搜索
-      const results = await knowledgeBaseManager.searchSQLite(testCase.query, 5, 0.3, true);
+      const results = await knowledgeBaseManager.searchSQLite(testCase.query, 5, 0.01, false); // 禁用混合搜索，只使用Qdrant
       
       console.log(`\n📊 搜索结果统计:`);
       console.log(`   - 总结果数: ${results.length}`);
@@ -315,14 +322,15 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         const maxScore = Math.max(...results.map(r => r.score));
         const minScore = Math.min(...results.map(r => r.score));
         
-        console.log(`   - 平均相似度: ${avgScore.toFixed(4)}`);
-        console.log(`   - 最高相似度: ${maxScore.toFixed(4)}`);
-        console.log(`   - 最低相似度: ${minScore.toFixed(4)}`);
+        console.log(`   - 平均相似度: ${avgScore !== undefined ? avgScore.toFixed(4) : 'N/A'}`);
+        console.log(`   - 最高相似度: ${maxScore !== undefined ? maxScore.toFixed(4) : 'N/A'}`);
+        console.log(`   - 最低相似度: ${minScore !== undefined ? minScore.toFixed(4) : 'N/A'}`);
         
         console.log(`\n📋 详细匹配结果:`);
         results.forEach((result, index) => {
           console.log(`\n   ${index + 1}. 文档: "${result.title}"`);
-          console.log(`      - 相似度分数: ${result.score.toFixed(4)}`);
+          const score = result.score !== undefined ? result.score.toFixed(4) : 'N/A';
+          console.log(`      - 相似度分数: ${score}`);
           console.log(`      - 文档ID: ${result.id}`);
           console.log(`      - 来源类型: ${result.sourceType || 'unknown'}`);
           console.log(`      - 内容预览: ${result.content ? result.content.substring(0, 100) + '...' : '无内容'}`);
@@ -344,7 +352,8 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         if (highScoreResults.length > 0) {
           console.log(`\n⭐ 高相似度匹配:`);
           highScoreResults.forEach((result, index) => {
-            console.log(`   ${index + 1}. "${result.title}" (${result.score.toFixed(4)})`);
+            const score = result.score !== undefined ? result.score.toFixed(4) : 'N/A';
+            console.log(`   ${index + 1}. "${result.title}" (${score})`);
           });
         }
       } else {
@@ -848,18 +857,27 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         <div className="knowledge-base-content">
           {/* 统计信息 */}
           <div className="knowledge-stats">
-            <div className="stat-item">
-              <span className="stat-label">{currentLanguage === "zh" ? "文档数量" : "Documents"}</span>
-              <span className="stat-value">{statistics.documentCount}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{currentLanguage === "zh" ? "向量数量" : "Vectors"}</span>
-              <span className="stat-value">{statistics.vectorCount}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{currentLanguage === "zh" ? "总大小" : "Total Size"}</span>
-              <span className="stat-value">{(statistics.totalSize / 1024 / 1024).toFixed(2)} MB</span>
-            </div>
+            {isInitializing ? (
+              <div className="initializing-message">
+                <div className="loading-spinner"></div>
+                <span>{currentLanguage === "zh" ? "正在加载知识库..." : "Loading knowledge base..."}</span>
+              </div>
+            ) : (
+              <>
+                <div className="stat-item">
+                  <span className="stat-label">{currentLanguage === "zh" ? "文档数量" : "Documents"}</span>
+                  <span className="stat-value">{statistics.documentCount}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">{currentLanguage === "zh" ? "向量数量" : "Vectors"}</span>
+                  <span className="stat-value">{statistics.vectorCount}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">{currentLanguage === "zh" ? "总大小" : "Total Size"}</span>
+                  <span className="stat-value">{(statistics.totalSize / 1024 / 1024).toFixed(2)} MB</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* 生成向量按钮 */}
@@ -1117,7 +1135,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                         <div className="result-header">
                           <h4>{result.title}</h4>
                           <span className="similarity-score">
-                            {(result.score * 100).toFixed(1)}%
+                            {result.score !== undefined ? (result.score * 100).toFixed(1) : 'N/A'}%
                           </span>
                         </div>
                         <p className="result-content">{result.content}</p>
@@ -1334,8 +1352,8 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                         <div className="test-result-details">
                           <div className="result-stats">
                             <span>{currentLanguage === "zh" ? "结果数量" : "Results"}: {result.resultCount}</span>
-                            <span>{currentLanguage === "zh" ? "平均分数" : "Avg Score"}: {result.avgScore.toFixed(3)}</span>
-                            <span>{currentLanguage === "zh" ? "最高分数" : "Max Score"}: {result.maxScore.toFixed(3)}</span>
+                            <span>{currentLanguage === "zh" ? "平均分数" : "Avg Score"}: {result.avgScore !== undefined ? result.avgScore.toFixed(3) : 'N/A'}</span>
+                            <span>{currentLanguage === "zh" ? "最高分数" : "Max Score"}: {result.maxScore !== undefined ? result.maxScore.toFixed(3) : 'N/A'}</span>
                           </div>
                           
                           {result.results && result.results.length > 0 && (
@@ -1343,7 +1361,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                               {result.results.map((item, index) => (
                                 <div key={index} className="result-item">
                                   <div className="result-title">{item.title}</div>
-                                  <div className="result-score">分数: {item.score.toFixed(3)}</div>
+                                  <div className="result-score">分数: {item.score !== undefined ? item.score.toFixed(3) : 'N/A'}</div>
                                   {item.content && (
                                     <div className="result-content">
                                       {item.content.substring(0, 100)}...

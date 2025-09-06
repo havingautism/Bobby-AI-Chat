@@ -25,7 +25,7 @@ class QdrantManager {
     }
 
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
+      const { invoke } = await import('@tauri-apps/api');
       this.isInstalled = await invoke('is_qdrant_installed');
       console.log('📦 Qdrant安装状态:', this.isInstalled ? '已安装' : '未安装');
       return this.isInstalled;
@@ -47,7 +47,7 @@ class QdrantManager {
 
     try {
       console.log('🔨 开始编译Qdrant...');
-      const { invoke } = await import('@tauri-apps/api/core');
+      const { invoke } = await import('@tauri-apps/api');
       const result = await invoke('compile_qdrant');
       console.log('✅ Qdrant编译成功:', result);
       this.isInstalled = true;
@@ -70,7 +70,7 @@ class QdrantManager {
 
     try {
       console.log('🚀 启动Qdrant服务...');
-      const { invoke } = await import('@tauri-apps/api/core');
+      const { invoke } = await import('@tauri-apps/api');
       const result = await invoke('start_qdrant');
       console.log('✅ Qdrant服务启动成功:', result);
       this.isRunning = true;
@@ -93,7 +93,7 @@ class QdrantManager {
 
     try {
       console.log('🛑 停止Qdrant服务...');
-      const { invoke } = await import('@tauri-apps/api/core');
+      const { invoke } = await import('@tauri-apps/api');
       const result = await invoke('stop_qdrant');
       console.log('✅ Qdrant服务已停止:', result);
       this.isRunning = false;
@@ -118,7 +118,7 @@ class QdrantManager {
     }
 
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
+      const { invoke } = await import('@tauri-apps/api');
       this.status = await invoke('get_qdrant_status');
       this.isRunning = this.status.is_running;
       console.log('📊 Qdrant状态:', this.status);
@@ -143,7 +143,7 @@ class QdrantManager {
     }
 
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
+      const { invoke } = await import('@tauri-apps/api');
       const version = await invoke('get_qdrant_version');
       console.log('📋 Qdrant版本:', version);
       return version;

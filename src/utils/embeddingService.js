@@ -7,7 +7,41 @@ class EmbeddingService {
   }
 
   checkTauriEnvironment() {
-    return typeof window !== 'undefined' && window.__TAURI__;
+    if (typeof window === 'undefined') return false;
+    
+    // 检查多种Tauri标识
+    const hasTauri = window.__TAURI__ || 
+                    window.__TAURI_INTERNALS__ || 
+                    window.__TAURI_METADATA__ ||
+                    window.navigator?.userAgent?.includes('Tauri') ||
+                    Object.keys(window).some(key => key.includes('TAURI'));
+    
+    console.log('🔍 Tauri环境检测:', {
+      __TAURI__: !!window.__TAURI__,
+      __TAURI_INTERNALS__: !!window.__TAURI_INTERNALS__,
+      __TAURI_METADATA__: !!window.__TAURI_METADATA__,
+      userAgent: window.navigator?.userAgent,
+      hasTauri: hasTauri
+    });
+    
+    // 即使检测到Tauri，也要测试IPC是否可用
+    if (hasTauri) {
+      try {
+        // 测试IPC是否可用
+        if (window.__TAURI__ && window.__TAURI__.invoke) {
+          console.log('✅ Tauri IPC可用');
+          return true;
+        } else {
+          console.warn('⚠️ Tauri环境检测到但IPC不可用，降级到前端嵌入');
+          return false;
+        }
+      } catch (error) {
+        console.warn('⚠️ Tauri IPC测试失败，降级到前端嵌入:', error);
+        return false;
+      }
+    }
+    
+    return false;
   }
 
   /**
@@ -23,7 +57,7 @@ class EmbeddingService {
     }
 
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
+      const { invoke } = await import('@tauri-apps/api');
       
       const result = await invoke('generate_embedding', {
         request: {
@@ -59,7 +93,7 @@ class EmbeddingService {
     }
 
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
+      const { invoke } = await import('@tauri-apps/api');
       
       const result = await invoke('generate_batch_embeddings', {
         request: {
@@ -94,7 +128,7 @@ class EmbeddingService {
     }
 
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
+      const { invoke } = await import('@tauri-apps/api');
       
       const similarity = await invoke('calculate_similarity', {
         embedding1: embedding1,
@@ -140,24 +174,45 @@ class EmbeddingService {
       const freq = wordFreq[word];
       const hash = this.simpleHash(word);
       
+      // 确保hash是有效数字
+      if (!isFinite(hash) || isNaN(hash)) {
+        console.warn('⚠️ 无效的hash值，跳过词:', word, 'hash:', hash);
+        continue;
+      }
+      
       for (let j = 0; j < 8; j++) {
         const dim = (hash + j * 1000) % 384;
-        embedding[dim] += freq * Math.sin(hash + j) * 0.1;
+        const sinValue = Math.sin(hash + j);
+        
+        // 确保所有值都是有效数字
+        if (isFinite(sinValue) && !isNaN(sinValue) && isFinite(freq) && !isNaN(freq)) {
+          const contribution = freq * sinValue * 0.1;
+          if (isFinite(contribution) && !isNaN(contribution)) {
+            embedding[dim] += contribution;
+          }
+        }
       }
     }
     
     // 归一化
     const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-    if (norm > 0) {
+    if (norm > 0 && isFinite(norm) && !isNaN(norm)) {
+      const normalizedEmbedding = embedding.map(val => {
+        const normalized = val / norm;
+        return isFinite(normalized) && !isNaN(normalized) ? normalized : 0;
+      });
+      
       return {
-        embedding: embedding.map(val => val / norm),
+        embedding: normalizedEmbedding,
         model: 'simple-frontend',
         dimensions: 384
       };
     }
     
+    // 如果归一化失败，返回零向量
+    console.warn('⚠️ 归一化失败，返回零向量');
     return {
-      embedding: embedding,
+      embedding: new Array(384).fill(0),
       model: 'simple-frontend',
       dimensions: 384
     };
@@ -197,13 +252,18 @@ class EmbeddingService {
    * @returns {number} 哈希值
    */
   simpleHash(str) {
+    if (!str || str.length === 0) return 0;
+    
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // 转换为32位整数
     }
-    return Math.abs(hash);
+    
+    // 确保返回有效的数字
+    const result = Math.abs(hash);
+    return isFinite(result) && !isNaN(result) ? result : 0;
   }
 
   /**

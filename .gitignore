@@ -102,6 +102,9 @@ temp/
 /src-tauri/target/
 /src-tauri/Cargo.lock
 
+# Qdrant data directory
+/qdrant_data/
+
 # Rust specific
 **/*.rs.bk
 Cargo.lock

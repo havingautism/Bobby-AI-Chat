@@ -1,0 +1,247 @@
+2025/09/07-03:10:46.080356 ba4c RocksDB version: 9.9.3
+2025/09/07-03:10:46.080412 ba4c Compile date 2024-12-05 01:25:31
+2025/09/07-03:10:46.080432 ba4c DB SUMMARY
+2025/09/07-03:10:46.080446 ba4c Host name (Env):  HAVINGAUTISM
+2025/09/07-03:10:46.080458 ba4c DB Session ID:  ZS86N35VKXVOBS3UZYXW
+2025/09/07-03:10:46.081802 ba4c CURRENT file:  CURRENT
+2025/09/07-03:10:46.081825 ba4c IDENTITY file:  IDENTITY
+2025/09/07-03:10:46.081977 ba4c MANIFEST file:  MANIFEST-000017 size: 165 Bytes
+2025/09/07-03:10:46.081996 ba4c SST files in E:\Git Projects\AI chat\src-tauri\qdrant_data\collections\knowledge_base\0\segments\d36783c6-8a81-4f13-83a3-bfd9acc24d77\payload_index dir, Total Num: 0, files: 
+2025/09/07-03:10:46.082009 ba4c Write Ahead Log file in E:\Git Projects\AI chat\src-tauri\qdrant_data\collections\knowledge_base\0\segments\d36783c6-8a81-4f13-83a3-bfd9acc24d77\payload_index: 000016.log size: 0 ; 
+2025/09/07-03:10:46.082115 ba4c                         Options.error_if_exists: 0
+2025/09/07-03:10:46.082120 ba4c                       Options.create_if_missing: 1
+2025/09/07-03:10:46.082124 ba4c                         Options.paranoid_checks: 1
+2025/09/07-03:10:46.082128 ba4c             Options.flush_verify_memtable_count: 1
+2025/09/07-03:10:46.082131 ba4c          Options.compaction_verify_record_count: 1
+2025/09/07-03:10:46.082134 ba4c                               Options.track_and_verify_wals_in_manifest: 0
+2025/09/07-03:10:46.082138 ba4c        Options.verify_sst_unique_id_in_manifest: 1
+2025/09/07-03:10:46.082142 ba4c                                     Options.env: 000001A1E4119770
+2025/09/07-03:10:46.082146 ba4c                                      Options.fs: WinFS
+2025/09/07-03:10:46.082150 ba4c                                Options.info_log: 000001A1E6048400
+2025/09/07-03:10:46.082153 ba4c                Options.max_file_opening_threads: 16
+2025/09/07-03:10:46.082158 ba4c                              Options.statistics: 0000000000000000
+2025/09/07-03:10:46.082161 ba4c                               Options.use_fsync: 0
+2025/09/07-03:10:46.082165 ba4c                       Options.max_log_file_size: 1048576
+2025/09/07-03:10:46.082168 ba4c                  Options.max_manifest_file_size: 1073741824
+2025/09/07-03:10:46.082172 ba4c                   Options.log_file_time_to_roll: 0
+2025/09/07-03:10:46.082175 ba4c                       Options.keep_log_file_num: 1
+2025/09/07-03:10:46.082178 ba4c                    Options.recycle_log_file_num: 0
+2025/09/07-03:10:46.082182 ba4c                         Options.allow_fallocate: 1
+2025/09/07-03:10:46.082185 ba4c                        Options.allow_mmap_reads: 0
+2025/09/07-03:10:46.082188 ba4c                       Options.allow_mmap_writes: 0
+2025/09/07-03:10:46.082192 ba4c                        Options.use_direct_reads: 0
+2025/09/07-03:10:46.082195 ba4c                        Options.use_direct_io_for_flush_and_compaction: 0
+2025/09/07-03:10:46.082199 ba4c          Options.create_missing_column_families: 1
+2025/09/07-03:10:46.082202 ba4c                              Options.db_log_dir: 
+2025/09/07-03:10:46.082206 ba4c                                 Options.wal_dir: 
+2025/09/07-03:10:46.082209 ba4c                Options.table_cache_numshardbits: 6
+2025/09/07-03:10:46.082213 ba4c                         Options.WAL_ttl_seconds: 0
+2025/09/07-03:10:46.082216 ba4c                       Options.WAL_size_limit_MB: 0
+2025/09/07-03:10:46.082219 ba4c                        Options.max_write_batch_group_size_bytes: 1048576
+2025/09/07-03:10:46.082224 ba4c             Options.manifest_preallocation_size: 4194304
+2025/09/07-03:10:46.082229 ba4c                     Options.is_fd_close_on_exec: 1
+2025/09/07-03:10:46.082235 ba4c                   Options.advise_random_on_open: 1
+2025/09/07-03:10:46.082238 ba4c                    Options.db_write_buffer_size: 0
+2025/09/07-03:10:46.082244 ba4c                    Options.write_buffer_manager: 000001A1E4119860
+2025/09/07-03:10:46.082247 ba4c           Options.random_access_max_buffer_size: 1048576
+2025/09/07-03:10:46.082251 ba4c                      Options.use_adaptive_mutex: 0
+2025/09/07-03:10:46.082272 ba4c                            Options.rate_limiter: 0000000000000000
+2025/09/07-03:10:46.082278 ba4c     Options.sst_file_manager.rate_bytes_per_sec: 0
+2025/09/07-03:10:46.082281 ba4c                       Options.wal_recovery_mode: 0
+2025/09/07-03:10:46.082285 ba4c                  Options.enable_thread_tracking: 0
+2025/09/07-03:10:46.082289 ba4c                  Options.enable_pipelined_write: 0
+2025/09/07-03:10:46.082292 ba4c                  Options.unordered_write: 0
+2025/09/07-03:10:46.082296 ba4c         Options.allow_concurrent_memtable_write: 1
+2025/09/07-03:10:46.082299 ba4c      Options.enable_write_thread_adaptive_yield: 1
+2025/09/07-03:10:46.082303 ba4c             Options.write_thread_max_yield_usec: 100
+2025/09/07-03:10:46.082307 ba4c            Options.write_thread_slow_yield_usec: 3
+2025/09/07-03:10:46.082328 ba4c                               Options.row_cache: None
+2025/09/07-03:10:46.082332 ba4c                              Options.wal_filter: None
+2025/09/07-03:10:46.082336 ba4c             Options.avoid_flush_during_recovery: 0
+2025/09/07-03:10:46.082339 ba4c             Options.allow_ingest_behind: 0
+2025/09/07-03:10:46.082343 ba4c             Options.two_write_queues: 0
+2025/09/07-03:10:46.082346 ba4c             Options.manual_wal_flush: 0
+2025/09/07-03:10:46.082349 ba4c             Options.wal_compression: 0
+2025/09/07-03:10:46.082352 ba4c             Options.background_close_inactive_wals: 0
+2025/09/07-03:10:46.082356 ba4c             Options.atomic_flush: 0
+2025/09/07-03:10:46.082359 ba4c             Options.avoid_unnecessary_blocking_io: 0
+2025/09/07-03:10:46.082365 ba4c             Options.prefix_seek_opt_in_only: 0
+2025/09/07-03:10:46.082368 ba4c                 Options.persist_stats_to_disk: 0
+2025/09/07-03:10:46.082372 ba4c                 Options.write_dbid_to_manifest: 1
+2025/09/07-03:10:46.082376 ba4c                 Options.write_identity_file: 1
+2025/09/07-03:10:46.082380 ba4c                 Options.log_readahead_size: 0
+2025/09/07-03:10:46.082383 ba4c                 Options.file_checksum_gen_factory: Unknown
+2025/09/07-03:10:46.082387 ba4c                 Options.best_efforts_recovery: 0
+2025/09/07-03:10:46.082390 ba4c                Options.max_bgerror_resume_count: 2147483647
+2025/09/07-03:10:46.082394 ba4c            Options.bgerror_resume_retry_interval: 1000000
+2025/09/07-03:10:46.082397 ba4c             Options.allow_data_in_errors: 0
+2025/09/07-03:10:46.082401 ba4c             Options.db_host_id: __hostname__
+2025/09/07-03:10:46.082404 ba4c             Options.enforce_single_del_contracts: true
+2025/09/07-03:10:46.082408 ba4c             Options.metadata_write_temperature: kUnknown
+2025/09/07-03:10:46.082412 ba4c             Options.wal_write_temperature: kUnknown
+2025/09/07-03:10:46.082415 ba4c             Options.max_background_jobs: 2
+2025/09/07-03:10:46.082419 ba4c             Options.max_background_compactions: -1
+2025/09/07-03:10:46.082423 ba4c             Options.max_subcompactions: 1
+2025/09/07-03:10:46.082427 ba4c             Options.avoid_flush_during_shutdown: 0
+2025/09/07-03:10:46.082430 ba4c           Options.writable_file_max_buffer_size: 1048576
+2025/09/07-03:10:46.082434 ba4c             Options.delayed_write_rate : 16777216
+2025/09/07-03:10:46.082437 ba4c             Options.max_total_wal_size: 0
+2025/09/07-03:10:46.082441 ba4c             Options.delete_obsolete_files_period_micros: 180000000
+2025/09/07-03:10:46.082444 ba4c                   Options.stats_dump_period_sec: 600
+2025/09/07-03:10:46.082449 ba4c                 Options.stats_persist_period_sec: 600
+2025/09/07-03:10:46.082452 ba4c                 Options.stats_history_buffer_size: 1048576
+2025/09/07-03:10:46.082456 ba4c                          Options.max_open_files: 256
+2025/09/07-03:10:46.082459 ba4c                          Options.bytes_per_sync: 0
+2025/09/07-03:10:46.082462 ba4c                      Options.wal_bytes_per_sync: 0
+2025/09/07-03:10:46.082467 ba4c                   Options.strict_bytes_per_sync: 0
+2025/09/07-03:10:46.082475 ba4c       Options.compaction_readahead_size: 2097152
+2025/09/07-03:10:46.082494 ba4c                  Options.max_background_flushes: -1
+2025/09/07-03:10:46.082498 ba4c Options.daily_offpeak_time_utc: 
+2025/09/07-03:10:46.082502 ba4c Compression algorithms supported:
+2025/09/07-03:10:46.082506 ba4c 	kZSTD supported: 0
+2025/09/07-03:10:46.082514 ba4c 	kSnappyCompression supported: 1
+2025/09/07-03:10:46.082518 ba4c 	kBZip2Compression supported: 0
+2025/09/07-03:10:46.082522 ba4c 	kZlibCompression supported: 0
+2025/09/07-03:10:46.082525 ba4c 	kLZ4Compression supported: 1
+2025/09/07-03:10:46.082529 ba4c 	kXpressCompression supported: 0
+2025/09/07-03:10:46.082533 ba4c 	kLZ4HCCompression supported: 1
+2025/09/07-03:10:46.082536 ba4c 	kZSTDNotFinalCompression supported: 0
+2025/09/07-03:10:46.082540 ba4c Fast CRC32 supported: Not supported on x86
+2025/09/07-03:10:46.082544 ba4c DMutex implementation: std::mutex
+2025/09/07-03:10:46.082547 ba4c Jemalloc supported: 0
+2025/09/07-03:10:46.083240 ba4c               Options.comparator: leveldb.BytewiseComparator
+2025/09/07-03:10:46.083251 ba4c           Options.merge_operator: None
+2025/09/07-03:10:46.083255 ba4c        Options.compaction_filter: None
+2025/09/07-03:10:46.083258 ba4c        Options.compaction_filter_factory: None
+2025/09/07-03:10:46.083261 ba4c  Options.sst_partitioner_factory: None
+2025/09/07-03:10:46.083265 ba4c         Options.memtable_factory: SkipListFactory
+2025/09/07-03:10:46.083268 ba4c            Options.table_factory: BlockBasedTable
+2025/09/07-03:10:46.083298 ba4c            table_factory options:   flush_block_policy_factory: FlushBlockBySizePolicyFactory (000001A1E6016110)
+  cache_index_and_filter_blocks: 0
+  cache_index_and_filter_blocks_with_high_priority: 1
+  pin_l0_filter_and_index_blocks_in_cache: 0
+  pin_top_level_index_and_filter: 1
+  index_type: 0
+  data_block_index_type: 0
+  index_shortening: 1
+  data_block_hash_table_util_ratio: 0.750000
+  checksum: 4
+  no_block_cache: 0
+  block_cache: 000001A1E41B3B30
+  block_cache_name: LRUCache
+  block_cache_options:
+    capacity : 33554432
+    num_shard_bits : 6
+    strict_capacity_limit : 0
+    memory_allocator : None
+    high_pri_pool_ratio: 0.500
+    low_pri_pool_ratio: 0.000
+  persistent_cache: 0000000000000000
+  block_size: 4096
+  block_size_deviation: 10
+  block_restart_interval: 16
+  index_block_restart_interval: 1
+  metadata_block_size: 4096
+  partition_filters: 0
+  use_delta_encoding: 1
+  filter_policy: nullptr
+  whole_key_filtering: 1
+  verify_compression: 0
+  read_amp_bytes_per_bit: 0
+  format_version: 6
+  enable_index_compression: 1
+  block_align: 0
+  max_auto_readahead_size: 262144
+  prepopulate_block_cache: 0
+  initial_auto_readahead_size: 8192
+  num_file_reads_for_auto_readahead: 2
+2025/09/07-03:10:46.083303 ba4c        Options.write_buffer_size: 10485760
+2025/09/07-03:10:46.083307 ba4c  Options.max_write_buffer_number: 2
+2025/09/07-03:10:46.083310 ba4c          Options.compression: LZ4
+2025/09/07-03:10:46.083313 ba4c                  Options.bottommost_compression: Disabled
+2025/09/07-03:10:46.083316 ba4c       Options.prefix_extractor: nullptr
+2025/09/07-03:10:46.083319 ba4c   Options.memtable_insert_with_hint_prefix_extractor: nullptr
+2025/09/07-03:10:46.083323 ba4c             Options.num_levels: 7
+2025/09/07-03:10:46.083327 ba4c        Options.min_write_buffer_number_to_merge: 1
+2025/09/07-03:10:46.083330 ba4c     Options.max_write_buffer_number_to_maintain: 0
+2025/09/07-03:10:46.083333 ba4c     Options.max_write_buffer_size_to_maintain: 0
+2025/09/07-03:10:46.083337 ba4c            Options.bottommost_compression_opts.window_bits: -14
+2025/09/07-03:10:46.083340 ba4c                  Options.bottommost_compression_opts.level: 32767
+2025/09/07-03:10:46.083343 ba4c               Options.bottommost_compression_opts.strategy: 0
+2025/09/07-03:10:46.083347 ba4c         Options.bottommost_compression_opts.max_dict_bytes: 0
+2025/09/07-03:10:46.083350 ba4c         Options.bottommost_compression_opts.zstd_max_train_bytes: 0
+2025/09/07-03:10:46.083353 ba4c         Options.bottommost_compression_opts.parallel_threads: 1
+2025/09/07-03:10:46.083360 ba4c                  Options.bottommost_compression_opts.enabled: false
+2025/09/07-03:10:46.083365 ba4c         Options.bottommost_compression_opts.max_dict_buffer_bytes: 0
+2025/09/07-03:10:46.083369 ba4c         Options.bottommost_compression_opts.use_zstd_dict_trainer: true
+2025/09/07-03:10:46.083373 ba4c            Options.compression_opts.window_bits: -14
+2025/09/07-03:10:46.083377 ba4c                  Options.compression_opts.level: 32767
+2025/09/07-03:10:46.083380 ba4c               Options.compression_opts.strategy: 0
+2025/09/07-03:10:46.083383 ba4c         Options.compression_opts.max_dict_bytes: 0
+2025/09/07-03:10:46.083387 ba4c         Options.compression_opts.zstd_max_train_bytes: 0
+2025/09/07-03:10:46.083392 ba4c         Options.compression_opts.use_zstd_dict_trainer: true
+2025/09/07-03:10:46.083398 ba4c         Options.compression_opts.parallel_threads: 1
+2025/09/07-03:10:46.083401 ba4c                  Options.compression_opts.enabled: false
+2025/09/07-03:10:46.083405 ba4c         Options.compression_opts.max_dict_buffer_bytes: 0
+2025/09/07-03:10:46.083408 ba4c      Options.level0_file_num_compaction_trigger: 4
+2025/09/07-03:10:46.083411 ba4c          Options.level0_slowdown_writes_trigger: 20
+2025/09/07-03:10:46.083414 ba4c              Options.level0_stop_writes_trigger: 36
+2025/09/07-03:10:46.083418 ba4c                   Options.target_file_size_base: 67108864
+2025/09/07-03:10:46.083421 ba4c             Options.target_file_size_multiplier: 1
+2025/09/07-03:10:46.083424 ba4c                Options.max_bytes_for_level_base: 268435456
+2025/09/07-03:10:46.083427 ba4c Options.level_compaction_dynamic_level_bytes: 1
+2025/09/07-03:10:46.083431 ba4c          Options.max_bytes_for_level_multiplier: 10.000000
+2025/09/07-03:10:46.083434 ba4c Options.max_bytes_for_level_multiplier_addtl[0]: 1
+2025/09/07-03:10:46.083437 ba4c Options.max_bytes_for_level_multiplier_addtl[1]: 1
+2025/09/07-03:10:46.083440 ba4c Options.max_bytes_for_level_multiplier_addtl[2]: 1
+2025/09/07-03:10:46.083444 ba4c Options.max_bytes_for_level_multiplier_addtl[3]: 1
+2025/09/07-03:10:46.083447 ba4c Options.max_bytes_for_level_multiplier_addtl[4]: 1
+2025/09/07-03:10:46.083450 ba4c Options.max_bytes_for_level_multiplier_addtl[5]: 1
+2025/09/07-03:10:46.083453 ba4c Options.max_bytes_for_level_multiplier_addtl[6]: 1
+2025/09/07-03:10:46.083456 ba4c       Options.max_sequential_skip_in_iterations: 8
+2025/09/07-03:10:46.083460 ba4c                    Options.max_compaction_bytes: 1677721600
+2025/09/07-03:10:46.083463 ba4c                        Options.arena_block_size: 1048576
+2025/09/07-03:10:46.083466 ba4c   Options.soft_pending_compaction_bytes_limit: 68719476736
+2025/09/07-03:10:46.083469 ba4c   Options.hard_pending_compaction_bytes_limit: 274877906944
+2025/09/07-03:10:46.083472 ba4c                Options.disable_auto_compactions: 0
+2025/09/07-03:10:46.083475 ba4c                        Options.compaction_style: kCompactionStyleLevel
+2025/09/07-03:10:46.083478 ba4c                          Options.compaction_pri: kMinOverlappingRatio
+2025/09/07-03:10:46.083482 ba4c Options.compaction_options_universal.size_ratio: 1
+2025/09/07-03:10:46.083485 ba4c Options.compaction_options_universal.min_merge_width: 2
+2025/09/07-03:10:46.083489 ba4c Options.compaction_options_universal.max_merge_width: 4294967295
+2025/09/07-03:10:46.083492 ba4c Options.compaction_options_universal.max_size_amplification_percent: 200
+2025/09/07-03:10:46.083496 ba4c Options.compaction_options_universal.compression_size_percent: -1
+2025/09/07-03:10:46.083499 ba4c Options.compaction_options_universal.stop_style: kCompactionStopStyleTotalSize
+2025/09/07-03:10:46.083502 ba4c Options.compaction_options_universal.max_read_amp: -1
+2025/09/07-03:10:46.083505 ba4c Options.compaction_options_fifo.max_table_files_size: 1073741824
+2025/09/07-03:10:46.083509 ba4c Options.compaction_options_fifo.allow_compaction: 0
+2025/09/07-03:10:46.083513 ba4c                   Options.table_properties_collectors: 
+2025/09/07-03:10:46.083516 ba4c                   Options.inplace_update_support: 0
+2025/09/07-03:10:46.083543 ba4c                 Options.inplace_update_num_locks: 10000
+2025/09/07-03:10:46.083548 ba4c               Options.memtable_prefix_bloom_size_ratio: 0.000000
+2025/09/07-03:10:46.083551 ba4c               Options.memtable_whole_key_filtering: 0
+2025/09/07-03:10:46.083554 ba4c   Options.memtable_huge_page_size: 0
+2025/09/07-03:10:46.083557 ba4c                           Options.bloom_locality: 0
+2025/09/07-03:10:46.083560 ba4c                    Options.max_successive_merges: 0
+2025/09/07-03:10:46.083563 ba4c             Options.strict_max_successive_merges: 0
+2025/09/07-03:10:46.083566 ba4c                Options.optimize_filters_for_hits: 0
+2025/09/07-03:10:46.083569 ba4c                Options.paranoid_file_checks: 0
+2025/09/07-03:10:46.083572 ba4c                Options.force_consistency_checks: 1
+2025/09/07-03:10:46.083576 ba4c                Options.report_bg_io_stats: 0
+2025/09/07-03:10:46.083579 ba4c                               Options.ttl: 2592000
+2025/09/07-03:10:46.083582 ba4c          Options.periodic_compaction_seconds: 0
+2025/09/07-03:10:46.083585 ba4c                        Options.default_temperature: kUnknown
+2025/09/07-03:10:46.083588 ba4c  Options.preclude_last_level_data_seconds: 0
+2025/09/07-03:10:46.083592 ba4c    Options.preserve_internal_time_seconds: 0
+2025/09/07-03:10:46.083595 ba4c                       Options.enable_blob_files: false
+2025/09/07-03:10:46.083598 ba4c                           Options.min_blob_size: 0
+2025/09/07-03:10:46.083601 ba4c                          Options.blob_file_size: 268435456
+2025/09/07-03:10:46.083605 ba4c                   Options.blob_compression_type: NoCompression
+2025/09/07-03:10:46.083608 ba4c          Options.enable_blob_garbage_collection: false
+2025/09/07-03:10:46.083611 ba4c      Options.blob_garbage_collection_age_cutoff: 0.250000
+2025/09/07-03:10:46.083615 ba4c Options.blob_garbage_collection_force_threshold: 1.000000
+2025/09/07-03:10:46.083618 ba4c          Options.blob_compaction_readahead_size: 0
+2025/09/07-03:10:46.083622 ba4c                Options.blob_file_starting_level: 0
+2025/09/07-03:10:46.083626 ba4c         Options.experimental_mempurge_threshold: 0.000000
+2025/09/07-03:10:46.083629 ba4c            Options.memtable_max_range_deletions: 0
+2025/09/07-03:10:46.128910 ba4c DB pointer 000001A1E604C140
