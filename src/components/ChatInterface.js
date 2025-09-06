@@ -174,6 +174,7 @@ const ChatInterface = ({
     }
   };
 
+  
   useEffect(() => {
     scrollToBottom();
     
@@ -385,7 +386,7 @@ const ChatInterface = ({
       };
 
       onUpdateConversation(conversationId, {
-        messages: [...messages, initialAssistantMessage],
+        messages: [...messages, initialAssistantMessage]
       });
     }
 
@@ -417,21 +418,9 @@ const ChatInterface = ({
             isStreaming: true,
           };
 
-          // 获取当前对话的消息列表并更新
-          const currentMessages = [...conversation.messages];
-          const existingMessageIndex = currentMessages.findIndex(
-            (msg) => msg.id === assistantMessageId
-          );
-
-          if (existingMessageIndex >= 0) {
-            currentMessages[existingMessageIndex] = updatedMessage;
-          } else {
-            // 如果找不到消息，说明可能是新消息，添加到末尾
-            currentMessages.push(updatedMessage);
-          }
-
+          // 直接更新对话消息
           onUpdateConversation(conversationId, {
-            messages: currentMessages,
+            messages: [...messages, updatedMessage]
           });
         },
         // onComplete
@@ -446,21 +435,9 @@ const ChatInterface = ({
             isStreaming: false,
           };
 
-          // 获取当前对话的消息列表并更新
-          finalMessages = [...conversation.messages];
-          const existingMessageIndex = finalMessages.findIndex(
-            (msg) => msg.id === assistantMessageId
-          );
-
-          if (existingMessageIndex >= 0) {
-            finalMessages[existingMessageIndex] = finalMessage;
-          } else {
-            // 如果找不到消息，说明可能是新消息，添加到末尾
-            finalMessages.push(finalMessage);
-          }
-
+          // 更新最终消息
           onUpdateConversation(conversationId, {
-            messages: finalMessages,
+            messages: [...messages, finalMessage]
           });
 
           // 生成标题（如果是第一条消息）
@@ -492,21 +469,9 @@ const ChatInterface = ({
             },
           };
 
-          // 获取当前对话的消息列表并更新
-          const errorMessages = [...conversation.messages];
-          const existingMessageIndex = errorMessages.findIndex(
-            (msg) => msg.id === assistantMessageId
-          );
-
-          if (existingMessageIndex >= 0) {
-            errorMessages[existingMessageIndex] = errorMessage;
-          } else {
-            // 如果找不到消息，说明可能是新消息，添加到末尾
-            errorMessages.push(errorMessage);
-          }
-
+          // 更新错误消息
           onUpdateConversation(conversationId, {
-            messages: errorMessages,
+            messages: [...messages, errorMessage]
           });
         },
         controller,
@@ -529,22 +494,10 @@ const ChatInterface = ({
         },
       };
 
-      // 获取当前对话的消息列表并更新
-      const errorMessages = [...conversation.messages];
-      const existingMessageIndex = errorMessages.findIndex(
-        (msg) => msg.id === assistantMessageId
-      );
-
-      if (existingMessageIndex >= 0) {
-        errorMessages[existingMessageIndex] = errorMessage;
-      } else {
-        // 如果找不到消息，说明可能是新消息，添加到末尾
-        errorMessages.push(errorMessage);
-      }
-
-      onUpdateConversation(conversationId, {
-        messages: errorMessages,
-      });
+      // 更新错误消息（这个逻辑应该在onError中，而不是finally中）
+      // onUpdateConversation(conversationId, {
+      //   messages: [...messages, errorMessage]
+      // });
     } finally {
       setIsStreaming(false);
       setStreamingConversationId(null);

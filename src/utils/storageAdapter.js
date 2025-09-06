@@ -3,12 +3,18 @@ import * as tauriStorage from './tauriStorage';
 import * as simpleSQLiteStorage from './simpleSQLiteStorage';
 import { isTauriEnvironment } from './tauriDetector';
 
-// 强制检测Tauri环境 - 使用CSDN文章的方法
+// 强制检测Tauri环境 - 使用更宽松的检测方法
 const forceDetectTauri = () => {
+  if (typeof window === 'undefined') return false;
+  
+  // 检查多种Tauri标识
   const isTauri = Boolean(
-    typeof window !== 'undefined' &&
-      window !== undefined &&
-      window.__TAURI_IPC__ !== undefined
+    window.__TAURI__ !== undefined || 
+    window.__TAURI_IPC__ !== undefined ||
+    window.__TAURI_INTERNALS__ !== undefined ||
+    window.__TAURI_METADATA__ !== undefined ||
+    navigator.userAgent.includes('Tauri') ||
+    Object.keys(window).some(key => key.includes('TAURI'))
   );
   
   if (isTauri) {
@@ -19,18 +25,26 @@ const forceDetectTauri = () => {
   return isTauri;
 };
 
-// 获取当前使用的存储实现
+// 智能存储选择器 - 支持SQLite不可用时的回退
 const getStorage = () => {
   try {
     // 强制检测Tauri环境
     const isTauri = forceDetectTauri();
     
     if (isTauri) {
-      // 在Tauri环境中强制使用SQLite
-      console.log('Tauri环境检测成功，强制使用SQLite存储');
-      // 强制设置localStorage
-      localStorage.setItem('use-sqlite-storage', 'true');
-      return simpleSQLiteStorage;
+      // 检查用户是否选择了SQLite存储
+      const useSQLite = localStorage.getItem('use-sqlite-storage') !== 'false';
+      
+      if (useSQLite) {
+        // 尝试使用真正的SQLite存储
+        console.log('Tauri环境检测成功，尝试使用SQLite存储');
+        localStorage.setItem('use-sqlite-storage', 'true');
+        return simpleSQLiteStorage;
+      } else {
+        // 用户选择了JSON存储
+        console.log('Tauri环境，用户选择使用JSON存储');
+        return tauriStorage;
+      }
     }
     console.log('非Tauri环境，使用IndexedDB存储');
     return indexedDBStorage;
@@ -119,17 +133,20 @@ export const storageAdapter = {
     }
     
     try {
-      // 初始化SQLite存储
+      // 初始化真正的SQLite存储
       await simpleSQLiteStorage.initialize();
       
       // 启用SQLite存储
       localStorage.setItem('use-sqlite-storage', 'true');
       
-      console.log('已成功切换到SQLite存储');
+      console.log('已成功切换到真正的SQLite存储');
       return true;
     } catch (error) {
       console.error('切换到SQLite存储失败:', error);
-      throw error;
+      // 如果SQLite不可用，回退到JSON存储
+      console.log('SQLite不可用，回退到JSON存储');
+      localStorage.setItem('use-sqlite-storage', 'false');
+      return false;
     }
   },
 

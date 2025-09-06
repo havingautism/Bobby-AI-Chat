@@ -187,7 +187,15 @@ function App() {
     }
   };
 
-  const deleteConversation = (id) => {
+  const deleteConversation = async (id) => {
+    // 先从数据库中删除
+    try {
+      await storageAdapter.deleteConversation(id);
+      console.log('已从数据库删除对话:', id);
+    } catch (error) {
+      console.error('从数据库删除对话失败:', error);
+    }
+    
     setConversations((prev) => {
       const filtered = prev.filter((conv) => conv.id !== id);
       const currentConv = prev.find(conv => conv.id === currentConversationId);

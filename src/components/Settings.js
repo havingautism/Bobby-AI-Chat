@@ -61,8 +61,8 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
     if (!storageInfo) return 0;
     
     if (isTauriEnvironment()) {
-      // Tauri环境：从JSON文件读取
-      return storageInfo.conversations?.count || 0;
+      // Tauri环境：从SQLite或JSON文件读取
+      return storageInfo.conversationCount || storageInfo.conversations?.count || 0;
     } else {
       // 移动端/Web环境：从IndexedDB读取
       return storageInfo.conversationCount || 0;

@@ -1,9 +1,15 @@
-// Tauri环境检测工具 - 参考CSDN文章的方法
+// Tauri环境检测工具 - 使用更宽松的检测方法
 export const isTauriEnvironment = () => {
+  if (typeof window === 'undefined') return false;
+  
+  // 检查多种Tauri标识
   return Boolean(
-    typeof window !== 'undefined' &&
-      window !== undefined &&
-      window.__TAURI_IPC__ !== undefined
+    window.__TAURI__ !== undefined || 
+    window.__TAURI_IPC__ !== undefined ||
+    window.__TAURI_INTERNALS__ !== undefined ||
+    window.__TAURI_METADATA__ !== undefined ||
+    navigator.userAgent.includes('Tauri') ||
+    Object.keys(window).some(key => key.includes('TAURI'))
   );
 };
 
