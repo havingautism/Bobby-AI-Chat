@@ -517,14 +517,20 @@
 
 .upload-button {
   padding: 12px 24px;
-  background: var(--primary-color);
-  color: white;
+  background: var(--primary-color-dark);
+  
+  color: var(--text-secondary);
   border: none;
-  border-radius: var(--border-radius-md);
+  /* border-radius: var(--border-radius-md); */
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  width: 100%;
+}
+
+[data-theme="dark"] .upload-button {
+background: var(--primary-color);
 }
 
 .upload-button:hover {
