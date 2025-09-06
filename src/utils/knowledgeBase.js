@@ -175,11 +175,13 @@ class KnowledgeBaseManager {
         };
         
         const sqlite = await this.getSQLiteInstance();
-        await sqlite.addDocument(document);
+        const docId = await sqlite.addDocument(document);
+        return docId;
       } else {
         // 在Web环境中，使用现有的SQLite存储
         const { sqliteStorage } = await import('./sqliteStorage');
-        await sqliteStorage.addKnowledgeDocument(docData);
+        const docId = await sqliteStorage.addKnowledgeDocument(docData);
+        return docId;
       }
     } catch (error) {
       console.error('添加文档到SQLite失败:', error);

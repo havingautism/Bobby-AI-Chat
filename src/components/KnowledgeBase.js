@@ -333,6 +333,33 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       return;
     }
 
+    // 检查是否已存在相同文件名的文档
+    const existingDocs = await knowledgeBaseManager.getStoredDocuments();
+    const duplicateDoc = existingDocs.find(doc => 
+      doc.fileName === file.name || 
+      (doc.title === file.name.replace('.pdf', '') && doc.sourceType === 'pdf')
+    );
+    
+    if (duplicateDoc) {
+      const shouldReplace = window.confirm(
+        currentLanguage === "zh" 
+          ? `文档 "${file.name}" 已存在，是否要替换？` 
+          : `Document "${file.name}" already exists. Do you want to replace it?`
+      );
+      
+      if (shouldReplace) {
+        // 删除现有文档
+        await knowledgeBaseManager.deleteDocument(duplicateDoc.id);
+        console.log(`🗑️ 已删除重复文档: ${duplicateDoc.id}`);
+      } else {
+        // 取消上传
+        if (pdfInputRef.current) {
+          pdfInputRef.current.value = '';
+        }
+        return;
+      }
+    }
+
     setIsUploadingPDF(true);
     setPdfUploadProgress(0);
     setPdfParseResult(null);
@@ -392,9 +419,12 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       
       // 创建文档对象
       const document = {
+        id: `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // 生成唯一ID
         title: fileName.replace('.pdf', ''),
         content: cleanedText,
         sourceType: 'pdf',
+        fileSize: pdfParseResult.fileSize, // 直接设置文件大小
+        fileName: fileName,
         metadata: {
           fileName: fileName,
           numPages: numPages,
@@ -405,9 +435,19 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       };
 
       // 添加到知识库
-      await knowledgeBaseManager.addDocumentToSQLite(document);
+      const docId = await knowledgeBaseManager.addDocumentToSQLite(document);
       
       console.log('✅ PDF文档已添加到知识库');
+      
+      // 自动生成向量嵌入
+      try {
+        console.log('开始为PDF文档生成向量嵌入...');
+        await knowledgeBaseManager.generateDocumentEmbeddings(docId);
+        console.log('✅ PDF文档向量嵌入生成完成');
+      } catch (vectorError) {
+        console.warn('⚠️ PDF文档向量嵌入生成失败:', vectorError);
+        // 不阻止整个流程，只是警告
+      }
       
       // 重新加载文档列表和统计
       await loadDocuments();
@@ -439,6 +479,118 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
     setPdfUploadProgress(0);
     if (pdfInputRef.current) {
       pdfInputRef.current.value = '';
+    }
+  };
+
+  // 调试向量生成
+  const debugVectorGeneration = async () => {
+    try {
+      console.log('🔍 开始调试向量生成...');
+      
+      // 获取所有文档
+      const allDocs = await knowledgeBaseManager.getStoredDocuments();
+      console.log('📄 所有文档:', allDocs);
+      
+      // 获取统计信息
+      const stats = await knowledgeBaseManager.getStatistics();
+      console.log('📊 统计信息:', stats);
+      
+      // 检查每个文档的向量
+      for (const doc of allDocs) {
+        console.log(`\n🔍 检查文档: ${doc.title} (ID: ${doc.id})`);
+        
+        try {
+          // 尝试生成向量
+          await knowledgeBaseManager.generateDocumentEmbeddings(doc.id);
+          console.log(`✅ 文档 ${doc.title} 向量生成成功`);
+        } catch (error) {
+          console.error(`❌ 文档 ${doc.title} 向量生成失败:`, error);
+        }
+      }
+      
+      // 重新获取统计信息
+      const newStats = await knowledgeBaseManager.getStatistics();
+      console.log('📊 更新后的统计信息:', newStats);
+      
+      // 重新加载统计信息
+      await loadStatistics();
+      
+      alert(currentLanguage === "zh" ? "向量生成调试完成，请查看控制台" : "Vector generation debug completed, check console");
+      
+    } catch (error) {
+      console.error('❌ 调试向量生成失败:', error);
+      alert(currentLanguage === "zh" ? "调试失败: " + error.message : "Debug failed: " + error.message);
+    }
+  };
+
+  // 强制刷新数据
+  const forceRefresh = async () => {
+    try {
+      console.log('🔄 强制刷新数据...');
+      await loadDocuments();
+      await loadStatistics();
+      console.log('✅ 数据刷新完成');
+      alert(currentLanguage === "zh" ? "数据已刷新" : "Data refreshed");
+    } catch (error) {
+      console.error('❌ 刷新数据失败:', error);
+      alert(currentLanguage === "zh" ? "刷新失败: " + error.message : "Refresh failed: " + error.message);
+    }
+  };
+
+  // 清理重复文档
+  const cleanupDuplicateDocuments = async () => {
+    try {
+      console.log('🧹 开始清理重复文档...');
+      
+      const allDocs = await knowledgeBaseManager.getStoredDocuments();
+      console.log('📄 所有文档:', allDocs);
+      
+      // 按文件名和标题分组
+      const docGroups = {};
+      allDocs.forEach(doc => {
+        const key = `${doc.fileName || doc.title}_${doc.sourceType}`;
+        if (!docGroups[key]) {
+          docGroups[key] = [];
+        }
+        docGroups[key].push(doc);
+      });
+      
+      // 找出重复的文档组
+      const duplicates = Object.values(docGroups).filter(group => group.length > 1);
+      
+      if (duplicates.length === 0) {
+        alert(currentLanguage === "zh" ? "没有发现重复文档" : "No duplicate documents found");
+        return;
+      }
+      
+      console.log('🔍 发现重复文档组:', duplicates);
+      
+      let deletedCount = 0;
+      for (const group of duplicates) {
+        // 保留最新的文档，删除其他的
+        const sortedGroup = group.sort((a, b) => (b.createdAt || b.created_at || 0) - (a.createdAt || a.created_at || 0));
+        const toDelete = sortedGroup.slice(1); // 保留第一个，删除其余的
+        
+        for (const doc of toDelete) {
+          try {
+            await knowledgeBaseManager.deleteDocument(doc.id);
+            console.log(`🗑️ 删除重复文档: ${doc.title} (${doc.id})`);
+            deletedCount++;
+          } catch (error) {
+            console.error(`❌ 删除文档失败: ${doc.id}`, error);
+          }
+        }
+      }
+      
+      // 重新加载数据
+      await loadDocuments();
+      await loadStatistics();
+      
+      alert(currentLanguage === "zh" ? `已清理 ${deletedCount} 个重复文档` : `Cleaned up ${deletedCount} duplicate documents`);
+      
+    } catch (error) {
+      console.error('❌ 清理重复文档失败:', error);
+      alert(currentLanguage === "zh" ? "清理失败: " + error.message : "Cleanup failed: " + error.message);
     }
   };
 
@@ -517,13 +669,19 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
     }
 
     try {
+      console.log(`🗑️ 开始删除文档: ${docId}`);
       await knowledgeBaseManager.deleteDocument(docId);
+      console.log(`✅ 文档删除成功: ${docId}`);
+      
+      // 重新加载数据
       await loadDocuments();
       await loadStatistics();
+      
+      console.log('📊 数据重新加载完成');
       alert(currentLanguage === "zh" ? "文档已删除" : "Document deleted");
     } catch (error) {
-      console.error("删除文档失败:", error);
-      alert(currentLanguage === "zh" ? "删除文档失败" : "Failed to delete document");
+      console.error("❌ 删除文档失败:", error);
+      alert(currentLanguage === "zh" ? "删除文档失败: " + error.message : "Failed to delete document: " + error.message);
     }
   };
 
@@ -562,17 +720,44 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
           {/* 生成向量按钮 */}
           {statistics.documentCount > 0 && statistics.vectorCount === 0 && (
             <div className="vector-generation-section">
-              <button 
-                className="generate-vectors-button"
-                onClick={handleGenerateVectors}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                  <path d="M2 17l10 5 10-5"/>
-                  <path d="M2 12l10 5 10-5"/>
-                </svg>
-                {currentLanguage === "zh" ? "生成向量嵌入" : "Generate Vectors"}
-              </button>
+              <div className="vector-generation-buttons">
+                <button 
+                  className="generate-vectors-button"
+                  onClick={handleGenerateVectors}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                  </svg>
+                  {currentLanguage === "zh" ? "生成向量嵌入" : "Generate Vectors"}
+                </button>
+                
+                <button 
+                  className="debug-vectors-button"
+                  onClick={debugVectorGeneration}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                  </svg>
+                  {currentLanguage === "zh" ? "调试向量" : "Debug Vectors"}
+                </button>
+                
+                <button 
+                  className="refresh-data-button"
+                  onClick={forceRefresh}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                    <path d="M21 3v5h-5"/>
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                    <path d="M3 21v-5h5"/>
+                  </svg>
+                  {currentLanguage === "zh" ? "刷新数据" : "Refresh Data"}
+                </button>
+                
+              </div>
               <p className="vector-hint">
                 {currentLanguage === "zh" ? "为文档生成向量嵌入以启用语义搜索功能" : "Generate vector embeddings for documents to enable semantic search"}
               </p>
@@ -612,16 +797,33 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
             <div className="tab-content">
               <div className="documents-header">
                 <h3>{currentLanguage === "zh" ? "文档列表" : "Document List"}</h3>
-                <button
-                  className="add-document-button"
-                  onClick={() => setShowAddDocument(true)}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 5v14"/>
-                    <path d="M5 12h14"/>
-                  </svg>
-                  {currentLanguage === "zh" ? "添加文档" : "Add Document"}
-                </button>
+                <div className="header-actions">
+                  <button
+                    className="cleanup-duplicates-button"
+                    onClick={cleanupDuplicateDocuments}
+                    title={currentLanguage === "zh" ? "清理重复文档" : "Clean duplicate documents"}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18"/>
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                      <path d="M10 11v6"/>
+                      <path d="M14 11v6"/>
+                    </svg>
+                    {currentLanguage === "zh" ? "清理重复" : "Clean Duplicates"}
+                  </button>
+                  
+                  <button
+                    className="add-document-button"
+                    onClick={() => setShowAddDocument(true)}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 5v14"/>
+                      <path d="M5 12h14"/>
+                    </svg>
+                    {currentLanguage === "zh" ? "添加文档" : "Add Document"}
+                  </button>
+                </div>
               </div>
 
               {showAddDocument && (
@@ -678,12 +880,12 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                     </button>
                   </div>
                 ) : (
-                  documents.map((doc) => (
-                    <div key={doc.id} className="document-item">
+                  documents.map((doc, index) => (
+                    <div key={doc.id || `doc_${index}`} className="document-item">
                       <div className="document-info">
                         <h4>{doc.title}</h4>
                         <p className="document-meta">
-                          {doc.sourceType} • {new Date(doc.createdAt).toLocaleDateString()}
+                          {doc.sourceType || 'manual'} • {new Date(doc.createdAt || doc.created_at || Date.now()).toLocaleDateString()}
                         </p>
                         <p className="document-preview">
                           {doc.content.substring(0, 100)}...

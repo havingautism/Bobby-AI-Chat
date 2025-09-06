@@ -105,6 +105,7 @@ class KnowledgeBaseSQLite {
       ]);
 
       console.log(`✅ 文档已添加: ${document.id}`);
+      return document.id;
     } catch (error) {
       console.error('❌ 添加文档失败:', error);
       throw error;
@@ -332,17 +333,23 @@ class KnowledgeBaseSQLite {
         ORDER BY updated_at DESC
       `);
 
-      return results.map(result => ({
-        id: result.id,
-        title: result.title,
-        content: result.content,
-        file_name: result.file_name,
-        file_size: result.file_size,
-        mime_type: result.mime_type,
-        metadata: result.metadata ? JSON.parse(result.metadata) : null,
-        created_at: result.created_at,
-        updated_at: result.updated_at
-      }));
+      return results.map(result => {
+        const metadata = result.metadata ? JSON.parse(result.metadata) : null;
+        return {
+          id: result.id,
+          title: result.title,
+          content: result.content,
+          fileName: result.file_name,
+          fileSize: result.file_size,
+          mimeType: result.mime_type,
+          metadata: metadata,
+          createdAt: result.created_at,
+          updatedAt: result.updated_at,
+          // 从metadata中提取额外字段
+          sourceType: metadata?.sourceType || 'manual',
+          sourceUrl: metadata?.sourceUrl || null
+        };
+      });
     } catch (error) {
       console.error('❌ 获取文档失败:', error);
       throw error;
@@ -356,16 +363,33 @@ class KnowledgeBaseSQLite {
     }
 
     try {
+      console.log(`🗑️ 开始删除文档和向量: ${documentId}`);
+      
+      // 先检查文档是否存在
+      const existingDoc = await this.db.select(`
+        SELECT id, title FROM knowledge_documents WHERE id = ?
+      `, [documentId]);
+      
+      if (existingDoc.length === 0) {
+        console.warn(`⚠️ 文档不存在: ${documentId}`);
+        return;
+      }
+      
+      console.log(`📄 找到文档: ${existingDoc[0].title}`);
+      
       // 删除向量
-      await this.db.execute(`
+      const vectorResult = await this.db.execute(`
         DELETE FROM knowledge_vectors WHERE document_id = ?
       `, [documentId]);
+      
+      console.log(`🗑️ 删除向量结果:`, vectorResult);
 
       // 删除文档
-      await this.db.execute(`
+      const docResult = await this.db.execute(`
         DELETE FROM knowledge_documents WHERE id = ?
       `, [documentId]);
-
+      
+      console.log(`🗑️ 删除文档结果:`, docResult);
       console.log(`✅ 文档已删除: ${documentId}`);
     } catch (error) {
       console.error('❌ 删除文档失败:', error);
@@ -391,6 +415,13 @@ class KnowledgeBaseSQLite {
       const totalSize = await this.db.select(`
         SELECT SUM(file_size) as total FROM knowledge_documents WHERE file_size IS NOT NULL
       `);
+
+      // 调试信息
+      console.log('📊 统计信息查询结果:', {
+        docCount: docCount[0].count,
+        vectorCount: vectorCount[0].count,
+        totalSize: totalSize[0].total
+      });
 
       return {
         documentCount: docCount[0].count || 0,
