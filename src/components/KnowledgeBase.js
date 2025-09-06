@@ -157,14 +157,48 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
     setTestResults({});
 
     try {
-      console.log('🧪 开始语义搜索测试...');
+      console.log('\n🧪 ===== 开始批量语义搜索测试 =====');
+      console.log(`📊 测试用例总数: ${testQueries.length}`);
+      console.log(`⏰ 开始时间: ${new Date().toLocaleString()}`);
+      console.log(`📈 当前统计: 文档 ${statistics.documentCount} 个, 向量 ${statistics.vectorCount} 个\n`);
       
-      for (const testCase of testQueries) {
+      let totalResults = 0;
+      let successfulTests = 0;
+      let failedTests = 0;
+      
+      for (let i = 0; i < testQueries.length; i++) {
+        const testCase = testQueries[i];
         try {
-          console.log(`测试查询: "${testCase.query}"`);
+          console.log(`\n🧪 [${i + 1}/${testQueries.length}] 测试用例: "${testCase.query}"`);
+          console.log(`📝 描述: ${testCase.description}`);
           
           // 执行混合搜索
           const results = await knowledgeBaseManager.searchSQLite(testCase.query, 5, 0.3, true);
+          totalResults += results.length;
+          
+          console.log(`📊 结果统计: 找到 ${results.length} 个匹配文档`);
+          
+          if (results.length > 0) {
+            const avgScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
+            const maxScore = Math.max(...results.map(r => r.score));
+            const minScore = Math.min(...results.map(r => r.score));
+            
+            console.log(`   - 平均相似度: ${avgScore.toFixed(4)}`);
+            console.log(`   - 最高相似度: ${maxScore.toFixed(4)}`);
+            console.log(`   - 最低相似度: ${minScore.toFixed(4)}`);
+            
+            // 显示前3个最佳匹配
+            console.log(`📋 最佳匹配 (前3个):`);
+            results.slice(0, 3).forEach((result, index) => {
+              console.log(`   ${index + 1}. "${result.title}" (${result.score.toFixed(4)})`);
+            });
+            
+            if (results.length > 3) {
+              console.log(`   ... 还有 ${results.length - 3} 个结果`);
+            }
+          } else {
+            console.log(`❌ 没有找到匹配的文档`);
+          }
           
           // 计算测试结果
           const testResult = {
@@ -183,9 +217,12 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
             [testCase.query]: testResult
           }));
           
-          console.log(`✅ 测试完成: "${testCase.query}" - 找到 ${results.length} 个结果`);
+          successfulTests++;
+          console.log(`✅ 测试完成: "${testCase.query}"`);
+          
         } catch (error) {
           console.error(`❌ 测试失败: "${testCase.query}"`, error);
+          failedTests++;
           setTestResults(prev => ({
             ...prev,
             [testCase.query]: {
@@ -198,9 +235,18 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         }
       }
       
-      console.log('🎉 语义搜索测试完成！');
+      // 输出最终统计信息
+      console.log('\n📊 ===== 批量测试完成统计 =====');
+      console.log(`✅ 成功测试: ${successfulTests} 个`);
+      console.log(`❌ 失败测试: ${failedTests} 个`);
+      console.log(`📈 总匹配结果: ${totalResults} 个`);
+      console.log(`⏰ 结束时间: ${new Date().toLocaleString()}`);
+      console.log(`🧪 ===== 批量语义搜索测试结束 =====\n`);
+      
     } catch (error) {
-      console.error('❌ 测试运行失败:', error);
+      console.error('\n❌ 批量测试运行失败:', error);
+      console.error('错误详情:', error);
+      console.log('🧪 ===== 批量语义搜索测试结束 (失败) =====\n');
     } finally {
       setIsRunningTests(false);
     }
@@ -253,10 +299,62 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
     }
 
     try {
-      console.log(`测试查询: "${testCase.query}"`);
+      console.log(`\n🧪 ===== 开始测试用例 =====`);
+      console.log(`📝 测试描述: ${testCase.description}`);
+      console.log(`🔍 查询内容: "${testCase.query}"`);
+      console.log(`⏰ 测试时间: ${new Date().toLocaleString()}`);
       
       // 执行混合搜索
       const results = await knowledgeBaseManager.searchSQLite(testCase.query, 5, 0.3, true);
+      
+      console.log(`\n📊 搜索结果统计:`);
+      console.log(`   - 总结果数: ${results.length}`);
+      
+      if (results.length > 0) {
+        const avgScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
+        const maxScore = Math.max(...results.map(r => r.score));
+        const minScore = Math.min(...results.map(r => r.score));
+        
+        console.log(`   - 平均相似度: ${avgScore.toFixed(4)}`);
+        console.log(`   - 最高相似度: ${maxScore.toFixed(4)}`);
+        console.log(`   - 最低相似度: ${minScore.toFixed(4)}`);
+        
+        console.log(`\n📋 详细匹配结果:`);
+        results.forEach((result, index) => {
+          console.log(`\n   ${index + 1}. 文档: "${result.title}"`);
+          console.log(`      - 相似度分数: ${result.score.toFixed(4)}`);
+          console.log(`      - 文档ID: ${result.id}`);
+          console.log(`      - 来源类型: ${result.sourceType || 'unknown'}`);
+          console.log(`      - 内容预览: ${result.content ? result.content.substring(0, 100) + '...' : '无内容'}`);
+          
+          if (result.metadata) {
+            console.log(`      - 元数据:`, result.metadata);
+          }
+        });
+        
+        console.log(`\n🎯 匹配分析:`);
+        const highScoreResults = results.filter(r => r.score > 0.7);
+        const mediumScoreResults = results.filter(r => r.score > 0.4 && r.score <= 0.7);
+        const lowScoreResults = results.filter(r => r.score <= 0.4);
+        
+        console.log(`   - 高相似度结果 (>0.7): ${highScoreResults.length} 个`);
+        console.log(`   - 中等相似度结果 (0.4-0.7): ${mediumScoreResults.length} 个`);
+        console.log(`   - 低相似度结果 (≤0.4): ${lowScoreResults.length} 个`);
+        
+        if (highScoreResults.length > 0) {
+          console.log(`\n⭐ 高相似度匹配:`);
+          highScoreResults.forEach((result, index) => {
+            console.log(`   ${index + 1}. "${result.title}" (${result.score.toFixed(4)})`);
+          });
+        }
+      } else {
+        console.log(`\n❌ 没有找到匹配的文档`);
+        console.log(`   可能的原因:`);
+        console.log(`   - 查询词与文档内容不匹配`);
+        console.log(`   - 相似度阈值设置过高 (当前: 0.3)`);
+        console.log(`   - 文档向量未正确生成`);
+        console.log(`   - 知识库中没有相关文档`);
+      }
       
       // 计算测试结果
       const testResult = {
@@ -275,9 +373,14 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         [testCase.query]: testResult
       }));
       
-      console.log(`✅ 测试完成: "${testCase.query}" - 找到 ${results.length} 个结果`);
+      console.log(`\n✅ 测试完成: "${testCase.query}" - 找到 ${results.length} 个结果`);
+      console.log(`🧪 ===== 测试用例结束 =====\n`);
+      
     } catch (error) {
-      console.error(`❌ 测试失败: "${testCase.query}"`, error);
+      console.error(`\n❌ 测试失败: "${testCase.query}"`, error);
+      console.error(`错误详情:`, error);
+      console.log(`🧪 ===== 测试用例结束 (失败) =====\n`);
+      
       setTestResults(prev => ({
         ...prev,
         [testCase.query]: {
@@ -594,6 +697,48 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
     }
   };
 
+  // 清理所有文档
+  const clearAllDocuments = async () => {
+    try {
+      // 确认对话框
+      const confirmMessage = currentLanguage === "zh" 
+        ? "⚠️ 警告：此操作将删除知识库中的所有文档和向量数据，且无法恢复！\n\n确定要继续吗？"
+        : "⚠️ Warning: This will delete ALL documents and vector data in the knowledge base and cannot be undone!\n\nAre you sure you want to continue?";
+      
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+      
+      // 二次确认
+      const secondConfirm = currentLanguage === "zh"
+        ? "最后确认：真的要删除所有文档吗？"
+        : "Final confirmation: Are you really sure you want to delete all documents?";
+      
+      if (!window.confirm(secondConfirm)) {
+        return;
+      }
+      
+      console.log('🧹 开始清理所有文档...');
+      
+      const result = await knowledgeBaseManager.clearAllDocuments();
+      console.log('✅ 清理结果:', result);
+      
+      // 重新加载数据
+      await loadDocuments();
+      await loadStatistics();
+      
+      const successMessage = currentLanguage === "zh"
+        ? `✅ 清理完成！\n删除了 ${result.deletedDocuments} 个文档和 ${result.deletedVectors} 个向量`
+        : `✅ Cleanup completed!\nDeleted ${result.deletedDocuments} documents and ${result.deletedVectors} vectors`;
+      
+      alert(successMessage);
+      
+    } catch (error) {
+      console.error('❌ 清理所有文档失败:', error);
+      alert(currentLanguage === "zh" ? `清理失败: ${error.message}` : `Cleanup failed: ${error.message}`);
+    }
+  };
+
   // 处理文件上传
   const handleFileUpload = async (event) => {
     const files = event.target.files;
@@ -811,6 +956,23 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                       <path d="M14 11v6"/>
                     </svg>
                     {currentLanguage === "zh" ? "清理重复" : "Clean Duplicates"}
+                  </button>
+                  
+                  <button
+                    className="clear-all-button"
+                    onClick={clearAllDocuments}
+                    title={currentLanguage === "zh" ? "清理所有文档" : "Clear all documents"}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18"/>
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                      <path d="M10 11v6"/>
+                      <path d="M14 11v6"/>
+                      <path d="M16 2l4 4"/>
+                      <path d="M20 2l-4 4"/>
+                    </svg>
+                    {currentLanguage === "zh" ? "清空全部" : "Clear All"}
                   </button>
                   
                   <button

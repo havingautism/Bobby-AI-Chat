@@ -1,5 +1,6 @@
 // 知识库SQLite存储实现 - 使用Tauri SQL插件
 import Database from '@tauri-apps/plugin-sql';
+import embeddingService from './embeddingService.js';
 
 class KnowledgeBaseSQLite {
   constructor() {
@@ -190,8 +191,11 @@ class KnowledgeBaseSQLite {
     }
 
     try {
-      // 生成查询向量
-      const queryEmbedding = this.generateSimpleEmbedding(query);
+      // 使用新的嵌入服务生成查询向量
+      const queryResult = await embeddingService.generateEmbedding(query);
+      const queryEmbedding = queryResult.embedding;
+      
+      console.log(`🔍 使用${queryResult.model}模型生成查询向量 (${queryResult.dimensions}维)`);
       
       // 获取所有向量
       const vectors = await this.db.select(`
@@ -206,7 +210,7 @@ class KnowledgeBaseSQLite {
       for (const vector of vectors) {
         try {
           const storedEmbedding = JSON.parse(vector.embedding);
-          const similarity = this.cosineSimilarity(queryEmbedding, storedEmbedding);
+          const similarity = await embeddingService.calculateSimilarity(queryEmbedding, storedEmbedding);
           
           if (similarity >= threshold) {
             results.push({
@@ -397,6 +401,41 @@ class KnowledgeBaseSQLite {
     }
   }
 
+  // 清理所有文档
+  async clearAllDocuments() {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    try {
+      console.log('🧹 开始清理所有文档和向量...');
+      
+      // 获取所有文档数量
+      const docCount = await this.db.select(`SELECT COUNT(*) as count FROM knowledge_documents`);
+      const vectorCount = await this.db.select(`SELECT COUNT(*) as count FROM knowledge_vectors`);
+      
+      console.log(`📊 准备删除 ${docCount[0].count} 个文档和 ${vectorCount[0].count} 个向量`);
+      
+      // 删除所有向量数据
+      const vectorResult = await this.db.execute(`DELETE FROM knowledge_vectors`);
+      console.log(`🗑️ 删除所有向量结果:`, vectorResult);
+      
+      // 删除所有文档
+      const docResult = await this.db.execute(`DELETE FROM knowledge_documents`);
+      console.log(`🗑️ 删除所有文档结果:`, docResult);
+      
+      console.log('✅ 所有文档和向量已清理完成');
+      
+      return {
+        deletedDocuments: docResult.changes || 0,
+        deletedVectors: vectorResult.changes || 0
+      };
+    } catch (error) {
+      console.error('❌ 清理所有文档失败:', error);
+      throw error;
+    }
+  }
+
   // 获取统计信息
   async getStatistics() {
     if (!this.isInitialized) {
@@ -544,24 +583,28 @@ class KnowledgeBaseSQLite {
 
       const content = docs[0].content;
       
-      // 分块
-      const chunks = this.chunkText(content);
+      console.log(`🔄 开始为文档 ${documentId} 生成嵌入向量...`);
       
-      // 为每个块生成嵌入
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-        const embedding = this.generateSimpleEmbedding(chunk);
-        
+      // 使用新的嵌入服务生成向量
+      const embeddings = await embeddingService.generateDocumentEmbeddings(content);
+      
+      // 删除旧的向量数据
+      await this.db.execute(`
+        DELETE FROM knowledge_vectors WHERE document_id = ?
+      `, [documentId]);
+      
+      // 存储新的向量数据
+      for (const embeddingData of embeddings) {
         await this.addVector({
           document_id: documentId,
-          chunk_index: i,
-          chunk_text: chunk,
-          embedding: embedding,
+          chunk_index: embeddingData.chunkIndex,
+          chunk_text: embeddingData.chunkText,
+          embedding: embeddingData.embedding,
           created_at: Date.now()
         });
       }
 
-      console.log(`✅ 文档 ${documentId} 的嵌入已生成，共 ${chunks.length} 个块`);
+      console.log(`✅ 文档 ${documentId} 的嵌入已生成，共 ${embeddings.length} 个块 (使用${embeddings[0]?.model || 'unknown'}模型)`);
     } catch (error) {
       console.error('❌ 生成文档嵌入失败:', error);
       throw error;
@@ -582,6 +625,7 @@ export const addVector = (...args) => knowledgeBaseSQLiteInstance.addVector(...a
 export const searchDocuments = (...args) => knowledgeBaseSQLiteInstance.searchDocuments(...args);
 export const getDocuments = (...args) => knowledgeBaseSQLiteInstance.getDocuments(...args);
 export const deleteDocument = (...args) => knowledgeBaseSQLiteInstance.deleteDocument(...args);
+export const clearAllDocuments = (...args) => knowledgeBaseSQLiteInstance.clearAllDocuments(...args);
 export const getStatistics = (...args) => knowledgeBaseSQLiteInstance.getStatistics(...args);
 export const generateDocumentEmbeddings = (...args) => knowledgeBaseSQLiteInstance.generateDocumentEmbeddings(...args);
 

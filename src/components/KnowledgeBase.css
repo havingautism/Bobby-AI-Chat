@@ -206,6 +206,28 @@
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
+.clear-all-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.clear-all-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.5);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
 .generate-vectors-button:active {
   transform: translateY(0);
 }

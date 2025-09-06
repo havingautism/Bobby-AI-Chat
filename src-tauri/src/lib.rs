@@ -3,6 +3,10 @@
 use serde::{Deserialize, Serialize};
 use anyhow::Result;
 use sqlx::{SqlitePool, Row};
+use std::sync::Mutex;
+
+mod embedding_service;
+use embedding_service::{EmbeddingService, generate_embedding, generate_batch_embeddings, calculate_similarity};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -10,6 +14,7 @@ pub fn run() {
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_sql::Builder::default().build())
+    .manage(Mutex::new(EmbeddingService::new()))
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -30,7 +35,10 @@ pub fn run() {
       get_knowledge_documents,
       delete_knowledge_document,
       get_knowledge_statistics,
-      generate_document_embeddings
+      generate_document_embeddings,
+      generate_embedding,
+      generate_batch_embeddings,
+      calculate_similarity
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

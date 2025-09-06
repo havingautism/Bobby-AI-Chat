@@ -549,6 +549,37 @@ class KnowledgeBaseManager {
     }
   }
 
+  // 清理所有文档
+  async clearAllDocuments() {
+    try {
+      if (this.isTauriEnvironment()) {
+        const sqlite = await this.getSQLiteInstance();
+        const result = await sqlite.clearAllDocuments();
+        console.log('所有文档已清理:', result);
+        return result;
+      } else if (storageAdapter.getStorageType() === 'sqlite') {
+        const { sqliteStorage } = await import('./sqliteStorage');
+        await sqliteStorage.execute(`DELETE FROM knowledge_vectors`);
+        const docResult = await sqliteStorage.execute(`DELETE FROM knowledge_documents`);
+        console.log('所有文档已清理');
+        return {
+          deletedDocuments: docResult.changes || 0,
+          deletedVectors: 0
+        };
+      } else {
+        await storageAdapter.saveSetting('knowledge-documents', []);
+        console.log('所有文档已清理');
+        return {
+          deletedDocuments: 0,
+          deletedVectors: 0
+        };
+      }
+    } catch (error) {
+      console.error('清理所有文档失败:', error);
+      throw error;
+    }
+  }
+
   // 为文档生成向量嵌入
   async generateDocumentEmbeddings(documentId) {
     try {
