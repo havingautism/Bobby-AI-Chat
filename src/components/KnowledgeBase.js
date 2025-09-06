@@ -306,7 +306,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
               <div className="documents-list">
                 {documents.length === 0 ? (
                   <div className="empty-state">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
                       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                       <path d="M8 7h8"/>
@@ -314,6 +314,16 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                       <path d="M8 15h5"/>
                     </svg>
                     <p>{currentLanguage === "zh" ? "暂无文档" : "No documents yet"}</p>
+                    <button
+                      className="add-document-button"
+                      onClick={() => setShowAddDocument(true)}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 5v14"/>
+                        <path d="M5 12h14"/>
+                      </svg>
+                      {currentLanguage === "zh" ? "+ 添加文档" : "+ Add Document"}
+                    </button>
                   </div>
                 ) : (
                   documents.map((doc) => (
