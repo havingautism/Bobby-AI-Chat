@@ -114,6 +114,7 @@ const ChatInterface = ({
   onUpdateConversation,
   onToggleSidebar,
   onOpenSettings,
+  onOpenKnowledgeBase,
 }) => {
   const [responseMode, setResponseMode] = useState(conversation.responseMode || "normal");
   const [currentRole, setCurrentRole] = useState(() => loadSelectedRole());
@@ -797,6 +798,7 @@ const ChatInterface = ({
         onAddTab={() => {
           console.log("添加新标签页");
         }}
+        onOpenKnowledgeBase={onOpenKnowledgeBase}
       />
       <ConversationTimeline
         messages={conversation.messages}

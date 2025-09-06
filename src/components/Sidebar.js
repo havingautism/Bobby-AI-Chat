@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { AI_ROLES, getRoleById } from "../utils/roles";
 import { getCurrentTheme, toggleTheme } from "../utils/theme";
 import { getCurrentLanguage, t } from "../utils/language";
+import { isTauriEnvironment } from "../utils/tauriDetector";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import LanguageToggle from "./LanguageToggle";
 import "./Sidebar.css";
@@ -333,8 +334,8 @@ const Sidebar = ({
           )}
         </div>
 
-        {/* 知识库按钮 */}
-        {!isCollapsed && (
+        {/* 知识库按钮 - 仅在Tauri环境显示 */}
+        {!isCollapsed && isTauriEnvironment() && (
           <div className="knowledge-base-section">
             <button
               className="knowledge-base-button"

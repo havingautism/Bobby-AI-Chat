@@ -9,6 +9,7 @@ import { initTheme } from "./utils/theme";
 import { getApiConfig } from "./utils/api";
 import { smartCacheCleanup } from "./utils/cacheManager";
 import { initializeApiSessionManager } from "./utils/apiSessionManager";
+import { isTauriEnvironment } from "./utils/tauriDetector";
 import "./utils/mobileCacheOptimizer"; // Import mobile cache optimizer
 import { v4 as uuidv4 } from "uuid";
 import "./App.css";
@@ -302,7 +303,7 @@ function App() {
           }
         }}
         onOpenSettings={() => setSettingsOpen(true)}
-        onOpenKnowledgeBase={() => setKnowledgeBaseOpen(true)}
+        onOpenKnowledgeBase={isTauriEnvironment() ? () => setKnowledgeBaseOpen(true) : undefined}
       />
       {/* 移动端侧边栏遮罩层：仅宽栏打开时显示 */}
       {sidebarOpen && !sidebarCollapsed && isMobile && (
@@ -318,6 +319,7 @@ function App() {
             onUpdateConversation={updateConversation}
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             onOpenSettings={() => setSettingsOpen(true)}
+            onOpenKnowledgeBase={() => setKnowledgeBaseOpen(true)}
           />
         )}
       </div>
@@ -339,10 +341,13 @@ function App() {
         }}
       />
 
-      <KnowledgeBase 
-        isOpen={knowledgeBaseOpen} 
-        onClose={() => setKnowledgeBaseOpen(false)}
-      />
+      {/* 知识库组件 - 仅在Tauri环境渲染 */}
+      {isTauriEnvironment() && (
+        <KnowledgeBase 
+          isOpen={knowledgeBaseOpen} 
+          onClose={() => setKnowledgeBaseOpen(false)}
+        />
+      )}
     </div>
     </TauriInitializer>
   );

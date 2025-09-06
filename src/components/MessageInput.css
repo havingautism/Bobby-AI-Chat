@@ -747,6 +747,133 @@
   }
 }
 
+/* 上传按钮样式 */
+.upload-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.upload-button:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: var(--border-hover);
+}
+
+.upload-button:active {
+  transform: scale(0.95);
+}
+
+.upload-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 知识库按钮样式 */
+.knowledge-base-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.knowledge-base-button:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: var(--border-hover);
+}
+
+.knowledge-base-button:active {
+  transform: scale(0.95);
+}
+
+.knowledge-base-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 响应模式切换按钮样式 */
+.response-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.response-mode-toggle:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  border-color: var(--border-hover);
+}
+
+.response-mode-toggle:active {
+  transform: scale(0.95);
+}
+
+.response-mode-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.response-mode-toggle .mode-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.response-mode-toggle .mode-text {
+  white-space: nowrap;
+}
+
+/* 工具栏左右布局 */
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* 移动端输入框适配 */
 @media (max-width: 768px) {
   .input-main-area {
@@ -769,5 +896,26 @@
   
   .input-wrapper-clean {
     border-radius: 14px;
+  }
+  
+  /* 移动端按钮适配 */
+  .upload-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .knowledge-base-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .response-mode-toggle {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  
+  .toolbar-left,
+  .toolbar-right {
+    gap: 6px;
   }
 }

@@ -334,14 +334,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: none;
-  border: none;
-  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   font-size: 16px;
 }
 
@@ -364,25 +366,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: none;
-  border: none;
-  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 16px;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.upload-button:hover {
+.upload-button:hover:not(:disabled) {
   background: var(--bg-hover);
   color: var(--text-primary);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: var(--border-hover);
+}
+
+.upload-button:active {
+  transform: scale(0.95);
 }
 
 .upload-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 
@@ -766,8 +777,8 @@
   }
   
   .upload-button {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
   }
   
   .dropdown-menu {
@@ -865,8 +876,8 @@
   }
   
   .upload-button {
-    width: 22px;
-    height: 22px;
+    width: 32px;
+    height: 32px;
   }
   
   .dropdown-menu {
@@ -893,6 +904,46 @@
 .knowledge-search-container {
   display: flex;
   align-items: center;
+}
+
+/* 知识库管理按钮样式 */
+.knowledge-base-container {
+  display: flex;
+  align-items: center;
+}
+
+.knowledge-base-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.knowledge-base-button:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: var(--border-hover);
+}
+
+.knowledge-base-button:active {
+  transform: scale(0.95);
+}
+
+.knowledge-base-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .knowledge-search-button {
@@ -1039,6 +1090,7 @@
   margin: 0 0 12px 0;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1094,11 +1146,21 @@
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* 移动端知识库搜索适配 */
+/* 移动端按钮适配 */
 @media (max-width: 768px) {
+  .upload-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .knowledge-base-button {
+    width: 32px;
+    height: 32px;
+  }
+  
   .knowledge-search-button {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
   }
   
   .knowledge-search-results {
