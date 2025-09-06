@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getCurrentLanguage, t } from "../utils/language";
 import { isModelSupportResponseModes } from "../utils/modelUtils";
-import { knowledgeBaseManager } from "../utils/knowledgeBase";
 import { isTauriEnvironment } from "../utils/tauriDetector";
 import "./ChatInput.css";
 
@@ -29,9 +28,6 @@ const ChatInput = ({
   const [uploadedFile, setUploadedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [responseMode, setResponseMode] = useState(externalResponseMode || "normal"); // normal 或 thinking
-  const [knowledgeSearchResults, setKnowledgeSearchResults] = useState([]);
-  const [isSearchingKnowledge, setIsSearchingKnowledge] = useState(false);
-  const [showKnowledgeResults, setShowKnowledgeResults] = useState(false);
   const dropdownRef = useRef(null);
   const quickResponseRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -40,25 +36,6 @@ const ChatInput = ({
   // 判断当前模型是否支持响应模式
   const supportsResponseModes = isModelSupportResponseModes(currentModel);
 
-  // 知识库搜索功能
-  const handleKnowledgeSearch = async () => {
-    if (!message.trim()) return;
-    
-    setIsSearchingKnowledge(true);
-    try {
-      const results = await knowledgeBaseManager.search(message, {
-        limit: 5,
-        threshold: 0.7,
-        includeContent: true
-      });
-      setKnowledgeSearchResults(results);
-      setShowKnowledgeResults(true);
-    } catch (error) {
-      console.error("知识库搜索失败:", error);
-    } finally {
-      setIsSearchingKnowledge(false);
-    }
-  };
 
   // 使用知识库结果的功能已内联到onClick处理函数中
 
@@ -122,17 +99,12 @@ const ChatInput = ({
   useEffect(() => {
     const updateMessagesPadding = () => {
       if (textareaRef.current) {
-        const isMobile = window.innerWidth <= 768;
         const inputContainer = textareaRef.current.closest('.chat-input-container');
         const chatMessages = document.querySelector('.chat-messages');
         
         if (inputContainer && chatMessages) {
-          // 获取输入框的实际高度
-          const containerHeight = inputContainer.offsetHeight;
-          
           // 移除所有padding bottom，不预留空白
           chatMessages.style.paddingBottom = '0px';
-          // setInputHeight(containerHeight);
         }
       }
     };
@@ -413,180 +385,77 @@ const ChatInput = ({
             )}
           </div>
 
-          {/* 底部工具栏 */}
-          {showBottomToolbar && (
-            <div className="bottom-toolbar">
-              {/* 快速响应下拉框 - 只有支持的模型才显示 */}
+          {/* 输入框内工具栏 */}
+          <div className="input-toolbar">
+            {/* 左侧按钮组 */}
+            <div className="toolbar-left">
+              {/* 加号按钮 */}
+              <button
+                type="button"
+                className="plus-button-inline"
+                onClick={triggerFileUpload}
+                disabled={disabled}
+                title={t("upload", currentLanguage)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14m-7-7h14" />
+                </svg>
+              </button>
+
+              {/* 响应模式滑动切换按钮 */}
               {supportsResponseModes && (
-                <div className="quick-response-container" ref={quickResponseRef}>
-                  <button 
-                    type="button" 
-                    className={`quick-response-btn ${showQuickResponseDropdown ? 'open' : ''}`} 
-                    disabled={disabled}
-                    onClick={() => setShowQuickResponseDropdown(!showQuickResponseDropdown)}
-                    title="选择响应模式"
+                <div className="response-mode-slider-container">
+                  <div 
+                    className={`response-mode-slider ${responseMode === "thinking" ? "thinking-mode" : "normal-mode"}`}
+                    onClick={() => {
+                      const newMode = responseMode === "normal" ? "thinking" : "normal";
+                      setResponseMode(newMode);
+                      if (onResponseModeChange) {
+                        onResponseModeChange(newMode);
+                      }
+                    }}
+                    title={responseMode === "normal" ? "切换到思考模式" : "切换到快速模式"}
                   >
-                    <span>
-                      {responseMode === "thinking" ? "思考模式" : "快速响应"}
-                    </span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
-                  </button>
-
-                {/* 响应模式下拉菜单 */}
-                {showQuickResponseDropdown && (
-                  <div className="quick-response-dropdown">
-                    <div 
-                      className={`quick-response-item ${responseMode === "normal" ? "active" : ""}`}
-                      onClick={() => {
-                        const newMode = "normal";
-                        setResponseMode(newMode);
-                        setShowQuickResponseDropdown(false);
-                        if (onResponseModeChange) {
-                          onResponseModeChange(newMode);
-                        }
-                      }}
-                    >
-                      <div className="response-mode-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                        </svg>
-                      </div>
-                      <div className="response-mode-info">
-                        <div className="response-mode-title">快速响应</div>
-                        <div className="response-mode-desc">标准模式，快速生成</div>
-                      </div>
-                      <div className="check-mark">
-                        {responseMode === "normal" && (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <path d="M20 6L9 17l-5-5" />
+                    <span className={`slider-label ${responseMode === "normal" ? "active" : ""}`}>快速</span>
+                    <div className="slider-track">
+                      <div className="slider-thumb">
+                        {responseMode === "normal" ? (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                          </svg>
+                        ) : (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                           </svg>
                         )}
                       </div>
                     </div>
-                    
-                    <div 
-                      className={`quick-response-item ${responseMode === "thinking" ? "active" : ""}`}
-                      onClick={() => {
-                        const newMode = "thinking";
-                        setResponseMode(newMode);
-                        setShowQuickResponseDropdown(false);
-                        if (onResponseModeChange) {
-                          onResponseModeChange(newMode);
-                        }
-                      }}
-                    >
-                      <div className="response-mode-icon">
-                       
-
-    <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 48 48" >{/* Icon from IconPark Outline by ByteDance - https://github.com/bytedance/IconPark/blob/master/LICENSE */}<g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4"><path d="m38 21l5 9l-5 1v6h-3l-6-1l-1 7H13l-2-10.381C7.92 29.703 6 25.576 6 21c0-8.837 7.163-16 16-16s16 7.163 16 16" /><path d="M17 19a5 5 0 1 1 5 5v3m0 6v1" /></g></svg>
-
-                      </div>
-                      <div className="response-mode-info">
-                        <div className="response-mode-title">思考模式</div>
-                        <div className="response-mode-desc">展示AI的推理过程</div>
-                      </div>
-                      <div className="check-mark">
-                        {responseMode === "thinking" && (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <path d="M20 6L9 17l-5-5" />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
+                    <span className={`slider-label ${responseMode === "thinking" ? "active" : ""}`}>思考</span>
                   </div>
-                )}
                 </div>
               )}
 
-              {/* 加号按钮和下拉菜单 - 暂时隐藏 */}
-              {/* <div className="plus-button-container" ref={dropdownRef}>
+              {/* 知识库按钮 */}
+              {isTauriEnvironment() && onOpenKnowledgeBase && (
                 <button
                   type="button"
-                  className="plus-button"
-                  onClick={toggleDropdown}
+                  className="knowledge-base-btn"
+                  onClick={onOpenKnowledgeBase}
                   disabled={disabled}
-                  title={t("moreOptions", currentLanguage)}
+                  title="知识库"
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 5v14m-7-7h14" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    <path d="M8 7h8"/>
+                    <path d="M8 11h8"/>
+                    <path d="M8 15h5"/>
                   </svg>
+                  <span>知识库</span>
                 </button>
-
-                <div className="dropdown-menu">
-                  <div className="dropdown-item" onClick={handleNewChat}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                      <polyline points="14,2 14,8 20,8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
-                      <polyline points="10,9 9,9 8,9" />
-                    </svg>
-                    <span>{t("newChat", currentLanguage)}</span>
-                  </div>
-                  
-                  {showFileUpload && (
-                    <div className="dropdown-item" onClick={triggerFileUpload}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                      </svg>
-                      <span>{t("upload", currentLanguage)}</span>
-                    </div>
-                  )}
-                  
-                  <div className="dropdown-item" onClick={handleAddTab}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <line x1="9" y1="1" x2="9" y2="23" />
-                      <line x1="15" y1="1" x2="15" y2="23" />
-                      <line x1="1" y1="9" x2="23" y2="9" />
-                      <line x1="1" y1="15" x2="23" y2="15" />
-                    </svg>
-                    <span>{t("addTab", currentLanguage)}</span>
-                  </div>
-                </div>
-              </div> */}
-
-              {/* 单独的上传按钮 */}
-              {showFileUpload && (
-                <div className="upload-button-container">
-                  <button
-                    type="button"
-                    className="upload-button"
-                    onClick={triggerFileUpload}
-                    disabled={disabled}
-                    title={t("upload", currentLanguage)}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-
-              {/* 知识库按钮 - 仅在Tauri环境显示管理功能 */}
-              {isTauriEnvironment() && onOpenKnowledgeBase && (
-                <div className="knowledge-base-container">
-                  <button
-                    type="button"
-                    className="knowledge-base-button"
-                    onClick={onOpenKnowledgeBase}
-                    disabled={disabled}
-                    title={currentLanguage === "zh" ? "知识库管理" : "Knowledge Base Management"}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                      <path d="M8 7h8"/>
-                      <path d="M8 11h8"/>
-                      <path d="M8 15h5"/>
-                    </svg>
-                  </button>
-                </div>
               )}
             </div>
-          )}
+          </div>
 
           {/* 隐藏的文件输入 */}
           {showFileUpload && (
@@ -601,47 +470,6 @@ const ChatInput = ({
         </div>
       </form>
       
-      {/* 知识库搜索结果 */}
-      {showKnowledgeResults && knowledgeSearchResults.length > 0 && (
-        <div className="knowledge-search-results">
-          <div className="knowledge-results-header">
-            <h4>{currentLanguage === "zh" ? "知识库搜索结果" : "Knowledge Base Results"}</h4>
-            <button
-              className="close-results-button"
-              onClick={() => setShowKnowledgeResults(false)}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 6L6 18"/>
-                <path d="M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-          <div className="knowledge-results-list">
-            {knowledgeSearchResults.map((result, index) => (
-              <div key={index} className="knowledge-result-item">
-                <div className="result-header">
-                  <h5>{result.title}</h5>
-                  <span className="similarity-score">
-                    {(result.score * 100).toFixed(1)}%
-                  </span>
-                </div>
-                <p className="result-content">{result.content}</p>
-                <button
-                  className="use-result-button"
-                  onClick={() => {
-                    const knowledgeContext = `基于知识库内容：\n${result.content}\n\n请根据以上信息回答用户的问题。`;
-                    setMessage(knowledgeContext);
-                    setShowKnowledgeResults(false);
-                    textareaRef.current?.focus();
-                  }}
-                >
-                  {currentLanguage === "zh" ? "使用此结果" : "Use this result"}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* <div className="input-hint">
         {currentLanguage === "zh" 

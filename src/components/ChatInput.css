@@ -1193,3 +1193,262 @@
     font-size: 11px;
   }
 }
+
+/* 输入框内工具栏样式 */
+.input-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 16px;
+  margin-top: 0;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  position: relative;
+  overflow: visible;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+[data-theme="dark"] .input-toolbar {
+  background: var(--bg-secondary);
+  border-top-color: var(--border-color);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+/* 工具栏左右布局 */
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 内联加号按钮样式 */
+.plus-button-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.plus-button-inline:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: scale(1.05);
+  border-color: var(--border-hover);
+}
+
+.plus-button-inline:active {
+  transform: scale(0.95);
+}
+
+.plus-button-inline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 响应模式滑动切换按钮样式 */
+.response-mode-slider-container {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.response-mode-slider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+}
+
+.response-mode-slider:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+}
+
+.slider-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  transition: all 0.3s ease;
+  padding: 2px 4px;
+  border-radius: 4px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.slider-label.active {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  font-weight: 600;
+}
+
+.slider-track {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.slider-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: var(--text-secondary);
+}
+
+/* 思考模式状态 */
+.response-mode-slider.thinking-mode .slider-track {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  border-color: #8b5cf6;
+}
+
+.response-mode-slider.thinking-mode .slider-thumb {
+  transform: translateX(20px);
+  background: #ffffff;
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* 快速模式状态 */
+.response-mode-slider.normal-mode .slider-track {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: #10b981;
+}
+
+.response-mode-slider.normal-mode .slider-thumb {
+  transform: translateX(0px);
+  background: #ffffff;
+  border-color: #10b981;
+  color: #10b981;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* 暗色模式适配 */
+[data-theme="dark"] .response-mode-slider.thinking-mode .slider-thumb {
+  background: #1f2937;
+  color: #a855f7;
+}
+
+[data-theme="dark"] .response-mode-slider.normal-mode .slider-thumb {
+  background: #1f2937;
+  color: #10b981;
+}
+
+/* 知识库按钮样式 */
+.knowledge-base-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.knowledge-base-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  border-color: var(--border-hover);
+}
+
+.knowledge-base-btn:active {
+  transform: scale(0.95);
+}
+
+.knowledge-base-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .input-toolbar {
+    padding: 6px 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+  }
+
+  .plus-button-inline {
+    width: 28px;
+    height: 28px;
+  }
+
+  .response-mode-slider {
+    padding: 4px 6px;
+    gap: 6px;
+  }
+
+  .slider-label {
+    font-size: 10px;
+    min-width: 20px;
+  }
+
+  .slider-track {
+    width: 36px;
+    height: 18px;
+  }
+
+  .slider-thumb {
+    width: 14px;
+    height: 14px;
+  }
+
+  .response-mode-slider.thinking-mode .slider-thumb {
+    transform: translateX(18px);
+  }
+
+  .knowledge-base-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .toolbar-left {
+    gap: 6px;
+  }
+}

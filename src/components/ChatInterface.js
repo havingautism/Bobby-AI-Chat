@@ -367,7 +367,7 @@ const ChatInterface = ({
   };
 
   // 流式消息发送
-  const sendMessageWithStream = async (messages, options, conversationId, customMessageId = null) => {
+  const sendMessageWithStream = async (messages, options, conversationId, customMessageId = null, messagesAfterAssistant = []) => {
     setIsStreaming(true);
     setStreamingConversationId(conversationId);
 
@@ -419,9 +419,9 @@ const ChatInterface = ({
             isStreaming: true,
           };
 
-          // 直接更新对话消息
+          // 直接更新对话消息，保留后续消息
           onUpdateConversation(conversationId, {
-            messages: [...messages, updatedMessage]
+            messages: [...messages, updatedMessage, ...messagesAfterAssistant]
           });
         },
         // onComplete
@@ -436,9 +436,9 @@ const ChatInterface = ({
             isStreaming: false,
           };
 
-          // 更新最终消息
+          // 更新最终消息，保留后续消息
           onUpdateConversation(conversationId, {
-            messages: [...messages, finalMessage]
+            messages: [...messages, finalMessage, ...messagesAfterAssistant]
           });
 
           // 生成标题（如果是第一条消息）
@@ -470,9 +470,9 @@ const ChatInterface = ({
             },
           };
 
-          // 更新错误消息
+          // 更新错误消息，保留后续消息
           onUpdateConversation(conversationId, {
-            messages: [...messages, errorMessage]
+            messages: [...messages, errorMessage, ...messagesAfterAssistant]
           });
         },
         controller,
@@ -621,11 +621,14 @@ const ChatInterface = ({
     
     // 获取到当前助手消息之前的所有消息（包括用户消息）
     const messagesUpToUser = conversation.messages.slice(0, messageIndex);
+    
+    // 获取当前助手消息之后的所有消息，用于保留
+    const messagesAfterAssistant = conversation.messages.slice(messageIndex + 1);
 
     // 使用原来的消息ID，直接替换内容
     const originalMessageId = assistantMessage.id;
 
-    // 先更新消息为流式状态
+    // 先更新消息为流式状态，并保留后续消息
     const updatedMessages = [...conversation.messages];
     const messageIndexToUpdate = updatedMessages.findIndex(msg => msg.id === originalMessageId);
     
@@ -661,7 +664,8 @@ const ChatInterface = ({
         responseMode: responseMode, // 使用当前的响应模式
       },
       conversation.id,
-      originalMessageId // 使用原来的消息ID
+      originalMessageId, // 使用原来的消息ID
+      messagesAfterAssistant // 传递后续消息，用于保留
     );
   };
 

@@ -29,11 +29,7 @@ input, textarea, [contenteditable] {
     overflow: visible;
   }
 }
-*:focus,
-*:focus-visible,
-*:focus-within {
-  outline: none !important;
-}
+
 
 
 
@@ -191,13 +187,7 @@ input:hover {
   appearance: none !important;
 }
 
-/* 特别针对可能的浏览器默认聚焦样式 */
-*:focus,
-*:focus-visible,
-*:active {
-  outline: none !important;
-  box-shadow: none !important;
-}
+
 
 /* 移除所有按钮和交互元素的蓝色选中效果 */
 button,
