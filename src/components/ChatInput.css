@@ -758,8 +758,8 @@
   
   .send-button svg,
   .stop-button svg {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
   }
   
   .bottom-toolbar {
@@ -1277,14 +1277,11 @@
   transition: all 0.3s ease;
   padding: 6px 8px;
   border-radius: 8px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  /* background: var(--bg-tertiary);
+  border: 1px solid var(--border-color); */
 }
 
-.response-mode-slider:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-hover);
-}
+
 
 .slider-label {
   font-size: 12px;
@@ -1299,7 +1296,6 @@
 
 .slider-label.active {
   color: var(--text-primary);
-  background: var(--bg-hover);
   font-weight: 600;
 }
 
