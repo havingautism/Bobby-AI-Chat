@@ -12,8 +12,12 @@ class SimpleSQLiteStorage {
     try {
       console.log('初始化SQLite数据库...');
       
+      // 使用用户数据目录，避免重新构建时数据丢失
+      const dbPath = await this.getDbPath();
+      console.log('数据库路径:', dbPath);
+      
       // 连接到SQLite数据库
-      this.db = await Database.load('sqlite:ai_chat.db');
+      this.db = await Database.load(dbPath);
       
       // 创建表结构
       await this.createTables();
@@ -24,6 +28,30 @@ class SimpleSQLiteStorage {
       console.error('❌ SQLite数据库初始化失败:', error);
       this.isInitialized = false;
       throw error;
+    }
+  }
+
+  // 获取数据库路径
+  async getDbPath() {
+    try {
+      // 检查是否在Tauri环境
+      if (typeof window !== 'undefined' && window.__TAURI_IPC__) {
+        // 使用Tauri API获取用户数据目录
+        const { invoke } = await import('@tauri-apps/api/core');
+        const { appDataDir } = await import('@tauri-apps/api/path');
+        
+        const dataDir = await appDataDir();
+        const dbPath = `${dataDir}ai_chat.db`;
+        console.log('使用Tauri用户数据目录:', dbPath);
+        return `sqlite:${dbPath}`;
+      } else {
+        // 非Tauri环境，使用相对路径
+        console.log('非Tauri环境，使用相对路径');
+        return 'sqlite:ai_chat.db';
+      }
+    } catch (error) {
+      console.warn('获取用户数据目录失败，使用相对路径:', error);
+      return 'sqlite:ai_chat.db';
     }
   }
 

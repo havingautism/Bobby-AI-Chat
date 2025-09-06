@@ -4,9 +4,22 @@ use serde::{Deserialize, Serialize};
 use anyhow::Result;
 use sqlx::{SqlitePool, Row};
 use std::sync::Mutex;
+use tauri::Manager;
 
 mod embedding_service;
+mod qdrant_manager;
+mod qdrant_service;
 use embedding_service::{EmbeddingService, generate_embedding, generate_batch_embeddings, calculate_similarity};
+use qdrant_manager::{
+    QdrantManager,
+    compile_qdrant,
+    start_qdrant,
+    stop_qdrant,
+    get_qdrant_status,
+    is_qdrant_installed,
+    get_qdrant_version
+};
+use qdrant_service::QdrantService;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -15,6 +28,8 @@ pub fn run() {
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_sql::Builder::default().build())
     .manage(Mutex::new(EmbeddingService::new()))
+    .manage(Mutex::new(QdrantManager::new()))
+    .manage(Mutex::new(QdrantService::new()))
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -23,6 +38,27 @@ pub fn run() {
             .build(),
         )?;
       }
+      
+      // 自动启动Qdrant (使用预编译二进制文件)
+      let app_handle = app.handle().clone();
+      tauri::async_runtime::spawn(async move {
+        let manager = app_handle.state::<Mutex<QdrantManager>>();
+        let mut manager = manager.lock().unwrap();
+        
+        // 检查预编译的二进制文件是否存在
+        if manager.is_installed() {
+          println!("🚀 启动预编译的Qdrant服务...");
+          match manager.start() {
+            Ok(_) => println!("✅ Qdrant服务已自动启动"),
+            Err(e) => println!("❌ Qdrant服务启动失败: {}", e),
+          }
+        } else {
+          println!("⚠️ 未找到预编译的Qdrant二进制文件");
+          println!("💡 请先运行: .\\compile_qdrant.bat 来编译Qdrant");
+          println!("💡 或者手动启动: .\\qdrant.exe");
+        }
+      });
+      
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
@@ -38,26 +74,43 @@ pub fn run() {
       generate_document_embeddings,
       generate_embedding,
       generate_batch_embeddings,
-      calculate_similarity
+      calculate_similarity,
+      compile_qdrant,
+      start_qdrant,
+      stop_qdrant,
+      get_qdrant_status,
+      is_qdrant_installed,
+      get_qdrant_version
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
 
 #[tauri::command]
-async fn ensure_data_directory() -> Result<(), String> {
+async fn ensure_data_directory() -> Result<String, String> {
   use std::fs;
   use std::path::Path;
   
-  // 使用简单的相对路径
-  let data_dir = Path::new("./data");
+  // 使用用户数据目录，避免重新构建时数据丢失
+  let data_dir = if cfg!(debug_assertions) {
+    // 开发模式：使用项目根目录下的data文件夹
+    let mut project_root = std::env::current_dir().unwrap();
+    project_root.push("data");
+    project_root
+  } else {
+    // 生产模式：使用用户数据目录
+    let mut data_dir = dirs::data_dir().unwrap_or_else(|| std::env::current_dir().unwrap());
+    data_dir.push("AI-Chat");
+    data_dir
+  };
   
   if !data_dir.exists() {
-    fs::create_dir_all(data_dir)
+    fs::create_dir_all(&data_dir)
       .map_err(|e| format!("创建数据目录失败: {}", e))?;
   }
   
-  Ok(())
+  println!("数据目录: {}", data_dir.display());
+  Ok(data_dir.to_string_lossy().to_string())
 }
 
 // 移除自定义SQLite命令，使用tauri-plugin-sql
@@ -112,10 +165,9 @@ pub struct SearchResult {
 // 知识库管理命令
 #[tauri::command]
 async fn init_knowledge_base() -> Result<String, String> {
-    let db_path = "./data/ai_chat.db";
-    
-    // 确保数据目录存在
-    ensure_data_directory().await?;
+    // 确保数据目录存在并获取路径
+    let data_dir = ensure_data_directory().await?;
+    let db_path = format!("{}/ai_chat.db", data_dir);
     
     // 初始化SQLite连接
     let pool = SqlitePool::connect(&format!("sqlite://{}", db_path))
@@ -191,7 +243,9 @@ async fn init_knowledge_base() -> Result<String, String> {
 
 #[tauri::command]
 async fn add_knowledge_document(document: KnowledgeDocument) -> Result<String, String> {
-    let db_path = "./data/ai_chat.db";
+    // 确保数据目录存在并获取路径
+    let data_dir = ensure_data_directory().await?;
+    let db_path = format!("{}/ai_chat.db", data_dir);
     let pool = SqlitePool::connect(&format!("sqlite://{}", db_path))
         .await
         .map_err(|e| format!("连接数据库失败: {}", e))?;
@@ -224,7 +278,9 @@ async fn add_knowledge_document(document: KnowledgeDocument) -> Result<String, S
 
 #[tauri::command]
 async fn add_knowledge_vector(vector: KnowledgeVector) -> Result<String, String> {
-    let db_path = "./data/ai_chat.db";
+    // 确保数据目录存在并获取路径
+    let data_dir = ensure_data_directory().await?;
+    let db_path = format!("{}/ai_chat.db", data_dir);
     let pool = SqlitePool::connect(&format!("sqlite://{}", db_path))
         .await
         .map_err(|e| format!("连接数据库失败: {}", e))?;
@@ -269,7 +325,9 @@ async fn add_knowledge_vector(vector: KnowledgeVector) -> Result<String, String>
 
 #[tauri::command]
 async fn search_knowledge_base(query: String, limit: i32) -> Result<Vec<SearchResult>, String> {
-    let db_path = "./data/ai_chat.db";
+    // 确保数据目录存在并获取路径
+    let data_dir = ensure_data_directory().await?;
+    let db_path = format!("{}/ai_chat.db", data_dir);
     let pool = SqlitePool::connect(&format!("sqlite://{}", db_path))
         .await
         .map_err(|e| format!("连接数据库失败: {}", e))?;
@@ -352,7 +410,9 @@ fn generate_simple_embedding(text: &str) -> Vec<f32> {
 
 #[tauri::command]
 async fn get_knowledge_documents() -> Result<Vec<KnowledgeDocument>, String> {
-    let db_path = "./data/ai_chat.db";
+    // 确保数据目录存在并获取路径
+    let data_dir = ensure_data_directory().await?;
+    let db_path = format!("{}/ai_chat.db", data_dir);
     let pool = SqlitePool::connect(&format!("sqlite://{}", db_path))
         .await
         .map_err(|e| format!("连接数据库失败: {}", e))?;
@@ -390,7 +450,9 @@ async fn get_knowledge_documents() -> Result<Vec<KnowledgeDocument>, String> {
 
 #[tauri::command]
 async fn delete_knowledge_document(document_id: String) -> Result<String, String> {
-    let db_path = "./data/ai_chat.db";
+    // 确保数据目录存在并获取路径
+    let data_dir = ensure_data_directory().await?;
+    let db_path = format!("{}/ai_chat.db", data_dir);
     let pool = SqlitePool::connect(&format!("sqlite://{}", db_path))
         .await
         .map_err(|e| format!("连接数据库失败: {}", e))?;
@@ -433,7 +495,9 @@ async fn delete_knowledge_document(document_id: String) -> Result<String, String
 
 #[tauri::command]
 async fn get_knowledge_statistics() -> Result<serde_json::Value, String> {
-    let db_path = "./data/ai_chat.db";
+    // 确保数据目录存在并获取路径
+    let data_dir = ensure_data_directory().await?;
+    let db_path = format!("{}/ai_chat.db", data_dir);
     let pool = SqlitePool::connect(&format!("sqlite://{}", db_path))
         .await
         .map_err(|e| format!("连接数据库失败: {}", e))?;
@@ -464,7 +528,9 @@ async fn get_knowledge_statistics() -> Result<serde_json::Value, String> {
 
 #[tauri::command]
 async fn generate_document_embeddings(document_id: String) -> Result<String, String> {
-    let db_path = "./data/ai_chat.db";
+    // 确保数据目录存在并获取路径
+    let data_dir = ensure_data_directory().await?;
+    let db_path = format!("{}/ai_chat.db", data_dir);
     let pool = SqlitePool::connect(&format!("sqlite://{}", db_path))
         .await
         .map_err(|e| format!("连接数据库失败: {}", e))?;

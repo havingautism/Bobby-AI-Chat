@@ -48,6 +48,8 @@
     "eject": "react-scripts eject",
     "tauri": "tauri dev",
     "tauri:build": "npm run build && tauri build",
+    "start:app": "node -e \"console.log('请运行对应的启动脚本: start_app.bat (Windows) 或 start_app.sh (Linux/macOS)')\"",
+    "qdrant:compile": "node -e \"console.log('请运行对应的编译脚本: compile_qdrant.bat (Windows) 或 compile_qdrant.sh (Linux/macOS)')\"",
     "install:sqlite": "node -e \"console.log('请运行对应的安装脚本: install_sqlite.bat (Windows) 或 install_sqlite.sh (Linux/macOS)')\""
   },
   "eslintConfig": {
