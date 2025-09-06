@@ -236,7 +236,6 @@
 
 .save-button {
   padding: 10px 20px;
-  background: var(--primary-color);
   color: white;
   border: none;
   border-radius: var(--border-radius-md);
