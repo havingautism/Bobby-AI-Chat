@@ -1,9 +1,9 @@
 import { invoke } from '@tauri-apps/api';
-import { BaseDirectory, join } from '@tauri-apps/api/path';
+// import { BaseDirectory, join } from '@tauri-apps/api/path';
 
 // 数据库配置
 const DB_NAME = 'ai_chat.db';
-const DB_VERSION = 1;
+// const DB_VERSION = 1;
 
 // 检查是否在Tauri环境中 - 使用CSDN文章的方法
 const isTauriEnv = () => {
@@ -260,13 +260,28 @@ class SQLiteStorage {
         ORDER BY c.updated_at DESC
       `);
 
-      // 为每个对话加载消息
+      // 为每个对话加载消息并解析metadata
       for (const conv of conversations) {
         conv.messages = await this.query(`
           SELECT * FROM messages 
           WHERE conversation_id = ? 
           ORDER BY timestamp ASC
         `, [conv.id]);
+
+        // 解析metadata字段，恢复role、model、responseMode等信息
+        if (conv.metadata) {
+          try {
+            const metadata = JSON.parse(conv.metadata);
+            conv.role = metadata.role;
+            conv.model = metadata.model;
+            conv.responseMode = metadata.responseMode;
+            // 保留其他metadata字段
+            conv.metadata = metadata;
+          } catch (error) {
+            console.warn('解析对话metadata失败:', error);
+            conv.metadata = {};
+          }
+        }
       }
 
       return conversations;

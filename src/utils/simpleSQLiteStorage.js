@@ -37,9 +37,13 @@ class SimpleSQLiteStorage {
           title TEXT NOT NULL,
           messages TEXT NOT NULL,
           last_updated INTEGER NOT NULL,
-          created_at INTEGER NOT NULL
+          created_at INTEGER NOT NULL,
+          metadata TEXT
         )
       `);
+
+      // 检查并添加metadata字段（向后兼容）
+      await this.migrateAddMetadataField();
 
       // 创建设置表
       await this.db.execute(`
@@ -70,6 +74,23 @@ class SimpleSQLiteStorage {
     }
   }
 
+  // 迁移：添加metadata字段
+  async migrateAddMetadataField() {
+    try {
+      // 检查metadata字段是否存在
+      const result = await this.db.select("PRAGMA table_info(conversations)");
+      const hasMetadata = result.some(column => column.name === 'metadata');
+      
+      if (!hasMetadata) {
+        console.log('添加metadata字段到conversations表...');
+        await this.db.execute('ALTER TABLE conversations ADD COLUMN metadata TEXT');
+        console.log('✅ metadata字段添加成功');
+      }
+    } catch (error) {
+      console.error('添加metadata字段失败:', error);
+    }
+  }
+
   // 加载聊天历史
   async loadChatHistory() {
     if (!this.isInitialized) {
@@ -78,13 +99,31 @@ class SimpleSQLiteStorage {
 
     try {
       const result = await this.db.select('SELECT * FROM conversations ORDER BY last_updated DESC');
-      const conversations = result.map(row => ({
-        id: row.id,
-        title: row.title,
-        messages: JSON.parse(row.messages),
-        lastUpdated: row.last_updated,
-        createdAt: row.created_at
-      }));
+      const conversations = result.map(row => {
+        const conversation = {
+          id: row.id,
+          title: row.title,
+          messages: JSON.parse(row.messages),
+          lastUpdated: row.last_updated,
+          createdAt: row.created_at
+        };
+
+        // 解析metadata字段，恢复role、model、responseMode等信息
+        if (row.metadata) {
+          try {
+            const metadata = JSON.parse(row.metadata);
+            conversation.role = metadata.role;
+            conversation.model = metadata.model;
+            conversation.responseMode = metadata.responseMode;
+            conversation.metadata = metadata;
+          } catch (error) {
+            console.warn('解析对话metadata失败:', error);
+            conversation.metadata = {};
+          }
+        }
+
+        return conversation;
+      });
       
       console.log(`从SQLite加载了 ${conversations.length} 个对话`);
       return conversations;
@@ -109,14 +148,23 @@ class SimpleSQLiteStorage {
       
       // 批量插入对话
       for (const conversation of cleaned) {
+        // 构建metadata，包含角色信息
+        const metadata = {
+          ...conversation.metadata,
+          role: conversation.role,
+          model: conversation.model,
+          responseMode: conversation.responseMode
+        };
+
         await this.db.execute(
-          'INSERT INTO conversations (id, title, messages, last_updated, created_at) VALUES (?, ?, ?, ?, ?)',
+          'INSERT INTO conversations (id, title, messages, last_updated, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?)',
           [
             conversation.id,
             conversation.title,
             JSON.stringify(conversation.messages),
             conversation.lastUpdated || Date.now(),
-            conversation.createdAt || Date.now()
+            conversation.createdAt || Date.now(),
+            JSON.stringify(metadata)
           ]
         );
       }
@@ -135,14 +183,23 @@ class SimpleSQLiteStorage {
     }
 
     try {
+      // 构建metadata，包含角色信息
+      const metadata = {
+        ...conversation.metadata,
+        role: conversation.role,
+        model: conversation.model,
+        responseMode: conversation.responseMode
+      };
+
       await this.db.execute(
-        'INSERT OR REPLACE INTO conversations (id, title, messages, last_updated, created_at) VALUES (?, ?, ?, ?, ?)',
+        'INSERT OR REPLACE INTO conversations (id, title, messages, last_updated, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?)',
         [
           conversation.id,
           conversation.title,
           JSON.stringify(conversation.messages),
           conversation.lastUpdated || Date.now(),
-          conversation.createdAt || Date.now()
+          conversation.createdAt || Date.now(),
+          JSON.stringify(metadata)
         ]
       );
       

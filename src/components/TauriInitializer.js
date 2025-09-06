@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { storageAdapter } from '../utils/storageAdapter';
-import { runStorageTests } from '../utils/storageTest';
+// import { runStorageTests } from '../utils/storageTest'; // 不再自动运行测试
 
 const TauriInitializer = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -33,11 +33,11 @@ const TauriInitializer = ({ children }) => {
         if (type === 'tauri' || type === 'sqlite') {
           console.log('使用本地存储:', type);
           
-          // 运行存储测试
-          const testResult = await runStorageTests();
-          if (!testResult.success) {
-            console.error('存储系统测试失败:', testResult.error);
-          }
+          // 注释掉自动存储测试，避免每次启动都运行测试
+          // const testResult = await runStorageTests();
+          // if (!testResult.success) {
+          //   console.error('存储系统测试失败:', testResult.error);
+          // }
           
           // 尝试从localStorage获取旧的对话数据并迁移
           const oldData = localStorage.getItem('ai-chat-conversations');
