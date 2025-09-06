@@ -157,7 +157,7 @@ class SimpleSQLiteStorage {
         };
 
         await this.db.execute(
-          'INSERT INTO conversations (id, title, messages, last_updated, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?)',
+          'INSERT OR REPLACE INTO conversations (id, title, messages, last_updated, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?)',
           [
             conversation.id,
             conversation.title,
@@ -342,7 +342,7 @@ class SimpleSQLiteStorage {
       // 批量插入API会话
       for (const session of sessions) {
         await this.db.execute(
-          'INSERT INTO api_sessions (id, name, model, api_key, base_url, created_at, last_used) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          'INSERT OR REPLACE INTO api_sessions (id, name, model, api_key, base_url, created_at, last_used) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [
             session.id,
             session.name,

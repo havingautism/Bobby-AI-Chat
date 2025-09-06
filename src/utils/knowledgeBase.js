@@ -7,16 +7,97 @@ class KnowledgeBaseManager {
     this.embeddingModel = null;
   }
 
+  // 检查是否在Tauri环境中
+  isTauriEnvironment() {
+    return storageAdapter.getStorageType() === 'sqlite';
+  }
+
+  // 获取SQL插件实例
+  async getSQLiteInstance() {
+    if (!this.sqliteInstance) {
+      const { knowledgeBaseSQLite } = await import('./knowledgeBaseSQLite');
+      this.sqliteInstance = knowledgeBaseSQLite;
+    }
+    return this.sqliteInstance;
+  }
+
+  // 等待Tauri IPC初始化
+  async waitForTauriIPC() {
+    if (!this.isTauriEnvironment()) {
+      return false;
+    }
+
+    // 等待Tauri IPC可用
+    let attempts = 0;
+    const maxAttempts = 100; // 最多等待10秒
+    
+    while (attempts < maxAttempts) {
+      try {
+        // 检查Tauri IPC是否可用
+        if (typeof window !== 'undefined' && 
+            (window.__TAURI_IPC__ || window.__TAURI__)) {
+          // 尝试导入invoke来验证IPC是否真正可用
+          const { invoke } = await import('@tauri-apps/api');
+          if (typeof invoke === 'function') {
+            // 尝试调用一个简单的命令来验证IPC真正工作
+            try {
+              await invoke('ensure_data_directory');
+              console.log('Tauri IPC已就绪');
+              return true;
+            } catch (error) {
+              // 如果命令调用失败，继续等待
+              console.log('Tauri IPC命令调用失败，继续等待...', error.message);
+            }
+          }
+        }
+        
+        // 等待100ms后重试
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      } catch (error) {
+        // 如果导入失败，继续等待
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+    }
+    
+    console.warn('等待Tauri IPC超时');
+    return false;
+  }
+
+  // 安全调用Tauri命令
+  async safeInvoke(command, args = {}) {
+    if (!this.isTauriEnvironment()) {
+      throw new Error('不在Tauri环境中');
+    }
+
+    // 等待IPC就绪
+    const ipcReady = await this.waitForTauriIPC();
+    if (!ipcReady) {
+      throw new Error('Tauri IPC未就绪');
+    }
+
+    // 导入并调用invoke
+    const { invoke } = await import('@tauri-apps/api');
+    return await invoke(command, args);
+  }
+
   // 初始化知识库
   async initialize() {
     try {
-      if (storageAdapter.getStorageType() === 'sqlite') {
+      if (this.isTauriEnvironment()) {
+        // 在Tauri环境中，使用SQL插件初始化知识库
+        const sqlite = await this.getSQLiteInstance();
+        await sqlite.initialize();
+        this.isInitialized = true;
+        console.log('知识库管理器已初始化（Tauri SQLite模式）');
+      } else if (storageAdapter.getStorageType() === 'sqlite') {
         // 确保SQLite数据库已初始化
         await storageAdapter.loadChatHistory(); // 这会触发SQLite初始化
         this.isInitialized = true;
-        console.log('知识库管理器已初始化（SQLite模式）');
+        console.log('知识库管理器已初始化（Web SQLite模式）');
       } else {
-        console.log('知识库管理器已初始化（非SQLite模式，向量搜索不可用）');
+        console.log('知识库管理器已初始化（IndexedDB模式，向量搜索不可用）');
         this.isInitialized = true;
       }
     } catch (error) {
@@ -33,7 +114,6 @@ class KnowledgeBaseManager {
 
     try {
       const docId = document.id || this.generateDocumentId();
-      const now = Date.now();
 
       const docData = {
         id: docId,
@@ -51,9 +131,16 @@ class KnowledgeBaseManager {
         // 使用SQLite存储
         await this.addDocumentToSQLite(docData);
         
-        // 如果内容较长，进行分块处理
-        if (document.content.length > 1000) {
-          await this.chunkAndEmbedDocument(docData);
+        // 自动生成向量嵌入
+        if (this.isTauriEnvironment() && document.content.length > 100) {
+          try {
+            const sqlite = await this.getSQLiteInstance();
+            await sqlite.generateDocumentEmbeddings(docId);
+            console.log(`文档 ${docId} 的向量嵌入已生成`);
+          } catch (error) {
+            console.warn('生成向量嵌入失败:', error);
+            // 不抛出错误，因为这是可选功能
+          }
         }
       } else {
         // 使用IndexedDB存储（简化版本）
@@ -71,10 +158,29 @@ class KnowledgeBaseManager {
   // 添加文档到SQLite
   async addDocumentToSQLite(docData) {
     try {
-      // 这里需要调用SQLite存储的addKnowledgeDocument方法
-      // 由于我们使用的是存储适配器，需要直接调用SQLite存储
-      const { sqliteStorage } = await import('./sqliteStorage');
-      await sqliteStorage.addKnowledgeDocument(docData);
+      if (this.isTauriEnvironment()) {
+        // 在Tauri环境中，调用Rust命令
+        const document = {
+          id: docData.id,
+          title: docData.title,
+          content: docData.content,
+          source_type: docData.sourceType,
+          source_url: docData.sourceUrl,
+          file_path: docData.filePath,
+          file_size: docData.fileSize,
+          mime_type: docData.mimeType,
+          metadata: JSON.stringify(docData.metadata),
+          created_at: Date.now(),
+          updated_at: Date.now()
+        };
+        
+        const sqlite = await this.getSQLiteInstance();
+        await sqlite.addDocument(document);
+      } else {
+        // 在Web环境中，使用现有的SQLite存储
+        const { sqliteStorage } = await import('./sqliteStorage');
+        await sqliteStorage.addKnowledgeDocument(docData);
+      }
     } catch (error) {
       console.error('添加文档到SQLite失败:', error);
       throw error;
@@ -179,7 +285,20 @@ class KnowledgeBaseManager {
   // 存储向量嵌入
   async storeVectorEmbedding(vectorData) {
     try {
-      if (storageAdapter.getStorageType() === 'sqlite') {
+      if (this.isTauriEnvironment()) {
+        // 在Tauri环境中，调用Rust命令
+        const vector = {
+          vector_id: vectorData.vectorId,
+          document_id: vectorData.documentId,
+          chunk_index: vectorData.chunkIndex,
+          chunk_text: vectorData.chunkText,
+          embedding: vectorData.embedding,
+          created_at: Date.now()
+        };
+        
+        const sqlite = await this.getSQLiteInstance();
+        await sqlite.addVector(vector);
+      } else if (storageAdapter.getStorageType() === 'sqlite') {
         const { sqliteStorage } = await import('./sqliteStorage');
         await sqliteStorage.execute(`
           INSERT INTO knowledge_vectors 
@@ -227,21 +346,45 @@ class KnowledgeBaseManager {
   // SQLite向量搜索
   async searchSQLite(query, limit, threshold, includeContent) {
     try {
-      // 生成查询嵌入
-      const queryEmbedding = await this.generateEmbedding(query);
-      
-      // 执行向量搜索（这里需要sqlite-vec扩展支持）
-      const results = await this.vectorSearch(queryEmbedding, limit, threshold);
-      
-      return results.map(result => ({
-        id: result.document_id,
-        title: result.title,
-        content: includeContent ? result.chunk_text : null,
-        score: result.similarity,
-        chunkIndex: result.chunk_index,
-        sourceType: result.source_type,
-        sourceUrl: result.source_url
-      }));
+      if (this.isTauriEnvironment()) {
+        // 在Tauri环境中，使用SQL插件进行搜索
+        const sqlite = await this.getSQLiteInstance();
+        
+        // 使用混合搜索（结合文本搜索和向量搜索）
+        let results;
+        try {
+          results = await sqlite.hybridSearch(query, limit, 0.7, 0.3);
+        } catch (error) {
+          console.warn('混合搜索失败，使用文本搜索:', error);
+          results = await sqlite.searchDocuments(query, limit);
+        }
+        
+        return results.map(result => ({
+          id: result.id,
+          title: result.title,
+          content: includeContent ? (result.content || result.full_content) : null,
+          score: result.combinedScore || result.similarity || 1.0, // 使用综合分数或相似度
+          chunkIndex: result.chunk_index || 0,
+          sourceType: 'document',
+          sourceUrl: null
+        }));
+      } else {
+        // 生成查询嵌入
+        const queryEmbedding = await this.generateEmbedding(query);
+        
+        // 执行向量搜索（这里需要sqlite-vec扩展支持）
+        const results = await this.vectorSearch(queryEmbedding, limit, threshold);
+        
+        return results.map(result => ({
+          id: result.document_id,
+          title: result.title,
+          content: includeContent ? result.chunk_text : null,
+          score: result.similarity,
+          chunkIndex: result.chunk_index,
+          sourceType: result.source_type,
+          sourceUrl: result.source_url
+        }));
+      }
     } catch (error) {
       console.error('SQLite向量搜索失败:', error);
       // 回退到文本搜索
@@ -353,7 +496,12 @@ class KnowledgeBaseManager {
   // 获取存储的文档
   async getStoredDocuments() {
     try {
-      if (storageAdapter.getStorageType() === 'sqlite') {
+      if (this.isTauriEnvironment()) {
+        // 在Tauri环境中，使用SQL插件获取文档
+        const sqlite = await this.getSQLiteInstance();
+        const results = await sqlite.getDocuments();
+        return results;
+      } else if (storageAdapter.getStorageType() === 'sqlite') {
         const { sqliteStorage } = await import('./sqliteStorage');
         const results = await sqliteStorage.query(`
           SELECT * FROM knowledge_documents 
@@ -372,7 +520,11 @@ class KnowledgeBaseManager {
   // 删除文档
   async deleteDocument(documentId) {
     try {
-      if (storageAdapter.getStorageType() === 'sqlite') {
+      if (this.isTauriEnvironment()) {
+        // 在Tauri环境中，使用SQL插件删除文档
+        const sqlite = await this.getSQLiteInstance();
+        await sqlite.deleteDocument(documentId);
+      } else if (storageAdapter.getStorageType() === 'sqlite') {
         const { sqliteStorage } = await import('./sqliteStorage');
         await sqliteStorage.execute(
           'DELETE FROM knowledge_documents WHERE id = ?',
@@ -395,10 +547,35 @@ class KnowledgeBaseManager {
     }
   }
 
+  // 为文档生成向量嵌入
+  async generateDocumentEmbeddings(documentId) {
+    try {
+      if (this.isTauriEnvironment()) {
+        const sqlite = await this.getSQLiteInstance();
+        await sqlite.generateDocumentEmbeddings(documentId);
+        console.log(`文档 ${documentId} 的向量嵌入已生成`);
+      } else {
+        console.warn('向量嵌入生成仅在Tauri环境中支持');
+      }
+    } catch (error) {
+      console.error('生成文档向量嵌入失败:', error);
+      throw error;
+    }
+  }
+
   // 获取知识库统计信息
   async getStatistics() {
     try {
-      if (storageAdapter.getStorageType() === 'sqlite') {
+      if (this.isTauriEnvironment()) {
+        // 在Tauri环境中，使用SQL插件获取统计信息
+        const sqlite = await this.getSQLiteInstance();
+        const stats = await sqlite.getStatistics();
+        return {
+          documentCount: stats.documentCount || 0,
+          vectorCount: stats.vectorCount || 0,
+          totalSize: stats.totalSize || 0
+        };
+      } else if (storageAdapter.getStorageType() === 'sqlite') {
         const { sqliteStorage } = await import('./sqliteStorage');
         const stats = await sqliteStorage.query(`
           SELECT 

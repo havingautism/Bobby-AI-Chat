@@ -317,7 +317,7 @@ class SQLiteStorage {
       // 插入消息
       if (conversation.messages && conversation.messages.length > 0) {
         const messageInserts = conversation.messages.map(msg => ({
-          sql: `INSERT INTO messages 
+          sql: `INSERT OR REPLACE INTO messages 
                 (id, conversation_id, role, content, timestamp, has_reasoning, reasoning, uploaded_file_info, token_count)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           params: [
