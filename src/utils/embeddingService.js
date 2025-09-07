@@ -6,10 +6,25 @@ import { invoke } from '@tauri-apps/api/core';
 class EmbeddingService {
   constructor() {
     this.isTauriEnvironment = this.checkTauriEnvironment();
-    // 知识库功能只在Tauri环境中可用，强制设置为true
-    if (typeof window !== 'undefined' && window.location && window.location.href.includes('tauri')) {
-      this.isTauriEnvironment = true;
-      console.log('🚀 强制设置Tauri环境为true（知识库功能）');
+    console.log('🔍 Tauri环境检测结果:', this.isTauriEnvironment);
+    console.log('🔍 window.__TAURI_IPC__:', typeof window !== 'undefined' ? window.__TAURI_IPC__ : 'undefined');
+    console.log('🔍 window.__TAURI__:', typeof window !== 'undefined' ? window.__TAURI__ : 'undefined');
+    console.log('🔍 window对象:', typeof window !== 'undefined' ? Object.keys(window).filter(k => k.includes('TAURI')) : 'undefined');
+    
+    // 如果检测失败，尝试其他方式检测
+    if (!this.isTauriEnvironment) {
+      console.log('⚠️ 标准检测失败，尝试其他检测方式...');
+      // 检查是否有Tauri相关的全局对象
+      if (typeof window !== 'undefined' && window.__TAURI__) {
+        this.isTauriEnvironment = true;
+        console.log('✅ 通过window.__TAURI__检测到Tauri环境');
+      } else if (typeof window !== 'undefined' && window.__TAURI_IPC__) {
+        this.isTauriEnvironment = true;
+        console.log('✅ 通过window.__TAURI_IPC__检测到Tauri环境');
+      } else {
+        console.log('❌ 所有检测方式都失败，强制设置为Tauri环境（知识库功能）');
+        this.isTauriEnvironment = true; // 知识库功能只在Tauri环境中可用
+      }
     }
   }
 
@@ -21,7 +36,7 @@ class EmbeddingService {
     return Boolean(
       typeof window !== 'undefined' &&
         window !== undefined &&
-        window.__TAURI__ !== undefined
+        window.__TAURI_IPC__ !== undefined
     );
   }
 
@@ -56,7 +71,13 @@ class EmbeddingService {
    * @returns {Promise<Object>} 嵌入结果
    */
   async generateEmbedding(text, model = 'all-MiniLM-L6-v2', taskType = 'search', dimensions = 384) {
-    return this.generateEmbeddings([text], model, taskType, dimensions);
+    const result = await this.generateEmbeddings([text], model, taskType, dimensions);
+    // 返回单个嵌入向量的格式
+    return {
+      embedding: result.embeddings[0], // 取第一个嵌入向量
+      model: result.model,
+      dimensions: result.dimensions
+    };
   }
 
   /**
