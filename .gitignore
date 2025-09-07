@@ -180,11 +180,17 @@ test_*.sh
 *_fix.sh
 *_clean.bat
 *_utf8.bat
-*_no_watch.bat
 *_download.bat
 *_build.bat
-*_start.bat
-*_start.sh
+*_build.sh
+
+# Keep essential project scripts
+!start_app.bat
+!start_app.sh
+!start_tauri_no_watch.bat
+!restart_tauri_fixed.bat
+!install_sqlite.bat
+!install_sqlite.sh
 *_guide.md
 *_GUIDE.md
 *_OPTIMIZATION.md
