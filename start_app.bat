@@ -35,3 +35,4 @@ if %errorlevel% equ 0 (
 echo.
 echo 🚀 启动Tauri应用...
 npm run tauri
+

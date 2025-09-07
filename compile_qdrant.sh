@@ -103,3 +103,4 @@ echo "📍 二进制文件位置: $(pwd)/qdrant"
 echo
 echo "💡 现在可以启动应用，Qdrant会自动启动"
 echo
+

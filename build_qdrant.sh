@@ -59,3 +59,4 @@ echo
 echo "🎉 Qdrant编译和安装完成！"
 echo "📍 二进制文件位置: $(pwd)/qdrant"
 echo
+

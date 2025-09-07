@@ -52,3 +52,4 @@ echo protoc --version
 echo.
 
 pause
+

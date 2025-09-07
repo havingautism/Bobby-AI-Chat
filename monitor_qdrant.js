@@ -80,3 +80,4 @@ console.log('⏰ 检查间隔: 5秒');
 console.log('');
 
 checkQdrantStatus();
+
