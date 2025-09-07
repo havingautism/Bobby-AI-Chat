@@ -1,44 +1,52 @@
+# 工作流名称
 name: Deploy to GitHub Pages
 
+# 触发条件：当 main 分支有 push 操作时触发
 on:
   push:
     branches: [main]
 
+# 工作任务
 jobs:
   deploy:
+    # 运行环境：使用最新的 Ubuntu
     runs-on: ubuntu-latest
+    # 权限设置：为了部署到 GitHub Pages，需要这些权限
     permissions:
       contents: read
       pages: write
       id-token: write
 
+    # 部署环境的配置
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
+    # 步骤
     steps:
+      # 步骤1: 检出代码
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      # 关键改动在这里！
+      # 步骤2: 设置 Node.js 环境
+      # 我们不再需要 pnpm/action-setup 步骤了
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          cache: "pnpm"
-          # 我们暂时移除了 cache: 'pnpm' 这一行，
-          # 因为 pnpm-lock.yaml 文件已被删除，无法进行缓存。
+          # 关键改动：将缓存策略从 'pnpm' 改为 'npm'
+          cache: "npm"
 
+      # 步骤3: 安装依赖
+      # 关键改动：使用 npm ci 命令，这是在 CI/CD 环境中安装依赖的最佳实践
+      # 它会根据 package-lock.json 文件进行干净、可复现的安装
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
+      # 步骤4: 构建项目
+      # 关键改动：使用 npm run 来执行构建脚本
       - name: Build
-        run: pnpm run build:mobile
+        run: npm run build:mobile
         env:
           GENERATE_SOURCEMAP: false
           INLINE_RUNTIME_CHUNK: false
@@ -46,14 +54,18 @@ jobs:
           REACT_APP_OPTIMIZE_IMAGES: true
           REACT_APP_ENABLE_CODE_SPLITTING: true
 
+      # 步骤5: 设置 Pages
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
+      # 步骤6: 上传构建产物
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          # 上传 build 目录
           path: "./build"
 
+      # 步骤7: 部署到 GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
