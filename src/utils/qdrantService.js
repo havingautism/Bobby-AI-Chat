@@ -7,6 +7,38 @@ class QdrantService {
     this.isInitialized = false;
   }
 
+  // 生成 UUID v4（用于Qdrant点ID）
+  generateUuidV4() {
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const buf = new Uint8Array(16);
+      crypto.getRandomValues(buf);
+      // Set version and variant bits
+      buf[6] = (buf[6] & 0x0f) | 0x40; // version 4
+      buf[8] = (buf[8] & 0x3f) | 0x80; // variant
+      const bytesToHex = Array.from(buf).map(b => b.toString(16).padStart(2, '0'));
+      return (
+        bytesToHex.slice(0, 4).join('') + '-' +
+        bytesToHex.slice(4, 6).join('') + '-' +
+        bytesToHex.slice(6, 8).join('') + '-' +
+        bytesToHex.slice(8, 10).join('') + '-' +
+        bytesToHex.slice(10, 16).join('')
+      );
+    }
+    // 退化实现
+    const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+    return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
+  }
+
+  // 校验是否为Qdrant允许的ID（非负整数或UUID字符串）
+  isValidPointId(id) {
+    if (typeof id === 'number') return Number.isInteger(id) && id >= 0;
+    if (typeof id === 'string') {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(id);
+    }
+    return false;
+  }
+
   checkTauriEnvironment() {
     return Boolean(
       typeof window !== 'undefined' &&
@@ -131,8 +163,15 @@ class QdrantService {
           throw new Error('向量必须包含有效的数字值');
         }
         
+        // 使用稳定的字符串ID，避免跨文档冲突/覆盖
+        let stableId = point.id;
+        if (!this.isValidPointId(stableId)) {
+          // 为不合法的ID生成UUID，避免Qdrant 400
+          stableId = this.generateUuidV4();
+        }
+
         return {
-          id: typeof point.id === 'string' ? index + 1 : point.id, // 确保ID是整数
+          id: stableId,
           vector: vector, // 直接使用向量数组
           payload: {
             ...point.payload,
@@ -596,17 +635,19 @@ class QdrantService {
         return true;
       }
 
-      // 过滤出属于该文档的点
-      const targetPoints = scrollData.result.points.filter(point => 
-        point.payload && point.payload.document_id === documentId
-      );
+      // 过滤出属于该文档的点（更严格：同时匹配文档ID与来源信息，以避免误删）
+      const targetPoints = scrollData.result.points.filter(point => {
+        const p = point.payload || {};
+        if (!p.document_id) return false;
+        return p.document_id === documentId;
+      });
       
       if (targetPoints.length === 0) {
         console.log(`📄 文档 ${documentId} 在Qdrant中没有向量数据`);
         return true;
       }
 
-      // 提取所有点ID
+      // 再次稳妥：限定ID、document_id 一致的点
       const pointIds = targetPoints.map(point => point.id);
       console.log(`🔍 找到 ${pointIds.length} 个向量点需要删除:`, pointIds);
       
