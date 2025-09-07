@@ -413,6 +413,53 @@ class EmbeddingService {
     
     return embedding;
   }
+
+  /**
+   * 诊断嵌入管线：确认是否在 Tauri 环境、模型文件可用性、实际使用的模型
+   * @returns {Promise<{isTauriEnvironment:boolean, modelFilesAvailable:boolean|null, usedBackend:boolean, degraded:boolean, model:string|null, dimensions:number|null, error?:string}>}
+   */
+  async diagnoseEmbeddingPipeline() {
+    const result = {
+      isTauriEnvironment: Boolean(this.isTauriEnvironment),
+      modelFilesAvailable: null,
+      usedBackend: false,
+      degraded: false,
+      model: null,
+      dimensions: null,
+    };
+
+    try {
+      // 检查模型文件可用
+      try {
+        const available = await invoke('check_model_files');
+        result.modelFilesAvailable = Boolean(available);
+      } catch (e) {
+        result.modelFilesAvailable = null; // 无法确认
+      }
+
+      // 直接调用后端批量接口，查看返回的模型名称
+      const probe = await invoke('generate_gemma_batch_embeddings', {
+        texts: ['diagnostic probe'],
+        model: 'all-MiniLM-L6-v2',
+        taskType: 'search',
+        dimensions: 384,
+      });
+
+      result.usedBackend = true;
+      result.degraded = false;
+      result.model = probe?.model || null;
+      result.dimensions = probe?.dimensions ?? null;
+      return result;
+    } catch (error) {
+      // 回退到前端/模拟
+      result.usedBackend = false;
+      result.degraded = true;
+      result.model = 'frontend-simulated';
+      result.dimensions = 384;
+      result.error = error?.message || String(error);
+      return result;
+    }
+  }
 }
 
 // 创建单例实例

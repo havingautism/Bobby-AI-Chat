@@ -628,6 +628,45 @@ class KnowledgeBaseQdrant {
     return await qdrantManager.getInfo();
   }
 
+  /**
+   * 诊断知识库：检查Qdrant可用性、向量统计、嵌入后端状态
+   * @returns {Promise<object>}
+   */
+  async diagnoseKnowledgeBase() {
+    const diag = {
+      useQdrant: this.useQdrant,
+      qdrantReady: this.qdrantReady,
+      qdrantInfo: null,
+      statistics: null,
+      embedding: null,
+      chunkDefaults: { size: 500, overlap: 100 },
+    };
+
+    try {
+      try {
+        diag.qdrantInfo = await qdrantManager.getInfo();
+      } catch (e) {
+        diag.qdrantInfo = { error: e?.message || String(e) };
+      }
+
+      try {
+        diag.statistics = await this.getStatistics();
+      } catch (e) {
+        diag.statistics = { error: e?.message || String(e) };
+      }
+
+      try {
+        diag.embedding = await embeddingService.diagnoseEmbeddingPipeline();
+      } catch (e) {
+        diag.embedding = { error: e?.message || String(e) };
+      }
+
+      return diag;
+    } catch (error) {
+      return { error: error?.message || String(error) };
+    }
+  }
+
   // 重启Qdrant服务
   async restartQdrant() {
     const success = await qdrantManager.restart();
@@ -727,5 +766,17 @@ export const restartQdrant = (...args) => knowledgeBaseQdrantInstance.restartQdr
 
 // 导出知识库管理器实例
 export const knowledgeBaseManager = knowledgeBaseQdrantInstance;
+
+// 诊断导出
+export const diagnoseKnowledgeBase = (...args) => knowledgeBaseQdrantInstance.diagnoseKnowledgeBase(...args);
+
+// 浏览器调试入口（可选）：在开发环境下将诊断方法挂到 window
+try {
+  if (typeof window !== 'undefined') {
+    window.__KB_DIAGNOSE__ = () => knowledgeBaseQdrantInstance.diagnoseKnowledgeBase();
+  }
+} catch (_e) {
+  // no-op
+}
 
 export default knowledgeBaseQdrantInstance;

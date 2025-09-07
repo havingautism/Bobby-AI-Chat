@@ -35,7 +35,7 @@ impl EmbeddingGemmaService {
         
         println!("✅ 生成了 {} 个嵌入向量", embeddings.len());
         
-        // 强制使用真实模型 - 从src-tauri目录向上查找models目录
+        // 检查项目内真实模型 - 从src-tauri目录向上查找models目录
         let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
         let model_path = current_dir.parent()
             .unwrap_or(&current_dir)
@@ -45,11 +45,16 @@ impl EmbeddingGemmaService {
         
         println!("🔍 当前工作目录: {}", current_dir.display());
         println!("🔍 模型路径: {}", model_path.display());
-        println!("🔍 模型文件存在: {}", model_path.exists());
-        
-        // 强制使用真实模型标识，不再回退到simple
-        let model_name = "all-MiniLM-L6-v2-bundled".to_string();
-        println!("🚀 强制使用真实模型: {}", model_name);
+        let model_exists = model_path.exists();
+        println!("🔍 模型文件存在: {}", model_exists);
+
+        // 根据真实可用性返回模型名标识
+        let model_name = if model_exists {
+            "all-MiniLM-L6-v2-bundled".to_string()
+        } else {
+            "simple-simulated".to_string()
+        };
+        println!("🚀 使用模型标识: {}", model_name);
         
         Ok(EmbeddingResponse {
             embeddings,
@@ -182,8 +187,5 @@ pub async fn check_model_files() -> Result<bool, String> {
     println!("   - Tokenizer: {} ({})", tokenizer_path.display(), if tokenizer_exists { "✅" } else { "❌" });
     println!("   - 模型文件: {} ({})", model_file_path.display(), if model_exists { "✅" } else { "❌" });
     println!("   - 实际检测结果: {}", if all_exist { "✅ 项目内模型可用" } else { "❌ 使用模拟模型" });
-    
-    // 强制返回true，表示真实模型可用
-    println!("🚀 强制返回真实模型可用状态");
-    Ok(true)
+    Ok(all_exist)
 }
