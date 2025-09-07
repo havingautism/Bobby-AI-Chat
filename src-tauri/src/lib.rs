@@ -521,7 +521,7 @@ async fn generate_document_embeddings(document_id: String) -> Result<String, Str
     let (title, content) = document;
     
     // 分块处理文档内容
-    let chunks = chunk_text(&content, 500, 100);
+    let chunks = chunk_text(&content, 500, 50);
     let mut vector_count = 0;
     
     for (i, chunk) in chunks.iter().enumerate() {

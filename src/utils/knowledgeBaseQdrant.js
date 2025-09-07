@@ -129,13 +129,15 @@ class KnowledgeBaseQdrant {
     }
 
     try {
+      // 统一生成文档ID，避免出现 null/undefined 被写入
+      const docId = document.id || `doc_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       // 存储文档到SQLite
       await this.db.execute(`
         INSERT OR REPLACE INTO knowledge_documents
         (id, title, content, file_name, file_size, mime_type, metadata, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
-        document.id,
+        docId,
         document.title,
         document.content,
         document.fileName || null,
@@ -146,12 +148,12 @@ class KnowledgeBaseQdrant {
         document.updatedAt || Date.now()
       ]);
 
-      console.log(`✅ 文档已添加到SQLite: ${document.id}`);
+      console.log(`✅ 文档已添加到SQLite: ${docId}`);
 
       // 如果Qdrant可用，也存储向量
       if (this.useQdrant && this.qdrantReady) {
         const success = await qdrantService.addDocumentVectors(
-          document.id,
+          docId,
           document.content,
           {
             title: document.title,
@@ -162,13 +164,13 @@ class KnowledgeBaseQdrant {
         );
         
         if (success) {
-          console.log(`✅ 文档向量已存储到Qdrant: ${document.id}`);
+          console.log(`✅ 文档向量已存储到Qdrant: ${docId}`);
         } else {
-          console.warn(`⚠️ 文档向量存储到Qdrant失败: ${document.id}`);
+          console.warn(`⚠️ 文档向量存储到Qdrant失败: ${docId}`);
         }
       }
 
-      return document.id;
+      return docId;
     } catch (error) {
       console.error('❌ 添加文档失败:', error);
       throw error;
@@ -191,7 +193,7 @@ class KnowledgeBaseQdrant {
       
       if (existingDoc.length === 0) {
         console.warn(`⚠️ 文档不存在: ${documentId}`);
-        return;
+        throw new Error(`文档不存在: ${documentId}`);
       }
       
       console.log(`📄 找到文档: ${existingDoc[0].title}`);
@@ -688,7 +690,7 @@ class KnowledgeBaseQdrant {
     
     try {
       // 使用项目内模型生成嵌入
-      const result = await embeddingService.generateDocumentEmbeddings(content, 500, 100);
+      const result = await embeddingService.generateDocumentEmbeddings(content, 500, 50);
       
       console.log(`✅ 项目内模型嵌入生成成功: ${result.length} 个向量`);
       
@@ -706,7 +708,7 @@ class KnowledgeBaseQdrant {
    * @param {number} overlap - 重叠大小
    * @returns {Array<string>} 文本块数组
    */
-  chunkText(text, chunkSize = 500, overlap = 100) {
+  chunkText(text, chunkSize = 500, overlap = 50) {
     if (!text || text.trim().length === 0) {
       return [];
     }

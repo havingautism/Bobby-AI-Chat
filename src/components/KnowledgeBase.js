@@ -6,6 +6,7 @@ import docxParser from "../utils/docxParser";
 import spreadsheetParser from "../utils/spreadsheetParser";
 import textParser from "../utils/textParser";
 import "./KnowledgeBase.css";
+import StatusModal from "./StatusModal";
 
 const KnowledgeBase = ({ isOpen, onClose }) => {
   const [documents, setDocuments] = useState([]);
@@ -14,6 +15,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [statusModal, setStatusModal] = useState({ open: false, title: "", message: "", loading: false, confirmText: "OK", cancelText: null, onConfirm: null });
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [activeTab, setActiveTab] = useState("documents"); // documents, search, upload, test
   const [showAddDocument, setShowAddDocument] = useState(false);
@@ -620,10 +622,26 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       await loadDocuments();
       await loadStatistics();
       
-      alert(currentLanguage === "zh" ? "文件上传成功" : "Files uploaded successfully");
+      setStatusModal({
+        open: true,
+        title: currentLanguage === "zh" ? "上传完成" : "Upload Completed",
+        message: currentLanguage === "zh" ? "文件上传成功" : "Files uploaded successfully",
+        loading: false,
+        confirmText: currentLanguage === "zh" ? "知道了" : "OK",
+        cancelText: null,
+        onConfirm: () => setStatusModal((s) => ({ ...s, open: false })),
+      });
     } catch (error) {
       console.error("文件上传失败:", error);
-      alert(currentLanguage === "zh" ? "文件上传失败" : "Failed to upload files");
+      setStatusModal({
+        open: true,
+        title: currentLanguage === "zh" ? "上传失败" : "Upload Failed",
+        message: currentLanguage === "zh" ? "文件上传失败" : "Failed to upload files",
+        loading: false,
+        confirmText: currentLanguage === "zh" ? "关闭" : "Close",
+        cancelText: null,
+        onConfirm: () => setStatusModal((s) => ({ ...s, open: false })),
+      });
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -671,9 +689,43 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
 
   // 删除文档
   const handleDeleteDocument = async (docId) => {
-    if (!window.confirm(currentLanguage === "zh" ? "确定要删除这个文档吗？" : "Are you sure you want to delete this document?")) {
-      return;
-    }
+    setStatusModal({
+      open: true,
+      title: currentLanguage === "zh" ? "删除确认" : "Confirm Delete",
+      message: currentLanguage === "zh" ? "确定要删除这个文档吗？" : "Are you sure you want to delete this document?",
+      loading: false,
+      confirmText: currentLanguage === "zh" ? "删除" : "Delete",
+      cancelText: currentLanguage === "zh" ? "取消" : "Cancel",
+      onConfirm: async () => {
+        setStatusModal((s) => ({ ...s, open: false }));
+        try {
+          await knowledgeBaseManager.deleteDocument(docId);
+          await loadDocuments();
+          await loadStatistics();
+          setTimeout(async () => { await loadStatistics(); }, 2000);
+          setStatusModal({
+            open: true,
+            title: currentLanguage === "zh" ? "删除完成" : "Deleted",
+            message: currentLanguage === "zh" ? "文档已删除" : "Document deleted",
+            loading: false,
+            confirmText: currentLanguage === "zh" ? "知道了" : "OK",
+            cancelText: null,
+            onConfirm: () => setStatusModal((s) => ({ ...s, open: false })),
+          });
+        } catch (error) {
+          setStatusModal({
+            open: true,
+            title: currentLanguage === "zh" ? "删除失败" : "Delete Failed",
+            message: (currentLanguage === "zh" ? "删除文档失败: " : "Failed to delete document: ") + (error?.message || ''),
+            loading: false,
+            confirmText: currentLanguage === "zh" ? "关闭" : "Close",
+            cancelText: null,
+            onConfirm: () => setStatusModal((s) => ({ ...s, open: false })),
+          });
+        }
+      }
+    });
+    return;
 
     try {
       console.log(`🗑️ 开始删除文档: ${docId}`);
@@ -702,6 +754,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
+    <>
     <div className="knowledge-base-overlay">
       <div className="knowledge-base-modal">
         <div className="knowledge-base-header">
@@ -1303,6 +1356,17 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         </div>
       </div>
     </div>
+    <StatusModal
+      isOpen={statusModal.open}
+      title={statusModal.title}
+      message={statusModal.message}
+      confirmText={statusModal.confirmText}
+      cancelText={statusModal.cancelText}
+      onConfirm={statusModal.onConfirm}
+      onCancel={() => setStatusModal((s) => ({ ...s, open: false }))}
+      isLoading={statusModal.loading}
+    />
+    </>
   );
 };
 
