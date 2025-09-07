@@ -1,7 +1,7 @@
 # 工作流名称
 name: Deploy to GitHub Pages
 
-# 触发条件：当 main 分支有 push 操作时触发
+# 触发条件
 on:
   push:
     branches: [main]
@@ -9,39 +9,44 @@ on:
 # 工作任务
 jobs:
   deploy:
-    # 运行环境：使用最新的 Ubuntu
     runs-on: ubuntu-latest
-    # 权限设置：为了部署到 GitHub Pages，需要这些权限
     permissions:
       contents: read
       pages: write
       id-token: write
 
-    # 部署环境的配置
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
-    # 步骤
     steps:
-      # 步骤1: 检出代码
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 步骤2: 设置 Node.js 环境
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
           cache: "npm"
 
-      # 步骤3: 安装依赖
-      # 关键改动：使用 npm install 代替 npm ci
-      # 这会绕过 lockfile 的严格检查，但不推荐在 CI/CD 中长期使用
       - name: Install dependencies
         run: npm install
 
-      # 步骤4: 构建项目
+      # ====================================================================
+      # ✨ 魔法步骤：在这里模拟 Tauri API ✨
+      # ====================================================================
+      - name: Mock Tauri API for Web Build
+        # 这个步骤只在 CI 环境中运行，不会影响你的本地开发
+        run: |
+          # 创建一个假的 @tauri-apps/api 目录结构
+          mkdir -p node_modules/@tauri-apps/api
+          # 在里面创建一个 package.json 文件，让它看起来像个真正的包
+          echo '{ "name": "@tauri-apps/api", "version": "0.0.0-mock", "main": "index.js" }' > node_modules/@tauri-apps/api/package.json
+          # 创建一个假的 index.js，并导出一个空的 invoke 函数和其他可能用到的模块
+          # 这会满足所有 `import { ... } from '@tauri-apps/api/...'` 的需求
+          echo 'export const invoke = () => Promise.resolve(); export const tauri = {}; export const event = {}; export const window = {}; export const path = {}; export default {};' > node_modules/@tauri-apps/api/index.js
+          echo "✅ Successfully mocked Tauri API for web build."
+      
       - name: Build
         run: npm run build:mobile
         env:
@@ -51,17 +56,14 @@ jobs:
           REACT_APP_OPTIMIZE_IMAGES: true
           REACT_APP_ENABLE_CODE_SPLITTING: true
 
-      # 步骤5: 设置 Pages
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      # 步骤6: 上传构建产物
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: "./build"
 
-      # 步骤7: 部署到 GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
