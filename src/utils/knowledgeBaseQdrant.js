@@ -18,6 +18,19 @@ class KnowledgeBaseQdrant {
     this.embeddingTaskType = 'search'; // 默认搜索任务
   }
 
+  // 推断文档来源类型
+  inferSourceType(fileName, mimeType) {
+    const name = (fileName || '').toLowerCase();
+    const mime = (mimeType || '').toLowerCase();
+    if (!name && !mime) return 'txt';
+    if (name.endsWith('.pdf') || mime.includes('pdf')) return 'pdf';
+    if (name.endsWith('.docx') || mime.includes('word')) return 'docx';
+    if (name.endsWith('.xlsx') || name.endsWith('.xls') || mime.includes('sheet')) return 'xlsx';
+    if (name.endsWith('.csv') || mime.includes('csv')) return 'csv';
+    if (name.endsWith('.txt') || mime.includes('text/plain')) return 'txt';
+    return 'manual';
+  }
+
   /**
    * 设置嵌入模型配置
    * @param {string} model - 模型名称
@@ -131,6 +144,12 @@ class KnowledgeBaseQdrant {
     try {
       // 统一生成文档ID，避免出现 null/undefined 被写入
       const docId = document.id || `doc_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      // 规范化元数据：把 sourceType 一并写入 metadata
+      const mergedMetadata = {
+        ...(document.metadata || {}),
+        sourceType: document.sourceType || this.inferSourceType(document.fileName, document.mimeType),
+      };
+
       // 存储文档到SQLite
       await this.db.execute(`
         INSERT OR REPLACE INTO knowledge_documents
@@ -143,7 +162,7 @@ class KnowledgeBaseQdrant {
         document.fileName || null,
         document.fileSize || null,
         document.mimeType || null,
-        document.metadata ? JSON.stringify(document.metadata) : null,
+        JSON.stringify(mergedMetadata),
         document.createdAt || Date.now(),
         document.updatedAt || Date.now()
       ]);
@@ -157,7 +176,7 @@ class KnowledgeBaseQdrant {
           document.content,
           {
             title: document.title,
-            sourceType: document.sourceType || 'manual',
+            sourceType: mergedMetadata.sourceType,
             fileName: document.fileName,
             fileSize: document.fileSize
           }
@@ -249,6 +268,7 @@ class KnowledgeBaseQdrant {
 
       return results.map(result => {
         const metadata = result.metadata ? JSON.parse(result.metadata) : null;
+        const sourceType = metadata?.sourceType || this.inferSourceType(result.file_name, result.mime_type);
         return {
           id: result.id,
           title: result.title,
@@ -259,7 +279,7 @@ class KnowledgeBaseQdrant {
           metadata: metadata,
           createdAt: result.created_at,
           updatedAt: result.updated_at,
-          sourceType: metadata?.sourceType || 'manual',
+          sourceType: sourceType,
           sourceUrl: metadata?.sourceUrl || null
         };
       });
