@@ -1,12 +1,9 @@
-# 工作流名称
 name: Deploy to GitHub Pages
 
-# 触发条件
 on:
   push:
     branches: [main]
 
-# 工作任务
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -30,43 +27,10 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm install
+        # 使用 npm ci 以确保构建环境的一致性
+        run: npm ci
 
-      # ====================================================================
-      # ✨ 最终魔法：伪造所有 Tauri API 和插件 ✨
-      # ====================================================================
-      - name: Mock All Tauri Packages for Web Build
-        run: |
-          # 定义一个包含所有需要伪造的 tauri 包的列表
-          # 这次我们把你的 package.json 里的所有 tauri 包都加进去了！
-          PACKAGES_TO_MOCK=(
-            "@tauri-apps/api/core"
-            "@tauri-apps/api/tauri"
-            "@tauri-apps/api/event"
-            "@tauri-apps/api/window"
-            "@tauri-apps/api/path"
-            "@tauri-apps/api/shell"
-            "@tauri-apps/plugin-fs"
-            "@tauri-apps/plugin-shell"
-            "@tauri-apps/plugin-sql"
-          )
-
-          # 循环遍历列表，为每个包创建伪造文件
-          for pkg in "${PACKAGES_TO_MOCK[@]}"; do
-            # 1. 创建包的完整目录结构
-            mkdir -p "node_modules/$pkg"
-            
-            # 2. 在目录中创建一个假的 package.json
-            echo "{ \"name\": \"$pkg\", \"version\": \"0.0.0-mock\", \"main\": \"index.js\" }" > "node_modules/$pkg/package.json"
-            
-            # 3. 在目录中创建一个假的 index.js，导出一个默认的空对象
-            # 这样无论代码是 import { ... } 还是 import * as ... 都能通过
-            echo 'export default {}; export const invoke = () => Promise.resolve();' > "node_modules/$pkg/index.js"
-            
-            echo "✅ Mocked $pkg"
-          done
-          
-          echo "✅ Successfully mocked all required Tauri packages."
+      # 我们已经不再需要任何伪造脚本了！
 
       - name: Build
         run: npm run build:mobile
@@ -88,3 +52,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
