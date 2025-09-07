@@ -208,26 +208,26 @@ test_*.sh
 *_INTEGRATION_GUIDE.md
 *_SIMPLE_GUIDE.md
 
-# Model files (keep locally but don't push to GitHub)
-models/
-*.h5
-*.bin
-*.ot
-*.safetensors
-*.onnx
-*.mmap
-*.dat
+# Model files - allow essential model files for all-MiniLM-L6-v2
+# Exclude large model variants but keep the main model
+models/all-MiniLM-L6-v2/tf_model.h5
+models/all-MiniLM-L6-v2/pytorch_model.bin
+models/all-MiniLM-L6-v2/rust_model.ot
+models/all-MiniLM-L6-v2/onnx/model_O*.onnx
+models/all-MiniLM-L6-v2/onnx/model_qint*.onnx
+models/all-MiniLM-L6-v2/onnx/model_quint*.onnx
+models/all-MiniLM-L6-v2/openvino/openvino_model*.bin
+models/all-MiniLM-L6-v2/openvino/openvino_model*.xml
+models/embeddinggemma-300m/
 
-# Qdrant executable (keep locally but don't push to GitHub)
-qdrant.exe
-qdrant
-
-# Qdrant data files
+# Qdrant data files (runtime data, not the executable)
 **/qdrant_data/
 **/wal/
 **/segments/
 **/payload_storage/
 **/vector_storage/
+*.mmap
+*.dat
 
 # Keep important files
 !README.md
