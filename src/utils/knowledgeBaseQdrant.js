@@ -649,7 +649,7 @@ class KnowledgeBaseQdrant {
     
     try {
       // 使用项目内模型生成嵌入
-      const result = await embeddingService.generateDocumentEmbeddings(content, 1000, 200);
+      const result = await embeddingService.generateDocumentEmbeddings(content, 500, 100);
       
       console.log(`✅ 项目内模型嵌入生成成功: ${result.length} 个向量`);
       
@@ -667,7 +667,7 @@ class KnowledgeBaseQdrant {
    * @param {number} overlap - 重叠大小
    * @returns {Array<string>} 文本块数组
    */
-  chunkText(text, chunkSize = 1000, overlap = 200) {
+  chunkText(text, chunkSize = 500, overlap = 100) {
     if (!text || text.trim().length === 0) {
       return [];
     }

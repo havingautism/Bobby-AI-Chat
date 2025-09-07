@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { knowledgeBaseManager } from "../utils/knowledgeBaseQdrant";
 import { getCurrentLanguage } from "../utils/language";
 import pdfParser from "../utils/pdfParser";
+import docxParser from "../utils/docxParser";
+import spreadsheetParser from "../utils/spreadsheetParser";
+import textParser from "../utils/textParser";
 import "./KnowledgeBase.css";
 
 const KnowledgeBase = ({ isOpen, onClose }) => {
@@ -42,14 +45,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
   const [customTestDescription, setCustomTestDescription] = useState("");
   const [showCustomTestForm, setShowCustomTestForm] = useState(false);
   
-  // PDF上传相关状态
-  const [isUploadingPDF, setIsUploadingPDF] = useState(false);
-  const [pdfUploadProgress, setPdfUploadProgress] = useState(0);
-  const [pdfParseResult, setPdfParseResult] = useState(null);
-  const [showPdfPreview, setShowPdfPreview] = useState(false);
-  
   const fileInputRef = useRef(null);
-  const pdfInputRef = useRef(null);
 
   // 监听语言变化
   useEffect(() => {
@@ -427,179 +423,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
     }
   };
 
-  // 处理PDF文件上传
-  const handlePdfUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // 验证文件类型
-    if (file.type !== 'application/pdf') {
-      alert(currentLanguage === "zh" ? "请选择PDF文件" : "Please select a PDF file");
-      return;
-    }
-
-    // 验证文件大小 (10MB限制)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      alert(currentLanguage === "zh" ? "PDF文件大小不能超过10MB" : "PDF file size cannot exceed 10MB");
-      return;
-    }
-
-    // 检查是否已存在相同文件名的文档
-    const existingDocs = await knowledgeBaseManager.getStoredDocuments();
-    const duplicateDoc = existingDocs.find(doc => 
-      doc.fileName === file.name || 
-      (doc.title === file.name.replace('.pdf', '') && doc.sourceType === 'pdf')
-    );
-    
-    if (duplicateDoc) {
-      const shouldReplace = window.confirm(
-        currentLanguage === "zh" 
-          ? `文档 "${file.name}" 已存在，是否要替换？` 
-          : `Document "${file.name}" already exists. Do you want to replace it?`
-      );
-      
-      if (shouldReplace) {
-        // 删除现有文档
-        await knowledgeBaseManager.deleteDocument(duplicateDoc.id);
-        console.log(`🗑️ 已删除重复文档: ${duplicateDoc.id}`);
-      } else {
-        // 取消上传
-        if (pdfInputRef.current) {
-          pdfInputRef.current.value = '';
-        }
-        return;
-      }
-    }
-
-    setIsUploadingPDF(true);
-    setPdfUploadProgress(0);
-    setPdfParseResult(null);
-
-    try {
-      console.log(`开始解析PDF文件: ${file.name}`);
-      
-      // 模拟上传进度
-      const progressInterval = setInterval(() => {
-        setPdfUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
-
-      // 解析PDF
-      const result = await pdfParser.parsePDF(file);
-      
-      clearInterval(progressInterval);
-      setPdfUploadProgress(100);
-
-      if (result.success) {
-        setPdfParseResult(result);
-        setShowPdfPreview(true);
-        console.log('✅ PDF解析成功:', result);
-      } else {
-        throw new Error(result.error);
-      }
-
-    } catch (error) {
-      console.error('❌ PDF解析失败:', error);
-      alert(currentLanguage === "zh" ? "PDF解析失败: " + error.message : "PDF parsing failed: " + error.message);
-    } finally {
-      setIsUploadingPDF(false);
-      setPdfUploadProgress(0);
-    }
-  };
-
-  // 将解析的PDF内容添加到知识库
-  const addPdfToKnowledgeBase = async () => {
-    if (!pdfParseResult || !pdfParseResult.success) {
-      alert(currentLanguage === "zh" ? "没有可用的PDF解析结果" : "No PDF parsing result available");
-      return;
-    }
-
-    try {
-      setIsUploading(true);
-      setUploadProgress(0);
-
-      const { text, fileName, numPages, info } = pdfParseResult;
-      
-      // 清理文本
-      const cleanedText = pdfParser.cleanText(text);
-      
-      // 创建文档对象
-      const document = {
-        id: `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // 生成唯一ID
-        title: fileName.replace('.pdf', ''),
-        content: cleanedText,
-        sourceType: 'pdf',
-        fileSize: pdfParseResult.fileSize, // 直接设置文件大小
-        fileName: fileName,
-        metadata: {
-          fileName: fileName,
-          numPages: numPages,
-          fileSize: pdfParseResult.fileSize,
-          extractedAt: pdfParseResult.extractedAt,
-          pdfInfo: pdfParser.extractMetadata(info)
-        }
-      };
-
-      // 添加到知识库
-      const docId = await knowledgeBaseManager.addDocumentToSQLite(document);
-      
-      console.log('✅ PDF文档已添加到知识库');
-      
-      // 自动生成向量嵌入
-      try {
-        console.log('开始为PDF文档生成向量嵌入...');
-        await knowledgeBaseManager.generateDocumentEmbeddings(docId);
-        console.log('✅ PDF文档向量嵌入生成完成');
-      } catch (vectorError) {
-        console.warn('⚠️ PDF文档向量嵌入生成失败:', vectorError);
-        // 不阻止整个流程，只是警告
-      }
-      
-      // 重新加载文档列表和统计
-      await loadDocuments();
-      await loadStatistics();
-      
-      // 延迟再次刷新统计信息，确保Qdrant索引更新
-      setTimeout(async () => {
-        console.log('🔄 延迟刷新统计信息...');
-        await loadStatistics();
-        console.log('✅ 统计信息已更新');
-      }, 2000);
-      
-      // 重置状态
-      setPdfParseResult(null);
-      setShowPdfPreview(false);
-      if (pdfInputRef.current) {
-        pdfInputRef.current.value = '';
-      }
-      
-      alert(currentLanguage === "zh" ? "PDF文档已成功添加到知识库！" : "PDF document successfully added to knowledge base!");
-      
-    } catch (error) {
-      console.error('❌ 添加PDF到知识库失败:', error);
-      alert(currentLanguage === "zh" ? "添加PDF到知识库失败: " + error.message : "Failed to add PDF to knowledge base: " + error.message);
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
-  };
-
-  // 取消PDF上传
-  const cancelPdfUpload = () => {
-    setPdfParseResult(null);
-    setShowPdfPreview(false);
-    setIsUploadingPDF(false);
-    setPdfUploadProgress(0);
-    if (pdfInputRef.current) {
-      pdfInputRef.current.value = '';
-    }
-  };
+  // 移除独立 PDF 上传流程，统一走单一上传入口
 
   // 调试向量生成
   const debugVectorGeneration = async () => {
@@ -810,21 +634,36 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
   };
 
   // 读取文件内容
-  const readFileContent = (file) => {
-    return new Promise((resolve, reject) => {
+  const readFileContent = async (file) => {
+    const lower = file.name.toLowerCase();
+    // txt
+    if (lower.endsWith('.txt') || file.type === 'text/plain') {
+      const res = await textParser.parse(file);
+      if (!res.success) throw new Error(res.error);
+      return res.text;
+    }
+    // pdf
+    if (lower.endsWith('.pdf') || file.type === 'application/pdf') {
+      const res = await pdfParser.parsePDF(file);
+      if (!res.success) throw new Error(res.error);
+      return pdfParser.cleanText ? pdfParser.cleanText(res.text) : res.text;
+    }
+    // docx
+    if (lower.endsWith('.docx')) {
+      const res = await docxParser.parseDOCX(file);
+      if (!res.success) throw new Error(res.error);
+      return res.text;
+    }
+    // xlsx/xls/csv
+    if (lower.endsWith('.xlsx') || lower.endsWith('.xls') || lower.endsWith('.csv')) {
+      const res = await spreadsheetParser.parse(file);
+      if (!res.success) throw new Error(res.error);
+      return res.text;
+    }
+    // 其他当作文本尝试读取
+    return await new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        if (file.type === "text/plain" || file.name.endsWith(".txt")) {
-          resolve(e.target.result);
-        } else if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
-          // PDF处理需要额外的库，这里简化处理
-          resolve(`PDF文件: ${file.name}\n\n注意：PDF内容解析需要额外的库支持。`);
-        } else {
-          resolve(`文件: ${file.name}\n类型: ${file.type}\n大小: ${file.size} bytes`);
-        }
-      };
-      
+      reader.onload = (e) => resolve(e.target.result);
       reader.onerror = reject;
       reader.readAsText(file);
     });
@@ -1405,127 +1244,14 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
           {activeTab === "upload" && (
             <div className="tab-content">
               <div className="upload-section">
-                {/* PDF上传区域 */}
-                <div className="pdf-upload-section">
-                  <h4>{currentLanguage === "zh" ? "PDF文档上传" : "PDF Document Upload"}</h4>
-                  <div className="pdf-upload-area">
-                    <input
-                      ref={pdfInputRef}
-                      type="file"
-                      accept=".pdf"
-                      onChange={handlePdfUpload}
-                      style={{ display: "none" }}
-                    />
-                    
-                    <div
-                      className="pdf-upload-dropzone"
-                      onClick={() => pdfInputRef.current?.click()}
-                    >
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14,2 14,8 20,8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                        <polyline points="10,9 9,9 8,9"/>
-                      </svg>
-                      <h3>{currentLanguage === "zh" ? "上传PDF文档" : "Upload PDF Document"}</h3>
-                      <p>{currentLanguage === "zh" ? "支持PDF格式，最大10MB" : "Supports PDF format, max 10MB"}</p>
-                      <button className="upload-button">
-                        {currentLanguage === "zh" ? "选择PDF文件" : "Choose PDF File"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* PDF上传进度 */}
-                  {isUploadingPDF && (
-                    <div className="upload-progress">
-                      <div className="progress-bar">
-                        <div 
-                          className="progress-fill" 
-                          style={{ width: `${pdfUploadProgress}%` }}
-                        ></div>
-                      </div>
-                      <p>{currentLanguage === "zh" ? "正在解析PDF..." : "Parsing PDF..."} {pdfUploadProgress}%</p>
-                    </div>
-                  )}
-
-                  {/* PDF解析结果预览 */}
-                  {showPdfPreview && pdfParseResult && (
-                    <div className="pdf-preview">
-                      <h5>{currentLanguage === "zh" ? "PDF解析结果" : "PDF Parsing Result"}</h5>
-                      <div className="pdf-info">
-                        <div className="info-item">
-                          <span className="label">{currentLanguage === "zh" ? "文件名:" : "File Name:"}</span>
-                          <span className="value">{pdfParseResult.fileName}</span>
-                        </div>
-                        <div className="info-item">
-                          <span className="label">{currentLanguage === "zh" ? "页数:" : "Pages:"}</span>
-                          <span className="value">{pdfParseResult.numPages}</span>
-                        </div>
-                        <div className="info-item">
-                          <span className="label">{currentLanguage === "zh" ? "文件大小:" : "File Size:"}</span>
-                          <span className="value">{(pdfParseResult.fileSize / 1024 / 1024).toFixed(2)} MB</span>
-                        </div>
-                        <div className="info-item">
-                          <span className="label">{currentLanguage === "zh" ? "提取字符数:" : "Extracted Characters:"}</span>
-                          <span className="value">{pdfParseResult.text.length.toLocaleString()}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="text-preview">
-                        <h6>{currentLanguage === "zh" ? "文本预览:" : "Text Preview:"}</h6>
-                        <div className="preview-content">
-                          {pdfParseResult.text.substring(0, 500)}
-                          {pdfParseResult.text.length > 500 && "..."}
-                        </div>
-                      </div>
-
-                      <div className="pdf-actions">
-                        <button 
-                          className="add-to-knowledge-button"
-                          onClick={addPdfToKnowledgeBase}
-                          disabled={isUploading}
-                        >
-                          {isUploading ? (
-                            <>
-                              <div className="loading-spinner"></div>
-                              {currentLanguage === "zh" ? "添加中..." : "Adding..."}
-                            </>
-                          ) : (
-                            <>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 5v14"/>
-                                <path d="M5 12h14"/>
-                              </svg>
-                              {currentLanguage === "zh" ? "添加到知识库" : "Add to Knowledge Base"}
-                            </>
-                          )}
-                        </button>
-                        <button 
-                          className="cancel-pdf-button"
-                          onClick={cancelPdfUpload}
-                        >
-                          {currentLanguage === "zh" ? "取消" : "Cancel"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 分隔线 */}
-                <div className="upload-divider">
-                  <span>{currentLanguage === "zh" ? "或" : "OR"}</span>
-                </div>
-
-                {/* 传统文件上传区域 */}
+                {/* 单一上传入口 */}
                 <div className="traditional-upload-section">
-                  <h4>{currentLanguage === "zh" ? "传统文档上传" : "Traditional Document Upload"}</h4>
                   <div className="upload-area">
                     <input
                       ref={fileInputRef}
                       type="file"
                       multiple
-                      accept=".txt,.md,.doc,.docx"
+                      accept=".pdf,.docx,.xlsx,.xls,.csv,.txt"
                       onChange={handleFileUpload}
                       style={{ display: "none" }}
                     />
@@ -1539,8 +1265,8 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                         <polyline points="7,10 12,15 17,10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
                       </svg>
-                      <h3>{currentLanguage === "zh" ? "上传文件" : "Upload Files"}</h3>
-                      <p>{currentLanguage === "zh" ? "支持 TXT, MD, DOC, DOCX 格式" : "Supports TXT, MD, DOC, DOCX formats"}</p>
+                      <h3>{currentLanguage === "zh" ? "上传到知识库" : "Upload to Knowledge Base"}</h3>
+                      <p>{currentLanguage === "zh" ? "支持 PDF, DOCX, XLSX/XLS, CSV, TXT" : "Supports PDF, DOCX, XLSX/XLS, CSV, TXT"}</p>
                       <button className="upload-button">
                         {currentLanguage === "zh" ? "选择文件" : "Choose Files"}
                       </button>
