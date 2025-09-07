@@ -137,7 +137,7 @@ class EmbeddingService {
    * @param {number} overlap - 重叠大小
    * @returns {Promise<Array>} 嵌入数据数组
    */
-  async generateDocumentEmbeddings(content, chunkSize = 1000, overlap = 200) {
+  async generateDocumentEmbeddings(content, chunkSize = 500, overlap = 100) {
     if (!content || content.trim().length === 0) {
       return [];
     }
@@ -211,7 +211,7 @@ class EmbeddingService {
    * @param {number} overlap - 重叠大小
    * @returns {string[]} 文本块数组
    */
-  chunkText(text, chunkSize = 1000, overlap = 200) {
+  chunkText(text, chunkSize = 500, overlap = 100) {
     if (!text || text.length <= chunkSize) {
       return [text];
     }
