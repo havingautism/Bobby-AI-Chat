@@ -33,20 +33,31 @@ jobs:
         run: npm install
 
       # ====================================================================
-      # ✨ 魔法步骤：在这里模拟 Tauri API ✨
+      # ✨ 终极魔法：精准伪造所有 Tauri API 子模块 ✨
       # ====================================================================
-      - name: Mock Tauri API for Web Build
-        # 这个步骤只在 CI 环境中运行，不会影响你的本地开发
+      - name: Mock Tauri API for Web Build (Advanced)
         run: |
-          # 创建一个假的 @tauri-apps/api 目录结构
-          mkdir -p node_modules/@tauri-apps/api
-          # 在里面创建一个 package.json 文件，让它看起来像个真正的包
-          echo '{ "name": "@tauri-apps/api", "version": "0.0.0-mock", "main": "index.js" }' > node_modules/@tauri-apps/api/package.json
-          # 创建一个假的 index.js，并导出一个空的 invoke 函数和其他可能用到的模块
-          # 这会满足所有 `import { ... } from '@tauri-apps/api/...'` 的需求
-          echo 'export const invoke = () => Promise.resolve(); export const tauri = {}; export const event = {}; export const window = {}; export const path = {}; export default {};' > node_modules/@tauri-apps/api/index.js
-          echo "✅ Successfully mocked Tauri API for web build."
-      
+          # 定义一个包含所有需要伪造的 tauri 子模块的列表
+          # 你的报错提到了 'core'，通常 'tauri' 和 'event' 也很常用
+          MODULES_TO_MOCK="core tauri event window path shell"
+
+          # 循环遍历列表，为每个子模块创建伪造文件
+          for module in $MODULES_TO_MOCK; do
+            # 1. 创建子模块的目录，例如: node_modules/@tauri-apps/api/core
+            mkdir -p "node_modules/@tauri-apps/api/$module"
+            
+            # 2. 在子模块目录中创建一个假的 package.json
+            echo "{ \"name\": \"@tauri-apps/api/$module\", \"version\": \"0.0.0-mock\", \"main\": \"index.js\" }" > "node_modules/@tauri-apps/api/$module/package.json"
+            
+            # 3. 在子模块目录中创建一个假的 index.js，导出一个默认的空对象
+            # 这足以满足 `import * as ...` 或 `import { ... }` 的需求
+            echo 'export default {};' > "node_modules/@tauri-apps/api/$module/index.js"
+            
+            echo "✅ Mocked @tauri-apps/api/$module"
+          done
+          
+          echo "✅ Successfully mocked all required Tauri API submodules."
+
       - name: Build
         run: npm run build:mobile
         env:
