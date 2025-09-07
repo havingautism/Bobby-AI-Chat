@@ -28,7 +28,7 @@ jobs:
 
       - name: Install dependencies
         # 使用 npm ci 以确保构建环境的一致性
-        run: npm ci
+        run: npm install
 
       # 我们已经不再需要任何伪造脚本了！
 
