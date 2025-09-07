@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import ChatInterface from "./components/ChatInterface";
 import Sidebar from "./components/Sidebar";
 import Settings from "./components/Settings";
+import KnowledgeBase from "./components/KnowledgeBase";
 import TauriInitializer from "./components/TauriInitializer";
-import { loadChatHistory, saveChatHistory, migrateFromLocalStorage } from "./utils/storageAdapter";
+import { storageAdapter } from "./utils/storageAdapter";
 import { initTheme } from "./utils/theme";
 import { getApiConfig } from "./utils/api";
 import { smartCacheCleanup } from "./utils/cacheManager";
 import { initializeApiSessionManager } from "./utils/apiSessionManager";
+import { isTauriEnvironment } from "./utils/tauriDetector";
 import "./utils/mobileCacheOptimizer"; // Import mobile cache optimizer
 import { v4 as uuidv4 } from "uuid";
 import "./App.css";
@@ -21,6 +23,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [knowledgeBaseOpen, setKnowledgeBaseOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [defaultModel, setDefaultModel] = useState("deepseek-ai/DeepSeek-V3.1");
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -62,11 +65,11 @@ function App() {
     setConversations(prev => prev.map(conv => {
       if (conv.messages.length === 0) {
         // 如果对话是空的，使用新的默认模型
-        return { ...conv, model: defaultModel };
+        return { ...conv, model: defaultModel, responseMode: lastResponseMode };
       }
       return conv;
     }));
-  }, [defaultModel]);
+  }, [defaultModel, lastResponseMode]);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -85,10 +88,10 @@ function App() {
         await initializeApiSessionManager();
 
         // 迁移旧数据
-        await migrateFromLocalStorage();
+        await storageAdapter.migrateFromIndexedDB();
 
         // 加载对话历史
-        const savedConversations = await loadChatHistory();
+        const savedConversations = await storageAdapter.loadChatHistory();
         console.log("加载的对话历史:", savedConversations);
 
         if (savedConversations.length > 0) {
@@ -144,7 +147,7 @@ function App() {
       const saveData = async () => {
         try {
           console.log("保存对话历史:", conversations);
-          await saveChatHistory(conversations);
+          await storageAdapter.saveChatHistory(conversations);
         } catch (error) {
           console.error("保存对话历史失败:", error);
         }
@@ -185,7 +188,15 @@ function App() {
     }
   };
 
-  const deleteConversation = (id) => {
+  const deleteConversation = async (id) => {
+    // 先从数据库中删除
+    try {
+      await storageAdapter.deleteConversation(id);
+      console.log('已从数据库删除对话:', id);
+    } catch (error) {
+      console.error('从数据库删除对话失败:', error);
+    }
+    
     setConversations((prev) => {
       const filtered = prev.filter((conv) => conv.id !== id);
       const currentConv = prev.find(conv => conv.id === currentConversationId);
@@ -292,6 +303,7 @@ function App() {
           }
         }}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenKnowledgeBase={isTauriEnvironment() ? () => setKnowledgeBaseOpen(true) : undefined}
       />
       {/* 移动端侧边栏遮罩层：仅宽栏打开时显示 */}
       {sidebarOpen && !sidebarCollapsed && isMobile && (
@@ -307,6 +319,7 @@ function App() {
             onUpdateConversation={updateConversation}
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             onOpenSettings={() => setSettingsOpen(true)}
+            onOpenKnowledgeBase={() => setKnowledgeBaseOpen(true)}
           />
         )}
       </div>
@@ -327,6 +340,14 @@ function App() {
           }
         }}
       />
+
+      {/* 知识库组件 - 仅在Tauri环境渲染 */}
+      {isTauriEnvironment() && (
+        <KnowledgeBase 
+          isOpen={knowledgeBaseOpen} 
+          onClose={() => setKnowledgeBaseOpen(false)}
+        />
+      )}
     </div>
     </TauriInitializer>
   );

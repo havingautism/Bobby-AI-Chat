@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { AI_ROLES, getRoleById } from "../utils/roles";
 import { getCurrentTheme, toggleTheme } from "../utils/theme";
 import { getCurrentLanguage, t } from "../utils/language";
+import { isTauriEnvironment } from "../utils/tauriDetector";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import LanguageToggle from "./LanguageToggle";
 import "./Sidebar.css";
@@ -18,6 +19,7 @@ const Sidebar = ({
   isCollapsed,
   onToggleCollapse,
   onOpenSettings,
+  onOpenKnowledgeBase,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
@@ -331,6 +333,30 @@ const Sidebar = ({
             </div>
           )}
         </div>
+
+        {/* 知识库按钮 - 仅在Tauri环境显示 */}
+        {!isCollapsed && isTauriEnvironment() && (
+          <div className="knowledge-base-section">
+            <button
+              className="knowledge-base-button"
+              onClick={onOpenKnowledgeBase}
+              title={currentLanguage === "zh" ? "知识库管理" : "Knowledge Base"}
+            >
+              <div className="knowledge-base-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  <path d="M8 7h8"/>
+                  <path d="M8 11h8"/>
+                  <path d="M8 15h5"/>
+                </svg>
+              </div>
+              <span className="knowledge-base-text">
+                {currentLanguage === "zh" ? "知识库" : "Knowledge Base"}
+              </span>
+            </button>
+          </div>
+        )}
 
         <div className="conversations-list">
           {isCollapsed ? (

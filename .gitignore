@@ -101,6 +101,12 @@ temp/
 # Tauri specific
 /src-tauri/target/
 /src-tauri/Cargo.lock
+/src-tauri/qdrant_src/
+/src-tauri/qdrant_data/
+/src-tauri/snapshots/
+
+# Qdrant data directory
+/qdrant_data/
 
 # Rust specific
 **/*.rs.bk
@@ -128,3 +134,109 @@ Cargo.lock
 
 # Local development
 .local
+
+# Test files and temporary scripts
+test_*.js
+test_*.bat
+test_*.sh
+*_test.js
+*_fix.js
+*_debug.js
+*_simple.js
+*_cleanup.js
+*_status.js
+*_detection.js
+*_integration.js
+*_usage.js
+*_model.js
+*_storage.js
+*_tauri.js
+*_sqlite.js
+*_qdrant.js
+*_vector.js
+*_embedding.js
+*_search.js
+*_delete.js
+*_clear.js
+*_verify.js
+*_download.py
+*_alternative.py
+*_real.js
+*_bundled.js
+*_environment.js
+*_method.js
+*_import.js
+*_binding.js
+*_csdn.js
+*_fake.js
+*_message.js
+*_permissions.js
+*_init.js
+*_streamdown.js
+*_ipc.js
+*_format.js
+*_gemma.js
+*_fix.bat
+*_fix.sh
+*_clean.bat
+*_utf8.bat
+*_download.bat
+*_build.bat
+*_build.sh
+
+# Keep essential project scripts
+!start_app.bat
+!start_app.sh
+!start_tauri_no_watch.bat
+!restart_tauri_fixed.bat
+!install_sqlite.bat
+!install_sqlite.sh
+*_guide.md
+*_GUIDE.md
+*_OPTIMIZATION.md
+*_FIX.md
+*_CHANGES.md
+*_COMPLETE.md
+*_USAGE.md
+*_START.md
+*_BUILD.md
+*_ENVIRONMENT_FIX.md
+*_IPC_FIX.md
+*_DROPDOWN_SYNC_FIX.md
+*_UNIFIED_HEADER_BUTTON.md
+*_INPUT_SHADOW_FIX.md
+*_RESPONSE_MOBILE_OPTIMIZATION.md
+*_INSTALL_GUIDE.md
+*_STORAGE_GUIDE.md
+*_TESTING_GUIDE.md
+*_DEBUG_GUIDE.md
+*_OPTIMIZATION.md
+*_INTEGRATION_GUIDE.md
+*_SIMPLE_GUIDE.md
+
+# Model files - allow essential model files for all-MiniLM-L6-v2
+# Exclude large model variants but keep the main model
+models/all-MiniLM-L6-v2/tf_model.h5
+models/all-MiniLM-L6-v2/pytorch_model.bin
+models/all-MiniLM-L6-v2/rust_model.ot
+models/all-MiniLM-L6-v2/onnx/model_O*.onnx
+models/all-MiniLM-L6-v2/onnx/model_qint*.onnx
+models/all-MiniLM-L6-v2/onnx/model_quint*.onnx
+models/all-MiniLM-L6-v2/openvino/openvino_model*.bin
+models/all-MiniLM-L6-v2/openvino/openvino_model*.xml
+models/embeddinggemma-300m/
+
+# Qdrant data files (runtime data, not the executable)
+**/qdrant_data/
+**/wal/
+**/segments/
+**/payload_storage/
+**/vector_storage/
+*.mmap
+*.dat
+
+# Keep important files
+!README.md
+!LICENSE
+!COPYRIGHT
+!NOTICE

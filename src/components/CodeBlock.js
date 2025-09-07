@@ -86,50 +86,55 @@ const CodeBlock = ({ children, language = "text" }) => {
     return icons[lang.toLowerCase()] || icons.default;
   };
 
+  // 判断是否为text代码块
+  const isTextCodeBlock = language === "text" || language === "plaintext";
+
   return (
     <div className="code-block">
-      <div className="code-header">
-        <div className="code-language">
-          <span className="language-icon">{getLanguageIcon(language)}</span>
-          <span className="language-name">{language}</span>
+      {!isTextCodeBlock && (
+        <div className="code-header">
+          <div className="code-language">
+            <span className="language-icon">{getLanguageIcon(language)}</span>
+            <span className="language-name">{language}</span>
+          </div>
+          <button
+            className={`copy-button ${copied ? "copied" : ""}`}
+            onClick={handleCopy}
+            title="复制代码"
+          >
+            {copied ? (
+              <>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
+                <span>已复制</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                </svg>
+                {/* <span>复制</span> */}
+              </>
+            )}
+          </button>
         </div>
-        <button
-          className={`copy-button ${copied ? "copied" : ""}`}
-          onClick={handleCopy}
-          title="复制代码"
-        >
-          {copied ? (
-            <>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="m9 12 2 2 4-4" />
-              </svg>
-              <span>已复制</span>
-            </>
-          ) : (
-            <>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-              </svg>
-              {/* <span>复制</span> */}
-            </>
-          )}
-        </button>
-      </div>
+      )}
       <div className="code-content">
         <SyntaxHighlighter
           language={language}

@@ -93,11 +93,11 @@
   cursor: not-allowed;
 }
 
-/* 底部工具栏样式 */
-.bottom-toolbar {
+/* 输入框内工具栏样式 */
+.input-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 8px 16px;
   margin-top: 0;
   border-top: 1px solid var(--border-color);
@@ -108,7 +108,7 @@
   border-bottom-right-radius: 16px;
 }
 
-[data-theme="dark"] .bottom-toolbar {
+[data-theme="dark"] .input-toolbar {
   background: var(--bg-secondary);
   border-top-color: var(--border-color);
   border-bottom-left-radius: 16px;
@@ -421,8 +421,8 @@
     padding: 0 4px;
   }
   
-  /* 移动端底部工具栏 */
-  .bottom-toolbar {
+  /* 移动端输入框内工具栏 */
+  .input-toolbar {
     padding: 6px 12px;
     border-top: 1px solid var(--border-color);
     border-bottom-left-radius: 12px;
@@ -505,7 +505,7 @@
     height: 19px;
   }
   
-  .bottom-toolbar {
+  .input-toolbar {
     padding: 5px 14px;
     border-bottom-left-radius: 14px;
     border-bottom-right-radius: 14px;
@@ -566,7 +566,7 @@
     padding: 0 2px;
   }
   
-  .bottom-toolbar {
+  .input-toolbar {
     padding: 4px 8px;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
@@ -747,6 +747,236 @@
   }
 }
 
+/* 上传按钮样式 */
+.upload-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.upload-button:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: var(--border-hover);
+}
+
+.upload-button:active {
+  transform: scale(0.95);
+}
+
+.upload-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 知识库按钮样式 */
+.knowledge-base-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.knowledge-base-button:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: var(--border-hover);
+}
+
+.knowledge-base-button:active {
+  transform: scale(0.95);
+}
+
+.knowledge-base-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 响应模式切换按钮样式 */
+.response-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.response-mode-toggle:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  border-color: var(--border-hover);
+}
+
+.response-mode-toggle:active {
+  transform: scale(0.95);
+}
+
+.response-mode-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.response-mode-toggle .mode-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.response-mode-toggle .mode-text {
+  white-space: nowrap;
+}
+
+/* 工具栏左右布局 */
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 内联加号按钮样式 */
+.plus-button-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.plus-button-inline:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: scale(1.05);
+  border-color: var(--border-hover);
+}
+
+.plus-button-inline:active {
+  transform: scale(0.95);
+}
+
+.plus-button-inline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 深度思考按钮样式 */
+.deep-thinking-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.deep-thinking-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  border-color: var(--border-hover);
+}
+
+.deep-thinking-btn:active {
+  transform: scale(0.95);
+}
+
+.deep-thinking-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 知识库按钮样式 */
+.knowledge-base-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.knowledge-base-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  border-color: var(--border-hover);
+}
+
+.knowledge-base-btn:active {
+  transform: scale(0.95);
+}
+
+.knowledge-base-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* 移动端输入框适配 */
 @media (max-width: 768px) {
   .input-main-area {
@@ -761,7 +991,7 @@
     max-height: 100px;
   }
   
-  .bottom-toolbar {
+  .input-toolbar {
     padding: 6px 14px;
     border-bottom-left-radius: 14px;
     border-bottom-right-radius: 14px;
@@ -769,5 +999,46 @@
   
   .input-wrapper-clean {
     border-radius: 14px;
+  }
+  
+  /* 移动端按钮适配 */
+  .upload-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .knowledge-base-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .response-mode-toggle {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  
+  .toolbar-left,
+  .toolbar-right {
+    gap: 6px;
+  }
+
+  /* 移动端内联加号按钮 */
+  .plus-button-inline {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* 移动端深度思考按钮 */
+  .deep-thinking-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  /* 移动端知识库按钮 */
+  .knowledge-base-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 4px;
   }
 }

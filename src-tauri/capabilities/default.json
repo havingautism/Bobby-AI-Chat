@@ -10,6 +10,9 @@
     "fs:allow-applocaldata-read-recursive",
     "fs:allow-applocaldata-write-recursive",
     "fs:allow-applocaldata-meta-recursive",
-    "shell:default"
+    "shell:default",
+    "sql:allow-load",
+    "sql:allow-execute",
+    "sql:default"
   ]
 }

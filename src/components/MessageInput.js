@@ -1,15 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
 
 import { getCurrentLanguage, t } from "../utils/language";
+import { isTauriEnvironment } from "../utils/tauriDetector";
 import "./MessageInput.css";
 
-const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStreaming = () => {} }) => {
+const MessageInput = ({ 
+  onSendMessage, 
+  disabled, 
+  isStreaming = false, 
+  onStopStreaming = () => {},
+  onOpenKnowledgeBase,
+  showResponseModeToggle = false,
+  responseMode = "normal",
+  onResponseModeChange
+}) => {
   const [message, setMessage] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [uploadedFile, setUploadedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
-  const dropdownRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const handleSubmit = (e) => {
@@ -41,25 +49,6 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
     };
   }, []);
 
-  // 点击外部关闭下拉菜单
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
-
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [showDropdown]);
-
-  const toggleDropdown = () => {
-    setShowDropdown(!showDropdown);
-  };
 
   // 处理文件上传
   const handleFileUpload = (event) => {
@@ -77,8 +66,6 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
       } else {
         setFilePreview(null);
       }
-      
-      setShowDropdown(false);
     }
   };
 
@@ -96,18 +83,6 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
-  };
-
-  // 处理新建对话
-  const handleNewChat = () => {
-    console.log('新建对话');
-    setShowDropdown(false);
-  };
-
-  // 处理添加选项卡
-  const handleAddTab = () => {
-    console.log('添加选项卡');
-    setShowDropdown(false);
   };
 
   return (
@@ -258,67 +233,54 @@ const MessageInput = ({ onSendMessage, disabled, isStreaming = false, onStopStre
             )}
           </div>
 
-          {/* 底部工具栏 */}
-          <div className="bottom-toolbar">
-            {/* 快速响应按钮 */}
-            <button 
-              type="button" 
-              className="quick-response-btn" 
-              disabled={disabled}
-              title={t("quickResponse", currentLanguage)}
-            >
-              <span>{t("quickResponse", currentLanguage)}</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </button>
-
-            {/* 加号按钮和下拉菜单 */}
-            <div className="plus-button-container" ref={dropdownRef}>
+          {/* 输入框内工具栏 */}
+          <div className="input-toolbar">
+            {/* 左侧按钮组 */}
+            <div className="toolbar-left">
+              {/* 加号按钮 */}
               <button
                 type="button"
-                className="plus-button"
-                onClick={toggleDropdown}
+                className="plus-button-inline"
+                onClick={triggerFileUpload}
                 disabled={disabled}
-                title={t("moreOptions", currentLanguage)}
+                title={t("upload", currentLanguage)}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 5v14m-7-7h14" />
                 </svg>
               </button>
 
-              {/* 简化的下拉菜单 */}
-              {showDropdown && (
-                <div className="dropdown-menu">
-                  <div className="dropdown-item" onClick={handleNewChat}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                      <polyline points="14,2 14,8 20,8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
-                      <polyline points="10,9 9,9 8,9" />
-                    </svg>
-                    <span>{t("newChat", currentLanguage)}</span>
-                  </div>
-                  
-                  <div className="dropdown-item" onClick={triggerFileUpload}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                    </svg>
-                    <span>{t("upload", currentLanguage)}</span>
-                  </div>
-                  
-                  <div className="dropdown-item" onClick={handleAddTab}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <line x1="9" y1="1" x2="9" y2="23" />
-                      <line x1="15" y1="1" x2="15" y2="23" />
-                      <line x1="1" y1="9" x2="23" y2="9" />
-                      <line x1="1" y1="15" x2="23" y2="15" />
-                    </svg>
-                    <span>{t("addTab", currentLanguage)}</span>
-                  </div>
-                </div>
+              {/* 深度思考按钮 */}
+              <button 
+                type="button" 
+                className="deep-thinking-btn" 
+                disabled={disabled}
+                title="深度思考"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span>深度思考</span>
+              </button>
+
+              {/* 知识库按钮 */}
+              {isTauriEnvironment() && onOpenKnowledgeBase && (
+                <button
+                  type="button"
+                  className="knowledge-base-btn"
+                  onClick={onOpenKnowledgeBase}
+                  disabled={disabled}
+                  title="知识库"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    <path d="M8 7h8"/>
+                    <path d="M8 11h8"/>
+                    <path d="M8 15h5"/>
+                  </svg>
+                  <span>知识库</span>
+                </button>
               )}
             </div>
           </div>

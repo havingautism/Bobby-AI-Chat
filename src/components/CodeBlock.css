@@ -152,22 +152,38 @@
   color: var(--syntax-punctuation);
 }
 
-/* 自定义滚动条 */
+/* 自定义滚动条 - 强制常驻显示的细滚动条 */
 .code-content::-webkit-scrollbar {
-  height: 8px;
+  height: 4px;
+  -webkit-appearance: none;
 }
 
 .code-content::-webkit-scrollbar-track {
-  background: #2d2d2d;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  -webkit-box-shadow: inset 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .code-content::-webkit-scrollbar-thumb {
-  background: #4b5563;
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 2px;
+  transition: background 0.2s ease;
+  -webkit-box-shadow: inset 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .code-content::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.code-content::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* 强制显示滚动条 */
+.code-content {
+  overflow-x: scroll !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.4) rgba(255, 255, 255, 0.15);
 }
 
 /* 移动端滚动条隐藏 */

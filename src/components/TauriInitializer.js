@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { storageAdapter } from '../utils/storageAdapter';
-import { testStorage } from '../utils/storageTest';
+// import { runStorageTests } from '../utils/storageTest'; // 不再自动运行测试
 
 const TauriInitializer = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -9,19 +9,35 @@ const TauriInitializer = ({ children }) => {
   useEffect(() => {
     const initializeTauri = async () => {
       try {
+        // 强制检测Tauri环境 - 检查多种标识
+        const isTauri = typeof window !== 'undefined' && (
+          window.__TAURI__ || 
+          window.__TAURI_INTERNALS__ || 
+          window.__TAURI_METADATA__ ||
+          window.navigator?.userAgent?.includes('Tauri') ||
+          Object.keys(window).some(key => key.includes('TAURI'))
+        );
+        
+        if (isTauri) {
+          console.log('检测到Tauri环境，强制使用SQLite存储');
+          // 强制设置SQLite存储
+          localStorage.setItem('use-sqlite-storage', 'true');
+        }
+        
         // 检测存储类型
         const type = storageAdapter.getStorageType();
         setStorageType(type);
+        console.log('当前存储类型:', type);
         
         // 如果是在Tauri环境中，可以尝试从IndexedDB迁移数据
-        if (type === 'tauri') {
-          console.log('检测到Tauri环境，使用本地文件存储');
+        if (type === 'tauri' || type === 'sqlite') {
+          console.log('使用本地存储:', type);
           
-          // 运行存储测试
-          const testResult = await testStorage();
-          if (!testResult.success) {
-            console.error('存储系统测试失败:', testResult.error);
-          }
+          // 注释掉自动存储测试，避免每次启动都运行测试
+          // const testResult = await runStorageTests();
+          // if (!testResult.success) {
+          //   console.error('存储系统测试失败:', testResult.error);
+          // }
           
           // 尝试从localStorage获取旧的对话数据并迁移
           const oldData = localStorage.getItem('ai-chat-conversations');

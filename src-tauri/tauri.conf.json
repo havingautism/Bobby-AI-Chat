@@ -34,6 +34,7 @@
     }
   },
   "bundle": {
+
     "active": true,
     "targets": "all",
     "icon": [
@@ -45,7 +46,8 @@
     ],
     "category": "ProductivityApp",
     "shortDescription": "A modern AI chat application supporting multiple models",
-    "longDescription": "A feature-rich AI chat application built with React and Tauri, supporting multiple AI models including DeepSeek, OpenAI, and more. Features include conversation history, settings management, and a modern glassmorphism UI.",
-    "publisher": "Bobby Project"
+    "longDescription": "A feature-rich AI chat application built with React and Tauri, supporting multiple AI models including DeepSeek, OpenAI, and more. Features include conversation history, settings management, knowledge base with vector search, and a modern glassmorphism UI.",
+    "publisher": "Bobby Project",
+    "resources": []
   }
 }

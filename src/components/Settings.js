@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getApiConfig, updateApiConfig } from "../utils/api";
 import { getCurrentLanguage, t } from "../utils/language";
-import { getStorageInfo, clearChatHistory, getDataDirectoryInfo } from "../utils/storageAdapter";
+import { storageAdapter } from "../utils/storageAdapter";
 import { isTauriEnvironment } from "../utils/tauriDetector";
 import "./Settings.css";
 
@@ -45,12 +45,12 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [isTesting, setIsTesting] = useState(false);
-  const [testMessage, setTestMessage] = useState("");
   const [testSuccess, setTestSuccess] = useState(false);
+  const [testMessage, setTestMessage] = useState("");
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState('bottom');
   const [storageInfo, setStorageInfo] = useState(null);
-  const [dataDirectoryInfo, setDataDirectoryInfo] = useState(null);
+  const [currentStorageType, setCurrentStorageType] = useState(() => storageAdapter.getStorageType());
   const dropdownRef = useRef(null);
   const [dropdownWidth, setDropdownWidth] = useState(undefined);
 
@@ -59,8 +59,8 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
     if (!storageInfo) return 0;
     
     if (isTauriEnvironment()) {
-      // Tauri环境：从JSON文件读取
-      return storageInfo.conversations?.count || 0;
+      // Tauri环境：从SQLite或JSON文件读取
+      return storageInfo.conversationCount || storageInfo.conversations?.count || 0;
     } else {
       // 移动端/Web环境：从IndexedDB读取
       return storageInfo.conversationCount || 0;
@@ -162,12 +162,25 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
         });
         
         // 加载存储信息
-        const info = await getStorageInfo();
-        setStorageInfo(info);
+        try {
+          console.log('开始加载存储信息...');
+          const info = await storageAdapter.getStorageInfo();
+          console.log('存储信息加载成功:', info);
+          setStorageInfo(info);
+        } catch (error) {
+          console.error('加载存储信息失败:', error);
+          setStorageInfo({
+            error: error.message,
+            dbPath: '加载失败',
+            dbSize: '未知',
+            conversationCount: 0,
+            messageCount: 0,
+            apiSessionCount: 0,
+            knowledgeDocumentCount: 0,
+            settingCount: 0
+          });
+        }
         
-        // 加载数据目录信息
-        const dirInfo = getDataDirectoryInfo();
-        setDataDirectoryInfo(dirInfo);
         
         // 自动初始化为硅基流动配置
         if (!currentConfig.baseURL) {
@@ -210,13 +223,18 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
 
   const handleClearHistory = async () => {
     if (window.confirm("确定要清除所有聊天历史吗？此操作不可撤销。")) {
-      await clearChatHistory();
+      await storageAdapter.clearChatHistory();
       // 重新加载存储信息
-      const info = await getStorageInfo();
-      setStorageInfo(info);
+      try {
+        const info = await storageAdapter.getStorageInfo();
+        setStorageInfo(info);
+      } catch (error) {
+        console.error('重新加载存储信息失败:', error);
+      }
       alert("聊天历史已清除");
     }
   };
+
 
   const handleInputChange = (field, value) => {
     setConfig((prev) => ({
@@ -335,24 +353,6 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
   };
 
 
-  const handleOpenDataDirectory = async () => {
-    try {
-      // 仅在Tauri环境中打开文件管理器
-      if (isTauriEnvironment()) {
-        const { open } = await import('@tauri-apps/plugin-shell');
-        const dirInfo = getDataDirectoryInfo();
-        if (dirInfo && dirInfo.path) {
-          await open(dirInfo.path);
-        } else {
-          setSaveMessage("无法获取数据目录路径");
-          setTimeout(() => setSaveMessage(""), 3000);
-        }
-      }
-    } catch (error) {
-      setSaveMessage(`打开目录失败: ${error.message}`);
-      setTimeout(() => setSaveMessage(""), 5000);
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -374,7 +374,7 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
             <label>API服务商</label>
             <div className="provider-card">
               <div className="provider-logo">
-                <svg height="1em" style={{flex:'none',lineHeight:1}} viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><title>SiliconCloud</title><path clip-rule="evenodd" d="M22.956 6.521H12.522c-.577 0-1.044.468-1.044 1.044v3.13c0 .577-.466 1.044-1.043 1.044H1.044c-.577 0-1.044.467-1.044 1.044v4.174C0 17.533.467 18 1.044 18h10.434c.577 0 1.044-.467 1.044-1.043v-3.13c0-.578.466-1.044 1.043-1.044h9.391c.577 0 1.044-.467 1.044-1.044V7.565c0-.576-.467-1.044-1.044-1.044z" fill="#6E29F6" fill-rule="evenodd"></path></svg>
+                <svg height="1em" style={{flex:'none',lineHeight:1}} viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><title>SiliconCloud</title><path clipRule="evenodd" d="M22.956 6.521H12.522c-.577 0-1.044.468-1.044 1.044v3.13c0 .577-.466 1.044-1.043 1.044H1.044c-.577 0-1.044.467-1.044 1.044v4.174C0 17.533.467 18 1.044 18h10.434c.577 0 1.044-.467 1.044-1.043v-3.13c0-.578.466-1.044 1.043-1.044h9.391c.577 0 1.044-.467 1.044-1.044V7.565c0-.576-.467-1.044-1.044-1.044z" fill="#6E29F6" fillRule="evenodd"></path></svg>
               </div>
               <div className="provider-info">
                 <div className="provider-name">硅基流动</div>
@@ -637,24 +637,11 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
                     <div className="storage-stats">
                       <p>对话数量: {getConversationCount()}</p>
                       <p>总大小: {storageInfo.totalSize}</p>
+                      <p>存储类型: {currentStorageType === 'sqlite' ? 'SQLite数据库' : 
+                                   currentStorageType === 'tauri' ? 'JSON文件' : 'IndexedDB'}</p>
                     </div>
                     
-                    {/* 打开数据目录 - 仅在Tauri环境中显示 */}
-                    {isTauriEnvironment() && (
-                      <div className="data-directory-section">
-                        <button 
-                          className="secondary-button" 
-                          onClick={handleOpenDataDirectory}
-                        >
-                          📁 打开数据目录
-                        </button>
-                        {dataDirectoryInfo && (
-                          <div className="directory-info">
-                            <small>数据目录: {dataDirectoryInfo.path}</small>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    
                     
                     <button 
                       className="danger-button" 
