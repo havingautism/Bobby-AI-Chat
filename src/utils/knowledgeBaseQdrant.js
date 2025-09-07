@@ -13,6 +13,22 @@ class KnowledgeBaseQdrant {
     this.isInitialized = false;
     this.useQdrant = false;
     this.qdrantReady = false;
+    this.embeddingModel = 'all-MiniLM-L6-v2'; // 默认使用项目内模型
+    this.embeddingDimensions = 384; // 默认384维
+    this.embeddingTaskType = 'search'; // 默认搜索任务
+  }
+
+  /**
+   * 设置嵌入模型配置
+   * @param {string} model - 模型名称
+   * @param {number} dimensions - 嵌入维度
+   * @param {string} taskType - 任务类型
+   */
+  setEmbeddingConfig(model = 'all-MiniLM-L6-v2', dimensions = 384, taskType = 'search') {
+    this.embeddingModel = model;
+    this.embeddingDimensions = dimensions;
+    this.embeddingTaskType = taskType;
+    console.log(`🔧 嵌入模型配置已更新: ${model} (${dimensions}维, ${taskType})`);
   }
 
   // 初始化数据库和Qdrant服务
@@ -470,8 +486,8 @@ class KnowledgeBaseQdrant {
           throw new Error('Qdrant向量存储失败');
         }
       } else {
-        // 降级到SQLite存储
-        const embeddings = await embeddingService.generateDocumentEmbeddings(content);
+        // 降级到SQLite存储，使用EmbeddingGemma模型
+        const embeddings = await this.generateDocumentEmbeddingsWithModel(content);
         
         // 删除旧的向量数据
         await this.db.execute(`
@@ -574,6 +590,14 @@ class KnowledgeBaseQdrant {
         const success = await qdrantService.clearCollection();
         if (success) {
           console.log(`✅ Qdrant集合已清空`);
+          
+          // 清空后优化索引
+          try {
+            await qdrantService.optimizeCollection();
+            console.log('✅ Qdrant索引优化完成');
+          } catch (optimizeError) {
+            console.warn(`⚠️ Qdrant索引优化失败: ${optimizeError.message}`);
+          }
         } else {
           console.warn(`⚠️ Qdrant集合清空失败`);
         }
@@ -614,6 +638,67 @@ class KnowledgeBaseQdrant {
     }
     return success;
   }
+
+  /**
+   * 使用项目内模型生成文档嵌入
+   * @param {string} content - 文档内容
+   * @returns {Promise<Array>} 嵌入数据数组
+   */
+  async generateDocumentEmbeddingsWithModel(content) {
+    console.log(`🎯 使用项目内模型生成文档嵌入: ${this.embeddingModel}`);
+    
+    try {
+      // 使用项目内模型生成嵌入
+      const result = await embeddingService.generateDocumentEmbeddings(content, 1000, 200);
+      
+      console.log(`✅ 项目内模型嵌入生成成功: ${result.length} 个向量`);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ 项目内模型嵌入生成失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 文本分块函数
+   * @param {string} text - 文本内容
+   * @param {number} chunkSize - 块大小
+   * @param {number} overlap - 重叠大小
+   * @returns {Array<string>} 文本块数组
+   */
+  chunkText(text, chunkSize = 1000, overlap = 200) {
+    if (!text || text.trim().length === 0) {
+      return [];
+    }
+    
+    const chunks = [];
+    let start = 0;
+    
+    while (start < text.length) {
+      let end = Math.min(start + chunkSize, text.length);
+      let chunk = text.slice(start, end);
+      
+      // 尝试在句子边界分割
+      if (end < text.length) {
+        const lastSentence = chunk.lastIndexOf('。');
+        if (lastSentence > chunkSize / 2) {
+          chunk = chunk.slice(0, lastSentence + 1);
+          start = start + lastSentence + 1 - overlap;
+        } else {
+          start = end - overlap;
+        }
+      } else {
+        start = end;
+      }
+      
+      if (chunk.trim().length > 0) {
+        chunks.push(chunk.trim());
+      }
+    }
+    
+    return chunks;
+  }
 }
 
 // 创建全局实例
@@ -630,6 +715,11 @@ export const searchSQLite = (...args) => knowledgeBaseQdrantInstance.searchSQLit
 export const addDocumentToSQLite = (...args) => knowledgeBaseQdrantInstance.addDocumentToSQLite(...args);
 export const searchDocuments = (...args) => knowledgeBaseQdrantInstance.searchDocuments(...args);
 export const generateDocumentEmbeddings = (...args) => knowledgeBaseQdrantInstance.generateDocumentEmbeddings(...args);
+export const generateDocumentEmbeddingsWithModel = (...args) => knowledgeBaseQdrantInstance.generateDocumentEmbeddingsWithModel(...args);
+
+// 兼容性导出
+export const generateDocumentEmbeddingsWithGemma = generateDocumentEmbeddingsWithModel;
+export const setEmbeddingConfig = (...args) => knowledgeBaseQdrantInstance.setEmbeddingConfig(...args);
 export const getStatistics = (...args) => knowledgeBaseQdrantInstance.getStatistics(...args);
 export const clearAllDocuments = (...args) => knowledgeBaseQdrantInstance.clearAllDocuments(...args);
 export const getQdrantInfo = (...args) => knowledgeBaseQdrantInstance.getQdrantInfo(...args);

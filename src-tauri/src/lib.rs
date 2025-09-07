@@ -7,9 +7,11 @@ use std::sync::Mutex;
 use tauri::Manager;
 
 mod embedding_service;
+mod embedding_gemma;
 mod qdrant_manager;
 mod qdrant_service;
 use embedding_service::{EmbeddingService, generate_embedding, generate_batch_embeddings, calculate_similarity};
+use embedding_gemma::{EmbeddingGemmaService, EmbeddingRequest, EmbeddingResponse, generate_gemma_batch_embeddings, check_model_files};
 use qdrant_manager::{
     QdrantManager,
     compile_qdrant,
@@ -84,100 +86,81 @@ pub fn run() {
       stop_qdrant,
       get_qdrant_status,
       is_qdrant_installed,
-      get_qdrant_version
+      get_qdrant_version,
+      generate_gemma_batch_embeddings,
+      check_model_files,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct KnowledgeDocument {
+    id: String,
+    title: String,
+    content: String,
+    source_type: String,
+    source_url: Option<String>,
+    file_path: Option<String>,
+    file_size: Option<i64>,
+    mime_type: Option<String>,
+    metadata: Option<String>,
+    created_at: i64,
+    updated_at: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct KnowledgeVector {
+    vector_id: String,
+    document_id: String,
+    chunk_index: i32,
+    chunk_text: String,
+    embedding: Vec<f32>,
+    created_at: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct SearchResult {
+    document_id: String,
+    title: String,
+    content: String,
+    chunk_text: String,
+    score: f32,
+    metadata: Option<String>,
+}
+
 #[tauri::command]
 async fn ensure_data_directory() -> Result<String, String> {
   use std::fs;
-  use std::path::Path;
   
-  // 使用用户数据目录，避免重新构建时数据丢失
   let data_dir = if cfg!(debug_assertions) {
-    // 开发模式：使用项目根目录下的data文件夹
-    let mut project_root = std::env::current_dir().unwrap();
-    project_root.push("data");
-    project_root
+    "./data".to_string()
   } else {
-    // 生产模式：使用用户数据目录
-    let mut data_dir = dirs::data_dir().unwrap_or_else(|| std::env::current_dir().unwrap());
-    data_dir.push("AI-Chat");
-    data_dir
+    let app_data = std::env::var("APPDATA").unwrap_or_else(|_| ".".to_string());
+    format!("{}/ai_chat", app_data)
   };
   
-  if !data_dir.exists() {
-    fs::create_dir_all(&data_dir)
-      .map_err(|e| format!("创建数据目录失败: {}", e))?;
-  }
-  
-  println!("数据目录: {}", data_dir.display());
-  Ok(data_dir.to_string_lossy().to_string())
+  fs::create_dir_all(&data_dir).map_err(|e| format!("创建数据目录失败: {}", e))?;
+  Ok(data_dir)
 }
-
-// 移除自定义SQLite命令，使用tauri-plugin-sql
 
 #[tauri::command]
 async fn get_file_size(file_path: String) -> Result<u64, String> {
-  use std::fs;
-  
-  let metadata = fs::metadata(&file_path)
-    .map_err(|e| format!("获取文件信息失败: {}", e))?;
-  
-  Ok(metadata.len())
+    use std::fs;
+    let metadata = fs::metadata(&file_path)
+        .map_err(|e| format!("无法获取文件元数据: {}", e))?;
+    Ok(metadata.len())
 }
 
-// 知识库相关数据结构
-#[derive(Debug, Serialize, Deserialize)]
-pub struct KnowledgeDocument {
-    pub id: String,
-    pub title: String,
-    pub content: String,
-    pub source_type: String,
-    pub source_url: Option<String>,
-    pub file_path: Option<String>,
-    pub file_size: Option<i64>,
-    pub mime_type: Option<String>,
-    pub metadata: String, // JSON字符串
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct KnowledgeVector {
-    pub vector_id: String,
-    pub document_id: String,
-    pub chunk_index: i32,
-    pub chunk_text: String,
-    pub embedding: Vec<f32>,
-    pub created_at: i64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SearchResult {
-    pub document_id: String,
-    pub title: String,
-    pub content: String,
-    pub similarity: f64,
-    pub chunk_index: i32,
-    pub source_type: String,
-    pub source_url: Option<String>,
-}
-
-// 知识库管理命令
 #[tauri::command]
 async fn init_knowledge_base() -> Result<String, String> {
     // 确保数据目录存在并获取路径
     let data_dir = ensure_data_directory().await?;
     let db_path = format!("{}/ai_chat.db", data_dir);
-    
-    // 初始化SQLite连接
     let pool = SqlitePool::connect(&format!("sqlite://{}", db_path))
         .await
         .map_err(|e| format!("连接数据库失败: {}", e))?;
-    
+
     // 创建知识库文档表
     sqlx::query(
         r#"
@@ -185,12 +168,12 @@ async fn init_knowledge_base() -> Result<String, String> {
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
             content TEXT NOT NULL,
-            source_type TEXT NOT NULL DEFAULT 'text',
+            source_type TEXT NOT NULL,
             source_url TEXT,
             file_path TEXT,
             file_size INTEGER,
             mime_type TEXT,
-            metadata TEXT DEFAULT '{}',
+            metadata TEXT,
             created_at INTEGER NOT NULL,
             updated_at INTEGER NOT NULL
         )
@@ -295,10 +278,7 @@ async fn add_knowledge_vector(vector: KnowledgeVector) -> Result<String, String>
     
     // 插入向量到虚拟表
     let result = sqlx::query(
-        r#"
-        INSERT INTO knowledge_vectors (embedding)
-        VALUES (?)
-        "#
+        "INSERT INTO knowledge_vectors (embedding) VALUES (?)"
     )
     .bind(&embedding_json)
     .execute(&pool)
@@ -309,10 +289,7 @@ async fn add_knowledge_vector(vector: KnowledgeVector) -> Result<String, String>
     
     // 插入元数据到元数据表
     sqlx::query(
-        r#"
-        INSERT INTO vector_metadata (rowid, document_id, chunk_index, chunk_text, created_at)
-        VALUES (?, ?, ?, ?, ?)
-        "#
+        "INSERT INTO vector_metadata (rowid, document_id, chunk_index, chunk_text, created_at) VALUES (?, ?, ?, ?, ?)"
     )
     .bind(rowid)
     .bind(&vector.document_id)
@@ -328,7 +305,7 @@ async fn add_knowledge_vector(vector: KnowledgeVector) -> Result<String, String>
 }
 
 #[tauri::command]
-async fn search_knowledge_base(query: String, limit: i32) -> Result<Vec<SearchResult>, String> {
+async fn search_knowledge_base(query: String, limit: Option<i32>) -> Result<Vec<SearchResult>, String> {
     // 确保数据目录存在并获取路径
     let data_dir = ensure_data_directory().await?;
     let db_path = format!("{}/ai_chat.db", data_dir);
@@ -336,27 +313,28 @@ async fn search_knowledge_base(query: String, limit: i32) -> Result<Vec<SearchRe
         .await
         .map_err(|e| format!("连接数据库失败: {}", e))?;
     
-    // 生成查询向量（这里使用简化版本，实际应该调用嵌入API）
+    // 生成查询向量
     let query_embedding = generate_simple_embedding(&query);
     let query_embedding_json = serde_json::to_string(&query_embedding)
         .map_err(|e| format!("序列化查询向量失败: {}", e))?;
     
-    // 使用sqlite-vec进行KNN搜索
+    let limit = limit.unwrap_or(10);
+    
+    // 使用sqlite-vec进行向量搜索
     let results = sqlx::query(
         r#"
         SELECT 
             vm.document_id,
-            vm.chunk_index,
-            vm.chunk_text,
             kd.title,
-            kd.source_type,
-            kd.source_url,
-            kv.distance
+            kd.content,
+            vm.chunk_text,
+            distance,
+            kd.metadata
         FROM knowledge_vectors kv
         JOIN vector_metadata vm ON kv.rowid = vm.rowid
         JOIN knowledge_documents kd ON vm.document_id = kd.id
         WHERE kv.embedding MATCH ?
-        ORDER BY kv.distance
+        ORDER BY distance ASC
         LIMIT ?
         "#
     )
@@ -368,20 +346,13 @@ async fn search_knowledge_base(query: String, limit: i32) -> Result<Vec<SearchRe
     
     let search_results: Vec<SearchResult> = results
         .iter()
-        .map(|row| {
-            let distance: f64 = row.get("distance");
-            // 将距离转换为相似度（距离越小，相似度越高）
-            let similarity = 1.0 / (1.0 + distance);
-            
-            SearchResult {
-                document_id: row.get("document_id"),
-                title: row.get("title"),
-                content: row.get("chunk_text"),
-                similarity,
-                chunk_index: row.get("chunk_index"),
-                source_type: row.get("source_type"),
-                source_url: row.get("source_url"),
-            }
+        .map(|row| SearchResult {
+            document_id: row.get("document_id"),
+            title: row.get("title"),
+            content: row.get("content"),
+            chunk_text: row.get("chunk_text"),
+            score: 1.0 - row.get::<f32, _>("distance"), // 转换距离为相似度分数
+            metadata: row.get("metadata"),
         })
         .collect();
     
@@ -389,9 +360,8 @@ async fn search_knowledge_base(query: String, limit: i32) -> Result<Vec<SearchRe
     Ok(search_results)
 }
 
-// 简化的向量生成函数（实际应用中应该使用真实的嵌入API）
+// 简单的嵌入生成函数（用于演示）
 fn generate_simple_embedding(text: &str) -> Vec<f32> {
-    // 使用简单的哈希算法生成384维向量
     let mut embedding = vec![0.0; 384];
     let mut hash = 0u64;
     
@@ -642,3 +612,4 @@ fn chunk_text(text: &str, chunk_size: usize, overlap: usize) -> Vec<String> {
     
     chunks
 }
+

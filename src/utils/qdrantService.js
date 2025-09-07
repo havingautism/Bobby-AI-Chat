@@ -219,10 +219,10 @@ class QdrantService {
         },
         body: JSON.stringify({
           vector: request.query_vector,
-          limit: request.limit,
-          score_threshold: request.score_threshold,
-          filter: request.filter,
-          with_payload: true  // 确保返回payload数据
+          limit: request.limit || 10,
+          score_threshold: request.score_threshold || 0.0,
+          with_payload: true,
+          with_vector: false
         })
       });
 
@@ -518,7 +518,7 @@ class QdrantService {
 
       const searchResponse = await this.search(searchRequest);
       
-      if (!searchResponse || searchResponse.results.length === 0) {
+      if (!searchResponse || !searchResponse.results || searchResponse.results.length === 0) {
         console.log(`📄 文档 ${documentId} 在Qdrant中没有向量数据`);
         return true;
       }
@@ -531,11 +531,60 @@ class QdrantService {
       
       if (success) {
         console.log(`✅ 成功删除文档 ${documentId} 的 ${pointIds.length} 个向量`);
+        
+        // 强制优化索引，确保删除的向量被正确清理
+        try {
+          await this.optimizeCollection();
+          console.log(`✅ 索引优化完成，确保删除的向量已清理`);
+        } catch (optimizeError) {
+          console.warn(`⚠️ 索引优化失败: ${optimizeError.message}`);
+        }
       }
       
       return success;
     } catch (error) {
       console.error(`❌ 删除文档 ${documentId} 的Qdrant向量失败:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 优化集合索引
+   * @returns {Promise<boolean>} 是否成功
+   */
+  async optimizeCollection() {
+    if (!this.isInitialized) {
+      console.warn('⚠️ Qdrant服务不可用');
+      return false;
+    }
+
+    try {
+      console.log('🔧 开始优化Qdrant集合索引...');
+      
+      // 使用正确的Qdrant优化API路径
+      const response = await fetch(`http://localhost:6333/collections/knowledge_base/optimize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          optimize_config: {
+            deleted_threshold: 0.2,
+            vacuum_min_vector_number: 1000,
+            default_segment_number: 0
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ 集合索引优化成功:', result);
+      return true;
+    } catch (error) {
+      console.error('❌ 集合索引优化失败:', error);
       return false;
     }
   }

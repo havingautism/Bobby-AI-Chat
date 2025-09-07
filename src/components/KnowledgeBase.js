@@ -565,6 +565,13 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       await loadDocuments();
       await loadStatistics();
       
+      // 延迟再次刷新统计信息，确保Qdrant索引更新
+      setTimeout(async () => {
+        console.log('🔄 延迟刷新统计信息...');
+        await loadStatistics();
+        console.log('✅ 统计信息已更新');
+      }, 2000);
+      
       // 重置状态
       setPdfParseResult(null);
       setShowPdfPreview(false);
@@ -736,6 +743,13 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       await loadDocuments();
       await loadStatistics();
       
+      // 延迟再次刷新统计信息，确保Qdrant索引更新
+      setTimeout(async () => {
+        console.log('🔄 延迟刷新统计信息...');
+        await loadStatistics();
+        console.log('✅ 统计信息已更新');
+      }, 2000);
+      
       const successMessage = currentLanguage === "zh"
         ? `✅ 清理完成！\n删除了 ${result.deletedDocuments} 个文档和 ${result.deletedVectors} 个向量`
         : `✅ Cleanup completed!\nDeleted ${result.deletedDocuments} documents and ${result.deletedVectors} vectors`;
@@ -830,6 +844,13 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       // 重新加载数据
       await loadDocuments();
       await loadStatistics();
+      
+      // 延迟再次刷新统计信息，确保Qdrant索引更新
+      setTimeout(async () => {
+        console.log('🔄 延迟刷新统计信息...');
+        await loadStatistics();
+        console.log('✅ 统计信息已更新');
+      }, 2000);
       
       console.log('📊 数据重新加载完成');
       alert(currentLanguage === "zh" ? "文档已删除" : "Document deleted");
