@@ -8,7 +8,7 @@
 }
 
 [data-theme="dark"] .chat-interface {
-  background: var(--bg-secondary);
+  /* background: var(--bg-secondary); */
 }
 
 .chat-header {
@@ -391,7 +391,7 @@
     z-index: 1000;
     background: var(--bg-primary);
     /* border-bottom: 1px solid var(--border-color); */
-    border-top-left-radius: var(--border-radius-sm);
+    border-radius: var(--border-radius-sm);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1),
       0 2px 8px rgba(0, 0, 0, 0.05);
   }

@@ -66,7 +66,7 @@
 
 .close-button {
   position: absolute;
-  right: 24px;
+  right: 20px;
   top: 50%;
   transform: translateY(-50%);
   background: linear-gradient(135deg, 
@@ -77,13 +77,16 @@
   border: 1px solid var(--glass-border-light);
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 12px;
-  border-radius: var(--border-radius-md);
+  padding: 6px;
+  border-radius: var(--border-radius-sm);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: var(--glass-shadow-light);
+  width: 32px;
+  height: 32px;
+  z-index: 10;
 }
 
 .close-button:hover {
@@ -1780,6 +1783,18 @@ background: var(--primary-color);
   
   .knowledge-base-header h2 {
     font-size: 18px;
+  }
+  
+  .knowledge-base-header .close-button {
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    padding: 4px;
+  }
+  
+  .knowledge-base-header .close-button svg {
+    width: 18px;
+    height: 18px;
   }
   
   .knowledge-stats {

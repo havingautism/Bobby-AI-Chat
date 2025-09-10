@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  padding: 20px;
+  padding: 16px;
 }
 
 .settings-modal {
@@ -21,8 +21,8 @@
   border: 1px solid var(--glass-border-light);
   border-radius: var(--border-radius-xl);
   width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
+  max-width: 580px;
+  max-height: 85vh;
   overflow: visible;
   box-shadow: var(--glass-shadow-dark);
   display: flex;
@@ -35,15 +35,15 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 24px;
+  padding: 18px 20px;
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 0;
-  min-height: 60px;
+  min-height: 52px;
   flex-shrink: 0;
 }
 
 .settings-header h2 {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
@@ -51,7 +51,7 @@
 
 .close-button {
   position: absolute;
-  right: 24px;
+  right: 20px;
   top: 50%;
   transform: translateY(-50%);
   background: linear-gradient(135deg, 
@@ -61,9 +61,9 @@
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border-light);
   color: var(--text-tertiary);
-  font-size: 24px;
+  font-size: 20px;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   border-radius: var(--border-radius-sm);
   transition: var(--transition-smooth);
   width: 32px;
@@ -72,6 +72,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: var(--glass-shadow-light);
+  z-index: 10;
 }
 
 .close-button:hover {
@@ -85,7 +86,7 @@
 }
 
 .settings-content {
-  padding: 24px;
+  padding: 18px 20px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -93,13 +94,13 @@
 }
 
 .setting-group {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .setting-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 14px;
 }
 
 .setting-group label {
@@ -227,7 +228,7 @@
 
 .setting-input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 14px;
   background: linear-gradient(135deg, 
     var(--glass-bg-light) 0%, 
     var(--glass-bg-dark) 100%) !important;
@@ -255,8 +256,8 @@
 .setting-hint {
   font-size: 12px;
   color: var(--text-secondary);
-  margin-top: 6px;
-  line-height: 1.4;
+  margin-top: 5px;
+  line-height: 1.3;
 }
 
 /* API密钥容器样式 */
@@ -286,13 +287,13 @@
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border-light);
   border-radius: var(--border-radius-md);
-  padding: 16px;
+  padding: 12px 14px;
   cursor: pointer;
   transition: var(--transition-smooth);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   box-shadow: var(--glass-shadow-light);
   position: relative;
   z-index: 2;
@@ -407,6 +408,8 @@
   width: 100%;
   padding: 12px 16px;
   background: transparent;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: none;
   cursor: pointer;
   display: flex;
@@ -415,7 +418,8 @@
   gap: 12px;
   transition: var(--transition-smooth);
   text-align: left;
-  margin: 2px 8px;
+  margin-top: 3px ;
+  margin-bottom: 3px;
   border-radius: var(--border-radius-sm);
   position: relative;
   z-index: 1;
@@ -428,7 +432,7 @@
     var(--glass-bg-dark-hover) 100%);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  transform: translateX(4px);
+  transform: translatey(1px);
 }
 
 .dropdown-option.selected {
@@ -492,7 +496,7 @@
 
 /* 高级设置折叠区域 */
 .advanced-settings {
-  margin-top: 24px;
+  margin-top: 18px;
   border: 1px solid var(--glass-border-light);
   border-radius: var(--border-radius-md);
   overflow: hidden;
@@ -539,12 +543,12 @@
 }
 
 .advanced-content {
-  padding: 20px;
+  padding: 16px;
   border-top: 1px solid var(--glass-border-light);
 }
 
 .advanced-content .setting-group {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .advanced-content .setting-group:last-child,
@@ -553,7 +557,7 @@
 }
 
 .advanced-content .setting-row {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .advanced-content .setting-row:last-child {
@@ -564,8 +568,8 @@
 .provider-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
+  gap: 12px;
+  padding: 12px 16px;
   background: linear-gradient(135deg, 
     var(--glass-bg-light) 0%, 
     var(--glass-bg-dark) 100%);
@@ -603,8 +607,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.2) 0%, 
     rgba(255, 255, 255, 0.05) 100%);
@@ -703,13 +707,13 @@
 }
 
 .settings-footer {
-  padding: 24px;
+  padding: 18px 20px;
   border-top: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 10px;
   flex-shrink: 0;
 }
 
@@ -721,13 +725,13 @@
 
 .footer-buttons {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .test-button,
 .save-button,
 .cancel-button {
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: var(--border-radius-sm);
   font-size: 14px;
   font-weight: 500;
@@ -897,71 +901,71 @@
 /* 移动端适配 */
 @media (max-width: 768px) {
   .settings-overlay {
-    padding: 12px;
+    padding: 8px;
   }
   
   .settings-modal {
-    max-height: 96vh;
+    max-height: 94vh;
     border-radius: var(--border-radius-lg);
   }
   
   .settings-header {
-    padding: 16px 16px 0;
-    margin-bottom: 16px;
-    min-height: 50px;
+    padding: 12px 14px 0;
+    margin-bottom: 12px;
+    min-height: 45px;
   }
   
   .settings-header h2 {
-    font-size: 18px;
+    font-size: 17px;
   }
   
   .settings-content {
-    padding: 0 16px;
+    padding: 0 14px;
   }
   
   .settings-footer {
-    padding: 16px;
+    padding: 14px;
     flex-direction: column;
     align-items: stretch;
-    gap: 16px;
+    gap: 12px;
   }
   
   .footer-buttons {
     width: 100%;
-    gap: 12px;
+    gap: 10px;
   }
   
   .test-button,
   .save-button,
   .cancel-button {
     flex: 1;
-    padding: 14px 20px;
+    padding: 12px 18px;
     font-size: 15px;
   }
   
   .setting-group {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
   
   .setting-row {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 14px;
   }
   
   .setting-group label {
     font-size: 15px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   
   .setting-input {
-    padding: 14px 16px;
+    padding: 12px 14px;
     font-size: 15px;
     border-radius: var(--border-radius-lg);
   }
   
   .setting-hint {
     font-size: 13px;
-    margin-top: 8px;
+    margin-top: 6px;
   }
   
   /* 高级设置移动端优化 */
@@ -1043,61 +1047,73 @@
 
 @media (max-width: 480px) {
   .settings-overlay {
-    padding: 8px;
+    padding: 6px;
   }
   
   .settings-modal {
-    max-height: 98vh;
+    max-height: 97vh;
     border-radius: var(--border-radius-md);
   }
   
   .settings-header {
-    padding: 14px 14px 0;
-    margin-bottom: 14px;
-    min-height: 48px;
+    padding: 10px 12px 0;
+    margin-bottom: 10px;
+    min-height: 42px;
   }
   
   .settings-header h2 {
-    font-size: 17px;
+    font-size: 16px;
+  }
+  
+  .settings-header .close-button {
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    padding: 4px;
+  }
+  
+  .settings-header .close-button svg {
+    width: 18px;
+    height: 18px;
   }
   
   .settings-content {
-    padding: 0 14px;
+    padding: 0 12px;
   }
   
   .settings-footer {
-    padding: 14px;
-    gap: 14px;
+    padding: 12px;
+    gap: 10px;
   }
   
   .footer-buttons {
-    gap: 10px;
+    gap: 8px;
   }
   
   .test-button,
   .save-button,
   .cancel-button {
-    padding: 16px 18px;
-    font-size: 16px;
+    padding: 14px 16px;
+    font-size: 15px;
     border-radius: var(--border-radius-lg);
   }
   
   .setting-group {
-    margin-bottom: 18px;
+    margin-bottom: 16px;
   }
   
   .setting-row {
-    gap: 18px;
+    gap: 14px;
   }
   
   .setting-group label {
-    font-size: 16px;
-    margin-bottom: 12px;
+    font-size: 15px;
+    margin-bottom: 8px;
   }
   
   .setting-input {
-    padding: 16px 18px;
-    font-size: 16px;
+    padding: 14px 16px;
+    font-size: 15px;
     border-radius: var(--border-radius-lg);
   }
   
@@ -1135,40 +1151,40 @@
   }
   
   .dropdown-menu {
-    max-height: 250px;
+    max-height: 220px;
     margin-right: 4px;
     overflow: hidden;
   }
   
   .dropdown-trigger {
-    padding: 16px 14px;
+    padding: 12px 14px;
     border-radius: var(--border-radius-lg);
   }
   
   .dropdown-name {
-    font-size: 16px;
+    font-size: 15px;
   }
   
   .dropdown-description {
-    font-size: 14px;
+    font-size: 13px;
   }
   
   .dropdown-option {
-    padding: 16px 14px;
+    padding: 12px 14px;
   }
   
   .dropdown-option-name {
-    font-size: 16px;
+    font-size: 15px;
   }
   
   .dropdown-option-description {
-    font-size: 14px;
+    font-size: 13px;
   }
   
   /* API密钥容器小屏幕适配 */
   .api-key-container {
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
   
   .api-key-input {
@@ -1177,43 +1193,43 @@
   
   .test-button {
     width: 100%;
-    padding: 16px 18px;
-    font-size: 16px;
+    padding: 14px 16px;
+    font-size: 15px;
   }
   
   /* 提供商卡片小屏幕优化 */
   .provider-card {
-    padding: 14px;
+    padding: 10px 12px;
     border-radius: var(--border-radius-lg);
   }
   
   .provider-logo {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
   }
   
   .provider-name {
-    font-size: 16px;
+    font-size: 15px;
   }
   
   .provider-english {
-    font-size: 14px;
+    font-size: 13px;
   }
   
   /* 存储信息小屏幕优化 */
   .storage-info {
-    padding: 14px;
+    padding: 12px;
     border-radius: var(--border-radius-lg);
   }
   
   .storage-info p {
-    font-size: 15px;
-    margin-bottom: 10px;
+    font-size: 14px;
+    margin-bottom: 8px;
   }
   
   .danger-button {
-    padding: 14px 18px;
-    font-size: 15px;
+    padding: 12px 16px;
+    font-size: 14px;
     border-radius: var(--border-radius-lg);
   }
   
