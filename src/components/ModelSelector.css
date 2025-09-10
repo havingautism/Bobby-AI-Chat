@@ -19,17 +19,22 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 移动端简化模式 */
+/* 移动端简化模式 - 与时间轴按钮样式保持一致 */
 .model-selector-trigger.mobile-mode {
   min-width: auto;
   width: 36px;
   height: 36px;
   padding: 8px;
   justify-content: center;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  border: 1px solid var(--glass-border-light);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow-light);
+  transition: var(--transition-smooth);
+  border-radius: var(--border-radius-sm);
 }
 
 .model-icon {
@@ -51,10 +56,12 @@
 }
 
 .model-selector-trigger.mobile-mode:hover:not(.disabled) {
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light-hover) 0%, 
+    var(--glass-bg-dark-hover) 100%);
+  border-color: var(--accent-primary);
   transform: scale(1.05);
-  background: var(--bg-hover);
-  border-color: var(--border-hover);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--glass-shadow-dark);
 }
 
 .model-selector-trigger:active:not(.disabled) {

@@ -1301,6 +1301,13 @@
   flex-direction: column;
   gap: 6px;
   padding-bottom: 6px;
+  background: #ffffffd9;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+[data-theme="dark"] .documents-list {
+  background: none;
 }
 
 .document-item {
