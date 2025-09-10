@@ -321,7 +321,7 @@
     var(--glass-bg-dark) 100%);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border-light);
+  border: none;
   border-radius: var(--border-radius-md);
   padding: 16px;
   cursor: pointer;
