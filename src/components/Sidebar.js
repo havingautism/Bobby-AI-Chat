@@ -187,7 +187,7 @@ const Sidebar = ({
           {!isCollapsed && (
             <div className="search-container">
               <div className="search-input-wrapper">
-                <svg
+                {/* <svg
                   width="16"
                   height="16"
                   viewBox="0 0 24 24"
@@ -198,7 +198,7 @@ const Sidebar = ({
                 >
                   <circle cx="11" cy="11" r="8" />
                   <path d="M21 21l-4.35-4.35" />
-                </svg>
+                </svg> */}
                 <input
                   type="text"
                   placeholder="搜索Bobby的记忆... 🔮"
@@ -501,7 +501,7 @@ const Sidebar = ({
           <div className="footer-buttons">
             {/* 设置按钮 */}
             <button
-              className="settings-btn"
+              className="theme-toggle-btn"
               onClick={onOpenSettings}
               title={t("settings", currentLanguage)}
             >
@@ -558,7 +558,7 @@ const Sidebar = ({
 
           {/* 收起按钮 - 右对齐 */}
           <button
-            className="collapse-toggle-btn"
+            className="theme-toggle-btn"
             onClick={onToggleCollapse}
             title={isCollapsed ? "展开侧边栏" : "收起侧边栏"}
           >

@@ -1,0 +1,301 @@
+/* 文件图标样式 */
+.file-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-icon {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.file-icon:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.file-icon-corner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.2);
+  color: white;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 0 6px 0 6px;
+  line-height: 1;
+}
+
+.file-icon-content {
+  font-size: 18px;
+  z-index: 1;
+}
+
+/* PDF 文件 */
+.file-icon.pdf {
+  background: linear-gradient(135deg, #e53e3e, #c53030);
+}
+
+.file-icon.pdf::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Word 文件 */
+.file-icon.word {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.file-icon.word::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Excel 文件 */
+.file-icon.excel {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+.file-icon.excel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* PowerPoint 文件 */
+.file-icon.powerpoint {
+  background: linear-gradient(135deg, #ea580c, #dc2626);
+}
+
+.file-icon.powerpoint::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* 代码文件 */
+.file-icon.code {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+}
+
+.file-icon.code::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* 文本文件 */
+.file-icon.text {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+.file-icon.text::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* 图片文件 */
+.file-icon.image {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.file-icon.image::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* 视频文件 */
+.file-icon.video {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.file-icon.video::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* 音频文件 */
+.file-icon.audio {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
+.file-icon.audio::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* 压缩文件 */
+.file-icon.archive {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.file-icon.archive::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* 默认文件 */
+.file-icon.default {
+  background: linear-gradient(135deg, #64748b, #475569);
+}
+
+.file-icon.default::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* 动画效果 */
+@keyframes shimmer {
+  0%, 100% {
+    background-position: -200% 0;
+  }
+  50% {
+    background-position: 200% 0;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 640px) {
+  .file-icon {
+    font-size: 16px;
+  }
+  
+  .file-icon-content {
+    font-size: 14px;
+  }
+  
+  .file-icon-corner {
+    font-size: 6px;
+    padding: 1px 3px;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .file-icon {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .file-icon:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+  
+  .file-icon-corner {
+    background: rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* 小尺寸图标 */
+.file-icon-wrapper[data-size="small"] {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.file-icon-wrapper[data-size="small"] .file-icon {
+  font-size: 14px;
+}
+
+.file-icon-wrapper[data-size="small"] .file-icon-content {
+  font-size: 12px;
+}
+
+.file-icon-wrapper[data-size="small"] .file-icon-corner {
+  font-size: 6px;
+  padding: 1px 2px;
+}
+
+/* 大尺寸图标 */
+.file-icon-wrapper[data-size="large"] {
+  width: 56px !important;
+  height: 56px !important;
+}
+
+.file-icon-wrapper[data-size="large"] .file-icon {
+  font-size: 24px;
+}
+
+.file-icon-wrapper[data-size="large"] .file-icon-content {
+  font-size: 22px;
+}
+
+.file-icon-wrapper[data-size="large"] .file-icon-corner {
+  font-size: 10px;
+  padding: 3px 6px;
+}

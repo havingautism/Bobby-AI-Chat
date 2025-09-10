@@ -4,7 +4,6 @@ import { join, homeDir } from '@tauri-apps/api/path';
 const DEFAULT_DATA_DIR = 'ai-chat-data';
 const CONVERSATIONS_FILE = 'conversations.json';
 const SETTINGS_FILE = 'settings.json';
-const API_SESSIONS_FILE = 'api-sessions.json';
 
 // 获取自定义数据目录路径
 let customDataDir = null;
@@ -286,12 +285,10 @@ export const getStorageInfo = async () => {
   try {
     const conversations = await loadChatHistory();
     const settings = await readJsonFile(SETTINGS_FILE, {});
-    const apiSessions = await readJsonFile(API_SESSIONS_FILE, []);
     
     const conversationsSize = new Blob([JSON.stringify(conversations)]).size;
     const settingsSize = new Blob([JSON.stringify(settings)]).size;
-    const apiSessionsSize = new Blob([JSON.stringify(apiSessions)]).size;
-    const totalSize = conversationsSize + settingsSize + apiSessionsSize;
+    const totalSize = conversationsSize + settingsSize;
     const sizeInMB = (totalSize / (1024 * 1024)).toFixed(2);
     
     // 添加调试信息
@@ -319,10 +316,6 @@ export const getStorageInfo = async () => {
       },
       settings: {
         size: (settingsSize / 1024).toFixed(2) + ' KB'
-      },
-      apiSessions: {
-        count: apiSessions.length,
-        size: (apiSessionsSize / (1024 * 1024)).toFixed(2) + ' MB'
       }
     };
   } catch (error) {
@@ -339,27 +332,6 @@ export const getStorageInfo = async () => {
   }
 };
 
-// 保存API会话历史
-export const saveApiSessions = async (sessions) => {
-  try {
-    await writeJsonFile(API_SESSIONS_FILE, sessions);
-    console.log(`已保存 ${sessions.length} 个API会话记录`);
-  } catch (error) {
-    console.error("保存API会话历史失败:", error);
-  }
-};
-
-// 加载API会话历史
-export const loadApiSessions = async () => {
-  try {
-    const sessions = await readJsonFile(API_SESSIONS_FILE, []);
-    console.log(`已加载 ${sessions.length} 个API会话记录`);
-    return sessions;
-  } catch (error) {
-    console.error("加载API会话历史失败:", error);
-    return [];
-  }
-};
 
 // 获取当前数据目录信息
 export const getDataDirectoryInfo = () => {

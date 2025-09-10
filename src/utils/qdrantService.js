@@ -1,10 +1,70 @@
 /**
  * Qdrant向量数据库服务 - 前端接口
+ * 支持专家模型分离方案，多Collection管理
  */
 class QdrantService {
   constructor() {
     this.isTauriEnvironment = this.checkTauriEnvironment();
     this.isInitialized = false;
+    this.collections = {
+      zh: 'my_knowledge_bge-large-zh-v1.5',
+      en: 'my_knowledge_bge-large-en-v1.5'
+    };
+    this.defaultCollection = 'my_knowledge_bge-m3';
+  }
+
+  // 带超时的fetch，避免无响应长时间卡住
+  async fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      return res;
+    } catch (e) {
+      console.error(`❌ 请求超时或失败: ${url}`, e);
+      throw e;
+    } finally {
+      clearTimeout(id);
+    }
+  }
+
+  // 生成 UUID v4（用于Qdrant点ID）
+  generateUuidV4() {
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const buf = new Uint8Array(16);
+      crypto.getRandomValues(buf);
+      // Set version and variant bits
+      buf[6] = (buf[6] & 0x0f) | 0x40; // version 4
+      buf[8] = (buf[8] & 0x3f) | 0x80; // variant
+      const bytesToHex = Array.from(buf).map(b => b.toString(16).padStart(2, '0'));
+      return (
+        bytesToHex.slice(0, 4).join('') + '-' +
+        bytesToHex.slice(4, 6).join('') + '-' +
+        bytesToHex.slice(6, 8).join('') + '-' +
+        bytesToHex.slice(8, 10).join('') + '-' +
+        bytesToHex.slice(10, 16).join('')
+      );
+    }
+    // 退化实现
+    const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+    return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
+  }
+
+  // 校验是否为Qdrant允许的ID（非负整数或UUID字符串）
+  isValidPointId(id) {
+    if (typeof id === 'number') return Number.isInteger(id) && id >= 0;
+    if (typeof id === 'string') {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(id);
+    }
+    return false;
+  }
+
+  // 检查字符串是否为UUID格式
+  isUuid(str) {
+    if (typeof str !== 'string') return false;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
   }
 
   checkTauriEnvironment() {
@@ -58,39 +118,122 @@ class QdrantService {
 
   /**
    * 确保集合存在
+   * @param {string} collectionName - 集合名称
+   * @param {number} vectorSize - 向量维度
    * @returns {Promise<boolean>} 是否成功
    */
-  async ensureCollection() {
+  async ensureCollection(collectionName = null, vectorSize = 384) {
+    const targetCollection = collectionName || this.defaultCollection;
     try {
       // 检查集合是否存在
-      const response = await fetch('http://localhost:6333/collections/knowledge_base');
+      const response = await this.fetchWithTimeout(`http://localhost:6333/collections/${targetCollection}`);
       if (response.ok) {
-        return true; // 集合已存在
+        const collectionInfo = await response.json();
+        const currentVectorSize = collectionInfo.result?.config?.params?.vectors?.size;
+        
+        if (currentVectorSize === vectorSize) {
+          console.log(`✅ Qdrant集合 ${targetCollection} 已存在，维度正确 (${vectorSize})`);
+          return true; // 集合已存在且维度正确
+        } else {
+          console.log(`⚠️ Qdrant集合 ${targetCollection} 存在但维度不匹配 (当前: ${currentVectorSize}, 需要: ${vectorSize})，重新创建...`);
+          
+          // 删除现有集合
+          const deleteResponse = await this.fetchWithTimeout(`http://localhost:6333/collections/${targetCollection}`, {
+            method: 'DELETE'
+          });
+          
+          if (deleteResponse.ok) {
+            console.log(`✅ 旧集合 ${targetCollection} 删除成功`);
+          } else {
+            console.warn(`⚠️ 删除旧集合 ${targetCollection} 失败，继续创建新集合`);
+          }
+          
+          // 删除后重新创建集合
+          console.log(`🔧 重新创建 Qdrant集合 ${targetCollection} (维度: ${vectorSize})...`);
+          const createResponse = await this.fetchWithTimeout(`http://localhost:6333/collections/${targetCollection}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              vectors: {
+                size: vectorSize,
+                distance: 'Cosine'
+              }
+            })
+          });
+
+          if (createResponse.ok) {
+            console.log(`✅ Qdrant集合 ${targetCollection} 重新创建成功`);
+            return true;
+          } else {
+            const errorText = await createResponse.text();
+            console.error(`❌ Qdrant集合 ${targetCollection} 重新创建失败:`, createResponse.status, createResponse.statusText);
+            console.error(`❌ 错误详情:`, errorText);
+            return false;
+          }
+        }
       }
 
-      // 创建集合
-      const createResponse = await fetch('http://localhost:6333/collections/knowledge_base', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          vectors: {
-            size: 384, // 使用384维向量（与embeddingService一致）
-            distance: 'Cosine'
-          }
-        })
-      });
+      // 如果集合不存在（404），则创建它
+      if (response.status === 404) {
+        console.log(`🔧 Qdrant集合 ${targetCollection} 不存在，正在创建...`);
+        
+        // 创建集合
+        const createResponse = await this.fetchWithTimeout(`http://localhost:6333/collections/${targetCollection}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            vectors: {
+              size: vectorSize,
+              distance: 'Cosine'
+            }
+          })
+        });
 
-      if (createResponse.ok) {
-        console.log('✅ Qdrant集合创建成功');
-        return true;
+        if (createResponse.ok) {
+          console.log(`✅ Qdrant集合 ${targetCollection} 创建成功`);
+          return true;
+        } else {
+          const errorText = await createResponse.text();
+          console.error(`❌ Qdrant集合 ${targetCollection} 创建失败:`, createResponse.status, createResponse.statusText);
+          console.error(`❌ 错误详情:`, errorText);
+          return false;
+        }
       } else {
-        console.error('❌ Qdrant集合创建失败:', createResponse.statusText);
+        // 其他错误
+        console.error(`❌ 检查集合 ${targetCollection} 时出错:`, response.status, response.statusText);
         return false;
       }
     } catch (error) {
-      console.error('❌ 确保集合存在失败:', error);
+      console.error(`❌ 确保集合 ${targetCollection} 存在失败:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 确保所有专家模型集合存在
+   * @returns {Promise<boolean>} 是否成功
+   */
+  async ensureAllCollections() {
+    try {
+      const results = await Promise.all([
+        this.ensureCollection(this.collections.zh, 1024), // BGE 1024维
+        this.ensureCollection(this.collections.en, 1024)  // BGE 1024维
+      ]);
+      
+      const allSuccess = results.every(result => result);
+      if (allSuccess) {
+        console.log('✅ 所有专家模型集合已就绪');
+      } else {
+        console.warn('⚠️ 部分专家模型集合创建失败');
+      }
+      
+      return allSuccess;
+    } catch (error) {
+      console.error('❌ 确保所有集合存在失败:', error);
       return false;
     }
   }
@@ -98,17 +241,22 @@ class QdrantService {
   /**
    * 添加向量点到Qdrant
    * @param {Array} points - 向量点数组
+   * @param {string} targetCollection - 目标集合名称
    * @returns {Promise<boolean>} 是否成功
    */
-  async upsertPoints(points) {
-    if (!this.isInitialized) {
+  async upsertPoints(points, targetCollection = null) {
+        if (!this.isInitialized) {
       console.warn('⚠️ Qdrant服务不可用');
       return false;
     }
 
     try {
-      // 确保集合存在
-      await this.ensureCollection();
+      // 检测向量维度
+      const vectorSize = points.length > 0 && points[0].vector ? points[0].vector.length : 384;
+      console.log(`🔍 检测到向量维度: ${vectorSize}`);
+      
+      // 确保集合存在，使用正确的维度
+      await this.ensureCollection(targetCollection, vectorSize);
       
       // 构建Qdrant格式的点数据
       const qdrantPoints = points.map((point, index) => {
@@ -131,8 +279,20 @@ class QdrantService {
           throw new Error('向量必须包含有效的数字值');
         }
         
+        // Qdrant要求点ID必须是无符号整数或UUID，不能是字符串
+        let stableId = point.id;
+        if (!this.isValidPointId(stableId)) {
+          // 为不合法的ID生成UUID，避免Qdrant 400
+          stableId = this.generateUuidV4();
+        }
+        
+        // 确保ID是UUID格式（如果还不是的话）
+        if (typeof stableId === 'string' && !this.isUuid(stableId)) {
+          stableId = this.generateUuidV4();
+        }
+
         return {
-          id: typeof point.id === 'string' ? index + 1 : point.id, // 确保ID是整数
+          id: stableId,
           vector: vector, // 直接使用向量数组
           payload: {
             ...point.payload,
@@ -141,7 +301,7 @@ class QdrantService {
         };
       });
 
-      const response = await fetch('http://localhost:6333/collections/knowledge_base/points', {
+      const response = await this.fetchWithTimeout(`http://localhost:6333/collections/${targetCollection}/points`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -149,13 +309,13 @@ class QdrantService {
         body: JSON.stringify({
           points: qdrantPoints
         })
-      });
+      }, 20000);
 
       if (response.ok) {
         console.log('✅ 向量点添加成功');
         
         // 强制触发索引，确保向量能被搜索到
-        await this.forceIndexing();
+        await this.forceIndexing(targetCollection);
         
         return true;
       } else {
@@ -173,12 +333,13 @@ class QdrantService {
 
   /**
    * 强制触发索引
+   * @param {string} targetCollection - 集合名称
    * @returns {Promise<boolean>} 是否成功
    */
-  async forceIndexing() {
-    try {
+  async forceIndexing(targetCollection = null) {
+        try {
       // 设置索引阈值为1，确保所有向量都被索引
-      const response = await fetch('http://localhost:6333/collections/knowledge_base', {
+      const response = await this.fetchWithTimeout(`http://localhost:6333/collections/${targetCollection}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -210,10 +371,11 @@ class QdrantService {
   /**
    * 搜索相似向量
    * @param {Object} request - 搜索请求
+   * @param {string} targetCollection - 集合名称
    * @returns {Promise<Object|null>} 搜索结果
    */
-  async search(request) {
-    if (!this.isInitialized) {
+  async search(request, targetCollection = null) {
+        if (!this.isInitialized) {
       console.warn('⚠️ Qdrant服务不可用');
       return null;
     }
@@ -227,16 +389,16 @@ class QdrantService {
         with_vector: false
       };
       
-      console.log('🔍 发送到Qdrant的请求体:', requestBody);
+      console.log(`🔍 在集合 ${targetCollection} 中搜索，请求体:`, requestBody);
       console.log('🔍 请求体中的vector字段:', requestBody.vector ? `存在，长度: ${requestBody.vector.length}` : '不存在');
       
-      const response = await fetch('http://localhost:6333/collections/knowledge_base/points/search', {
+      const response = await this.fetchWithTimeout(`http://localhost:6333/collections/${targetCollection}/points/search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody)
-      });
+      }, 15000);
 
       if (response.ok) {
         const results = await response.json();
@@ -258,13 +420,14 @@ class QdrantService {
   /**
    * 删除向量点
    * @param {Array} pointIds - 要删除的点ID数组
+   * @param {string} targetCollection - 集合名称
    * @returns {Promise<boolean>} 是否成功
    */
-  async deletePoints(pointIds) {
-    try {
-      console.log(`🗑️ 删除 ${pointIds.length} 个向量点:`, pointIds);
+  async deletePoints(pointIds, targetCollection = null) {
+        try {
+      console.log(`🗑️ 在集合 ${targetCollection} 中删除 ${pointIds.length} 个向量点:`, pointIds);
       
-      const response = await fetch('http://localhost:6333/collections/knowledge_base/points/delete', {
+      const response = await fetch(`http://localhost:6333/collections/${targetCollection}/points/delete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -290,28 +453,161 @@ class QdrantService {
 
   /**
    * 获取集合信息
+   * @param {string} targetCollection - 集合名称
    * @returns {Promise<Object|null>} 集合信息
    */
-  async getCollectionInfo() {
-    if (!this.isInitialized) {
+  async getCollectionInfo(targetCollection = null) {
+        if (!this.isInitialized) {
       console.warn('⚠️ Qdrant服务不可用');
       return null;
     }
 
     try {
-      const response = await fetch('http://localhost:6333/collections/knowledge_base');
+      const response = await this.fetchWithTimeout(`http://localhost:6333/collections/${targetCollection}`);
       if (response.ok) {
         const data = await response.json();
         const info = data.result;
-        console.log('📊 Qdrant集合信息:', info);
+        console.log(`📊 Qdrant集合 ${targetCollection} 信息:`, info);
         return info;
       } else {
-        console.error('❌ 获取集合信息失败:', response.status, response.statusText);
+        console.error(`❌ 获取集合 ${targetCollection} 信息失败:`, response.status, response.statusText);
         return null;
       }
     } catch (error) {
-      console.error('❌ 获取集合信息失败:', error);
+      console.error(`❌ 获取集合 ${targetCollection} 信息失败:`, error);
       return null;
+    }
+  }
+
+  /**
+   * 获取所有专家模型集合信息
+   * @returns {Promise<Object>} 所有集合信息
+   */
+  async getAllCollectionsInfo() {
+    const info = {};
+    
+    for (const [lang, targetCollection] of Object.entries(this.collections)) {
+      try {
+        const collectionInfo = await this.getCollectionInfo(targetCollection);
+        info[lang] = {
+          targetCollection,
+          info: collectionInfo,
+          isAvailable: collectionInfo !== null
+        };
+      } catch (error) {
+        console.error(`❌ 获取集合 ${targetCollection} 信息失败:`, error);
+        info[lang] = {
+          targetCollection,
+          info: null,
+          isAvailable: false
+        };
+      }
+    }
+    
+    return info;
+  }
+
+  /**
+   * 根据语言检测结果选择集合
+   * @param {string} text - 要分析的文本
+   * @returns {Promise<Object>} 选择的集合配置
+   */
+  async selectCollectionByLanguage(text) {
+    try {
+      // 导入语言检测器
+      const { autoSelectModel } = await import('./languageDetector.js');
+      
+      // 自动选择模型和集合
+      const config = autoSelectModel(text);
+      
+      console.log(`🎯 语言检测结果: ${config.detectedLanguage}, 选择集合: ${config.collection}`);
+      
+      return config;
+    } catch (error) {
+      console.error('❌ 语言检测失败，使用默认集合:', error);
+      return {
+        model: 'BAAI/bge-large-en-v1.5',
+        collection: this.collections.en,
+        dimensions: 1024,
+        detectedLanguage: 'default'
+      };
+    }
+  }
+
+  /**
+   * 多集合搜索 - 在所有专家模型集合中搜索
+   * @param {string} query - 搜索查询
+   * @param {number} limit - 结果数量限制
+   * @param {number} threshold - 相似度阈值
+   * @returns {Promise<Array>} 合并的搜索结果
+   */
+  async searchAllCollections(query, limit = 10, threshold = 0.01) {
+    try {
+      console.log(`🔍 在所有专家模型集合中搜索: "${query}"`);
+      
+      // 导入语言检测器和嵌入服务
+      const { autoSelectModel } = await import('./languageDetector.js');
+      const { default: embeddingService } = await import('./embeddingService.js');
+      
+      // 检测查询语言并选择主要模型
+      const primaryConfig = autoSelectModel(query);
+      console.log(`🎯 主要搜索语言: ${primaryConfig.detectedLanguage}, 模型: ${primaryConfig.model}`);
+      
+      // 生成查询向量
+      const queryResult = await embeddingService.generateEmbeddings([query], primaryConfig.model);
+      
+      // 检查返回结果格式
+      if (!queryResult || !queryResult.embeddings || !queryResult.embeddings[0]) {
+        console.error('❌ 查询向量生成失败:', queryResult);
+        throw new Error('查询向量生成失败');
+      }
+      
+      const queryVector = queryResult.embeddings[0];
+      
+      console.log(`📊 使用${primaryConfig.model}模型生成查询向量 (${queryVector.length}维)`);
+      
+      // 在所有集合中搜索
+      const searchPromises = Object.entries(this.collections).map(async ([lang, targetCollection]) => {
+        try {
+          const searchRequest = {
+            vector: queryVector,
+            limit: Math.ceil(limit / 2), // 每个集合搜索一半的结果
+            score_threshold: threshold
+          };
+          
+          const results = await this.search(searchRequest, targetCollection);
+          
+          if (results && results.result) {
+            return results.result.map(result => ({
+              ...result,
+              collection: targetCollection,
+              language: lang
+            }));
+          }
+          
+          return [];
+        } catch (error) {
+          console.error(`❌ 在集合 ${targetCollection} 中搜索失败:`, error);
+          return [];
+        }
+      });
+      
+      // 等待所有搜索完成
+      const allResults = await Promise.all(searchPromises);
+      
+      // 合并和排序结果
+      const mergedResults = allResults.flat();
+      mergedResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+      
+      // 限制结果数量
+      const finalResults = mergedResults.slice(0, limit);
+      
+      console.log(`✅ 多集合搜索完成，找到 ${finalResults.length} 个结果`);
+      return finalResults;
+      
+    } catch (error) {
+      console.error('❌ 多集合搜索失败:', error);
+      return [];
     }
   }
 
@@ -336,7 +632,7 @@ class QdrantService {
 
     try {
       // 首先获取所有点的ID
-      const scrollResponse = await fetch('http://localhost:6333/collections/knowledge_base/points/scroll', {
+      const scrollResponse = await fetch(`http://localhost:6333/collections/${this.defaultCollection}/points/scroll`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -362,7 +658,7 @@ class QdrantService {
       }
 
       // 删除所有点
-      const deleteResponse = await fetch('http://localhost:6333/collections/knowledge_base/points/delete', {
+      const deleteResponse = await fetch(`http://localhost:6333/collections/${this.defaultCollection}/points/delete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -414,7 +710,7 @@ class QdrantService {
    * @param {Object} metadata - 文档元数据
    * @returns {Promise<boolean>} 是否成功
    */
-  async addDocumentVectors(documentId, content, metadata = {}) {
+  async addDocumentVectors(documentId, content, metadata = {}, targetCollection) {
     if (!this.isInitialized) {
       console.warn('⚠️ Qdrant服务不可用');
       return false;
@@ -423,6 +719,16 @@ class QdrantService {
     try {
       console.log(`🔄 开始为文档 ${documentId} 生成Qdrant向量...`);
       
+      // 选择目标集合（按内容语言自动选择，除非外部已明确传入）
+      if (!targetCollection) {
+        const { autoSelectModel } = await import('./languageDetector.js');
+        const cfg = autoSelectModel(content || '');
+        targetCollection = cfg.collection || this.collections.zh;
+      }
+
+      // 确保目标集合已存在
+      await this.ensureCollection(targetCollection, 384);
+
       // 导入嵌入服务
       const { default: embeddingService } = await import('./embeddingService.js');
       
@@ -442,12 +748,15 @@ class QdrantService {
           throw new Error('无效的嵌入数据格式');
         }
         
+        // 使用真正的分块索引，而不是数组索引
+        const chunkIndex = embeddingData.chunkIndex !== undefined ? embeddingData.chunkIndex : index;
+        
         return {
-          id: `${documentId}_chunk_${index}`,
+          id: `${documentId}_chunk_${chunkIndex}`,
           vector: vector,
           payload: {
             document_id: documentId,
-            chunk_index: index,
+            chunk_index: chunkIndex,
             chunk_text: embeddingData.chunkText,
             title: metadata.title || 'Unknown',
             source_type: metadata.sourceType || 'manual',
@@ -460,8 +769,8 @@ class QdrantService {
         };
       });
 
-      // 存储到Qdrant
-      const success = await this.upsertPoints(points);
+      // 存储到Qdrant（写入到目标集合）
+      const success = await this.upsertPoints(points, targetCollection);
       
       if (success) {
         console.log(`✅ 文档 ${documentId} 的向量已存储到Qdrant，共 ${points.length} 个向量`);
@@ -495,6 +804,13 @@ class QdrantService {
       
       // 生成查询向量
       const queryResult = await embeddingService.generateEmbedding(query);
+      
+      // 检查返回结果格式
+      if (!queryResult || !queryResult.embedding) {
+        console.error('❌ 查询向量生成失败:', queryResult);
+        throw new Error('查询向量生成失败');
+      }
+      
       const queryVector = queryResult.embedding;
       
       console.log(`📊 使用${queryResult.model}模型生成查询向量 (${queryResult.dimensions}维)`);
@@ -561,7 +877,7 @@ class QdrantService {
       const collectionsResponse = await fetch('http://localhost:6333/collections');
       const collectionsData = await collectionsResponse.json();
       
-      if (!collectionsData.result.collections.some(col => col.name === 'knowledge_base')) {
+      if (collectionsData.result.collections.length === 0) {
         console.log(`ℹ️ Qdrant集合不存在，无需删除向量`);
         return true;
       }
@@ -575,7 +891,7 @@ class QdrantService {
         with_vector: false
       };
 
-      const scrollResponse = await fetch('http://localhost:6333/collections/knowledge_base/points/scroll', {
+      const scrollResponse = await fetch(`http://localhost:6333/collections/${this.defaultCollection}/points/scroll`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -596,17 +912,19 @@ class QdrantService {
         return true;
       }
 
-      // 过滤出属于该文档的点
-      const targetPoints = scrollData.result.points.filter(point => 
-        point.payload && point.payload.document_id === documentId
-      );
+      // 过滤出属于该文档的点（更严格：同时匹配文档ID与来源信息，以避免误删）
+      const targetPoints = scrollData.result.points.filter(point => {
+        const p = point.payload || {};
+        if (!p.document_id) return false;
+        return p.document_id === documentId;
+      });
       
       if (targetPoints.length === 0) {
         console.log(`📄 文档 ${documentId} 在Qdrant中没有向量数据`);
         return true;
       }
 
-      // 提取所有点ID
+      // 再次稳妥：限定ID、document_id 一致的点
       const pointIds = targetPoints.map(point => point.id);
       console.log(`🔍 找到 ${pointIds.length} 个向量点需要删除:`, pointIds);
       
@@ -657,7 +975,7 @@ class QdrantService {
       // 由于Qdrant的优化API端点不存在，我们使用更直接的方法
       // 方法1: 尝试使用update_collection来设置优化配置
       try {
-        const response = await fetch(`http://localhost:6333/collections/knowledge_base`, {
+        const response = await fetch(`http://localhost:6333/collections/${this.defaultCollection}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -712,7 +1030,7 @@ class QdrantService {
       
       // 方法1: 尝试使用snapshot API来触发索引重建
       try {
-        const snapshotResponse = await fetch(`http://localhost:6333/collections/knowledge_base/snapshots`, {
+        const snapshotResponse = await fetch(`http://localhost:6333/collections/${this.defaultCollection}/snapshots`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -733,12 +1051,10 @@ class QdrantService {
         console.log('🔧 尝试重新创建集合来清理索引...');
         
         // 获取当前集合配置
-        const getResponse = await fetch(`http://localhost:6333/collections/knowledge_base`);
+        const getResponse = await fetch(`http://localhost:6333/collections/${this.defaultCollection}`);
         if (getResponse.ok) {
-          const collectionInfo = await getResponse.json();
-          
           // 删除集合
-          const deleteResponse = await fetch(`http://localhost:6333/collections/knowledge_base`, {
+          const deleteResponse = await fetch(`http://localhost:6333/collections/${this.defaultCollection}`, {
             method: 'DELETE'
           });
           
@@ -746,7 +1062,7 @@ class QdrantService {
             console.log('✅ 集合已删除，正在重新创建...');
             
             // 重新创建集合
-            const createResponse = await fetch(`http://localhost:6333/collections/knowledge_base`, {
+            const createResponse = await fetch(`http://localhost:6333/collections/${this.defaultCollection}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
@@ -810,25 +1126,76 @@ class QdrantService {
     }
 
     try {
-      const collectionInfo = await this.getCollectionInfo();
+      // 在专家模式下，需要统计所有专家模型集合的向量数量
+      let totalPointsCount = 0;
+      let totalVectorsCount = 0;
+      let allCollectionsInfo = [];
       
-      if (!collectionInfo) {
-        return {
-          isAvailable: false,
-          pointsCount: 0,
-          vectorsCount: 0,
-          status: 'error'
-        };
+      // 统计所有专家模型集合
+      const expertCollections = [
+        'my_knowledge_bge-large-zh-v1.5',
+        'my_knowledge_bge-large-en-v1.5',
+        'my_knowledge_bge-m3'
+      ];
+      
+      for (const targetCollection of expertCollections) {
+        try {
+          const collectionInfo = await this.getCollectionInfo(targetCollection);
+          if (collectionInfo) {
+            totalPointsCount += collectionInfo.points_count || 0;
+            totalVectorsCount += collectionInfo.indexed_vectors_count || 0;
+            allCollectionsInfo.push({
+              name: targetCollection,
+              pointsCount: collectionInfo.points_count || 0,
+              vectorsCount: collectionInfo.indexed_vectors_count || 0,
+              status: collectionInfo.status
+            });
+            console.log(`✅ 成功获取集合 ${targetCollection} 信息:`, {
+              pointsCount: collectionInfo.points_count || 0,
+              vectorsCount: collectionInfo.indexed_vectors_count || 0
+            });
+          }
+        } catch (error) {
+          // 如果是404错误，说明集合不存在，这是正常的，不需要警告
+          if (error.message && error.message.includes('404')) {
+            console.log(`ℹ️ 集合 ${targetCollection} 不存在，跳过统计`);
+          } else {
+            console.warn(`⚠️ 获取集合 ${targetCollection} 信息失败:`, error.message);
+          }
+        }
       }
+      
+      // 如果没有专家模型集合，回退到默认集合
+      if (totalVectorsCount === 0) {
+        const defaultCollectionInfo = await this.getCollectionInfo(this.defaultCollection);
+        if (defaultCollectionInfo) {
+          totalPointsCount = defaultCollectionInfo.points_count || 0;
+          totalVectorsCount = defaultCollectionInfo.indexed_vectors_count || 0;
+          allCollectionsInfo = [{
+            name: 'knowledge_base',
+            pointsCount: defaultCollectionInfo.points_count || 0,
+            vectorsCount: defaultCollectionInfo.indexed_vectors_count || 0,
+            status: defaultCollectionInfo.status
+          }];
+        }
+      }
+
+      console.log('📊 专家模型集合统计结果:', {
+        totalPointsCount,
+        totalVectorsCount,
+        collectionsCount: allCollectionsInfo.length,
+        allCollections: allCollectionsInfo
+      });
 
       return {
         isAvailable: true,
-        pointsCount: collectionInfo.points_count,
-        vectorsCount: collectionInfo.indexed_vectors_count, // 使用indexed_vectors_count作为向量数量
-        indexedVectorsCount: collectionInfo.indexed_vectors_count,
-        segmentsCount: collectionInfo.segments_count,
-        status: collectionInfo.status,
-        collectionName: 'knowledge_base'
+        pointsCount: totalPointsCount,
+        vectorsCount: totalVectorsCount, // 使用所有集合的总向量数量
+        indexedVectorsCount: totalVectorsCount,
+        segmentsCount: allCollectionsInfo.length,
+        status: allCollectionsInfo.length > 0 ? 'green' : 'error',
+        targetCollection: 'expert-collections',
+        allCollections: allCollectionsInfo
       };
     } catch (error) {
       console.error('❌ 获取Qdrant统计信息失败:', error);

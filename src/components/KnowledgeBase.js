@@ -6,17 +6,52 @@ import docxParser from "../utils/docxParser";
 import spreadsheetParser from "../utils/spreadsheetParser";
 import textParser from "../utils/textParser";
 import "./KnowledgeBase.css";
+import "./KnowledgeBase.enhanced.css";
+import StatusModal from "./StatusModal";
+import LoadingModal from "./LoadingModal";
+import SuccessModal from "./SuccessModal";
+import FileIcon from "./FileIcon";
+import TextModal from "./TextModal";
+import { useNotification, NotificationContainer } from "../hooks/useNotification";
 
 const KnowledgeBase = ({ isOpen, onClose }) => {
   const [documents, setDocuments] = useState([]);
+  const [documentSearchQuery, setDocumentSearchQuery] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [statusModal, setStatusModal] = useState({ open: false, title: "", message: "", loading: false, confirmText: "OK", cancelText: null, onConfirm: null });
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [activeTab, setActiveTab] = useState("documents"); // documents, search, upload, test
+  
+  // 新的loading和通知状态
+  const [loadingModal, setLoadingModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    progress: null,
+    steps: [],
+    currentStep: 0,
+    showCancel: true,
+    onCancel: null
+  });
+
+  // 成功完成模态框状态
+  const [successModal, setSuccessModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    details: [],
+    actions: [],
+    autoClose: true,
+    autoCloseDelay: 5000
+  });
+  
+  const { notifications, showSuccess, showError, showWarning, showInfo, removeNotification } = useNotification();
   const [showAddDocument, setShowAddDocument] = useState(false);
+  const [showTextModal, setShowTextModal] = useState(false);
   const [newDocument, setNewDocument] = useState({
     title: "",
     content: "",
@@ -46,6 +81,36 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
   const [showCustomTestForm, setShowCustomTestForm] = useState(false);
   
   const fileInputRef = useRef(null);
+
+  // 更新加载模态框步骤
+  const updateLoadingModalStep = (stepId, status, progress = null) => {
+    setLoadingModal(prev => {
+      const updatedSteps = prev.steps.map(step => 
+        step.id === stepId ? { ...step, status } : step
+      );
+      
+      return {
+        ...prev,
+        steps: updatedSteps,
+        progress: progress !== null ? progress : prev.progress
+      };
+    });
+  };
+
+  // 格式化文件大小
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // 过滤文档列表
+  const filteredDocuments = documents.filter(doc => {
+    if (!documentSearchQuery.trim()) return true;
+    return doc.title.toLowerCase().includes(documentSearchQuery.toLowerCase());
+  });
 
   // 监听语言变化
   useEffect(() => {
@@ -79,10 +144,26 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
 
   const loadDocuments = async () => {
     try {
+      // 先检查模型是否可用
+      // 使用硅基流动API，不再需要本地模型检查
+      console.log('🔍 使用硅基流动API，跳过模型可用性检查');
+
       const docs = await knowledgeBaseManager.getStoredDocuments();
       setDocuments(docs);
     } catch (error) {
       console.error("加载文档失败:", error);
+      // 检查是否是模型相关错误
+      if (error.message && (error.message.includes('模型') || error.message.includes('model') || error.message.includes('专家模型'))) {
+        setStatusModal({
+          open: true,
+          title: currentLanguage === "zh" ? "模型错误" : "Model Error",
+          message: error.message,
+          loading: false,
+          confirmText: currentLanguage === "zh" ? "确定" : "OK",
+          cancelText: null,
+          onConfirm: () => setStatusModal(prev => ({ ...prev, open: false }))
+        });
+      }
     }
   };
 
@@ -102,6 +183,9 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       return;
     }
 
+    // 使用硅基流动API，不再需要本地模型检查
+    console.log('🔍 使用硅基流动API，跳过模型可用性检查');
+
     setIsSearching(true);
     try {
       const results = await knowledgeBaseManager.search(searchQuery, {
@@ -113,17 +197,68 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
     } catch (error) {
       console.error("搜索失败:", error);
       setSearchResults([]);
+      // 检查是否是模型相关错误
+      if (error.message && (error.message.includes('模型') || error.message.includes('model') || error.message.includes('专家模型'))) {
+        setStatusModal({
+          open: true,
+          title: currentLanguage === "zh" ? "搜索失败" : "Search Failed",
+          message: error.message,
+          loading: false,
+          confirmText: currentLanguage === "zh" ? "确定" : "OK",
+          cancelText: null,
+          onConfirm: () => setStatusModal(prev => ({ ...prev, open: false }))
+        });
+      }
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  // 处理文本添加（用于TextModal）
+  const handleAddText = async (textData) => {
+    try {
+      const docId = await knowledgeBaseManager.addDocument(textData);
+      console.log("文本已添加:", docId);
+      
+      // 重新加载文档列表和统计
+      await loadDocuments();
+      await loadStatistics();
+      
+      // 显示成功消息
+      showSuccess(
+        currentLanguage === "zh" ? "添加成功" : "Added Successfully",
+        currentLanguage === "zh" ? "文本内容已成功添加到知识库" : "Text content has been successfully added to the knowledge base"
+      );
+      
+      return docId;
+    } catch (error) {
+      console.error("添加文本失败:", error);
+      showError(
+        currentLanguage === "zh" ? "添加失败" : "Add Failed",
+        currentLanguage === "zh" ? "添加文本内容失败" : "Failed to add text content"
+      );
+      throw error;
     }
   };
 
   // 添加文档
   const handleAddDocument = async () => {
     if (!newDocument.title.trim() || !newDocument.content.trim()) {
-      alert(currentLanguage === "zh" ? "请填写标题和内容" : "Please fill in title and content");
+      setStatusModal({
+        open: true,
+        title: currentLanguage === "zh" ? "输入错误" : "Input Error",
+        message: currentLanguage === "zh" ? "请填写标题和内容" : "Please fill in title and content",
+        loading: false,
+        confirmText: currentLanguage === "zh" ? "确定" : "OK",
+        cancelText: null,
+        onConfirm: () => setStatusModal(prev => ({ ...prev, open: false }))
+      });
       return;
     }
+
+    // 先检查模型是否可用
+    // 使用硅基流动API，不再需要本地模型检查
+    console.log('🔍 使用硅基流动API，跳过模型可用性检查');
 
     try {
       const docId = await knowledgeBaseManager.addDocument(newDocument);
@@ -141,10 +276,26 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       await loadDocuments();
       await loadStatistics();
       
-      alert(currentLanguage === "zh" ? "文档添加成功" : "Document added successfully");
+      setStatusModal({
+        open: true,
+        title: currentLanguage === "zh" ? "添加成功" : "Success",
+        message: currentLanguage === "zh" ? "文档添加成功" : "Document added successfully",
+        loading: false,
+        confirmText: currentLanguage === "zh" ? "确定" : "OK",
+        cancelText: null,
+        onConfirm: () => setStatusModal(prev => ({ ...prev, open: false }))
+      });
     } catch (error) {
       console.error("添加文档失败:", error);
-      alert(currentLanguage === "zh" ? "添加文档失败" : "Failed to add document");
+      setStatusModal({
+        open: true,
+        title: currentLanguage === "zh" ? "添加失败" : "Failed",
+        message: error.message || (currentLanguage === "zh" ? "添加文档失败" : "Failed to add document"),
+        loading: false,
+        confirmText: currentLanguage === "zh" ? "确定" : "OK",
+        cancelText: null,
+        onConfirm: () => setStatusModal(prev => ({ ...prev, open: false }))
+      });
     }
   };
 
@@ -591,39 +742,226 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
     const files = event.target.files;
     if (!files.length) return;
 
+    // 显示上传开始通知
+    showInfo(
+      currentLanguage === "zh" ? "开始上传" : "Upload Started",
+      currentLanguage === "zh" ? `正在上传 ${files.length} 个文件...` : `Uploading ${files.length} files...`,
+      { persistent: true }
+    );
+
+    // 设置详细的loading modal
+    setLoadingModal({
+      open: true,
+      title: currentLanguage === "zh" ? "正在上传文件" : "Uploading Files",
+      message: currentLanguage === "zh" ? "正在处理文件，请稍候..." : "Processing files, please wait...",
+      progress: 0,
+      steps: [
+        {
+          title: currentLanguage === "zh" ? "文件解析" : "File Parsing",
+          description: currentLanguage === "zh" ? "读取和解析文件内容" : "Reading and parsing file content"
+        },
+        {
+          title: currentLanguage === "zh" ? "向量化处理" : "Vector Processing",
+          description: currentLanguage === "zh" ? "生成文档向量嵌入" : "Generating document vector embeddings"
+        },
+        {
+          title: currentLanguage === "zh" ? "存储到知识库" : "Storing to Knowledge Base",
+          description: currentLanguage === "zh" ? "保存到向量数据库" : "Saving to vector database"
+        },
+        {
+          title: currentLanguage === "zh" ? "完成" : "Complete",
+          description: currentLanguage === "zh" ? "上传完成" : "Upload completed"
+        }
+      ],
+      currentStep: 0,
+      showCancel: true,
+      onCancel: () => {
+        setLoadingModal(s => ({ ...s, open: false }));
+        showWarning(
+          currentLanguage === "zh" ? "上传已取消" : "Upload Cancelled",
+          currentLanguage === "zh" ? "文件上传操作已取消" : "File upload operation was cancelled"
+        );
+      }
+    });
+
     setIsUploading(true);
     setUploadProgress(0);
 
     try {
+      const uploadedFiles = [];
+      const failedFiles = [];
+      let totalProgress = 0;
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const content = await readFileContent(file);
         
-        const document = {
-          title: file.name,
-          content: content,
-          sourceType: "file",
-          filePath: file.name,
-          fileSize: file.size,
-          mimeType: file.type,
-          metadata: {
-            originalName: file.name,
-            uploadTime: new Date().toISOString()
-          }
-        };
+        // 计算当前文件的进度贡献
+        const fileProgressWeight = 100 / files.length;
+        const baseProgress = i * fileProgressWeight;
+        
+        showInfo(
+          currentLanguage === "zh" ? `处理文件 ${i + 1}/${files.length}` : `Processing file ${i + 1}/${files.length}`,
+          currentLanguage === "zh" ? `正在处理: ${file.name}` : `Processing: ${file.name}`,
+          { persistent: true }
+        );
 
-        await knowledgeBaseManager.addDocument(document);
-        setUploadProgress(((i + 1) / files.length) * 100);
+        try {
+          // 步骤1: 文件解析 (25% of file progress)
+          setLoadingModal(s => ({ 
+            ...s, 
+            progress: baseProgress + (fileProgressWeight * 0.25),
+            currentStep: 0,
+            message: currentLanguage === "zh" ? `解析文件: ${file.name}` : `Parsing file: ${file.name}`
+          }));
+          await new Promise(resolve => setTimeout(resolve, 300)); // 模拟处理时间
+          const content = await readFileContent(file);
+          
+          // 步骤2: 向量化处理 (35% of file progress)
+          setLoadingModal(s => ({ 
+            ...s, 
+            progress: baseProgress + (fileProgressWeight * 0.6),
+            currentStep: 1,
+            message: currentLanguage === "zh" ? `生成向量: ${file.name}` : `Generating vectors: ${file.name}`
+          }));
+          await new Promise(resolve => setTimeout(resolve, 200)); // 模拟处理时间
+          
+          const document = {
+            title: file.name,
+            content: content,
+            sourceType: "file",
+            filePath: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+            metadata: {
+              originalName: file.name,
+              uploadTime: new Date().toISOString()
+            }
+          };
+
+          // 步骤3: 存储到知识库 (40% of file progress)
+          setLoadingModal(s => ({ 
+            ...s, 
+            progress: baseProgress + (fileProgressWeight * 0.9),
+            currentStep: 2,
+            message: currentLanguage === "zh" ? `存储到知识库: ${file.name}` : `Storing to knowledge base: ${file.name}`
+          }));
+          await knowledgeBaseManager.addDocument(document);
+          
+          // 文件完成
+          totalProgress = baseProgress + fileProgressWeight;
+          setLoadingModal(s => ({ ...s, progress: totalProgress }));
+          uploadedFiles.push(file);
+          
+          // 短暂显示完成状态
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+        } catch (fileError) {
+          console.error(`❌ 处理文件 ${file.name} 失败:`, fileError);
+          failedFiles.push({ file, error: fileError });
+          
+          // 即使文件失败，也要更新进度
+          totalProgress = baseProgress + fileProgressWeight;
+          setLoadingModal(s => ({ ...s, progress: totalProgress }));
+        }
       }
+
+      // 步骤4: 完成
+      setLoadingModal(s => ({ 
+        ...s, 
+        progress: 100,
+        currentStep: 3,
+        message: currentLanguage === "zh" ? "上传完成，正在刷新数据..." : "Upload complete, refreshing data..."
+      }));
+      await new Promise(resolve => setTimeout(resolve, 800)); // 显示完成状态
 
       // 重新加载数据
       await loadDocuments();
       await loadStatistics();
-      
-      alert(currentLanguage === "zh" ? "文件上传成功" : "Files uploaded successfully");
+
+      // 关闭loading modal
+      setTimeout(() => {
+        setLoadingModal(prev => ({ ...prev, open: false }));
+      }, 500);
+
+      // 显示优雅的成功完成模态框
+      setSuccessModal({
+        open: true,
+        title: currentLanguage === "zh" ? "上传完成 🎉" : "Upload Complete 🎉",
+        message: currentLanguage === "zh" 
+          ? `成功上传 ${uploadedFiles.length} 个文件到知识库`
+          : `Successfully uploaded ${uploadedFiles.length} files to knowledge base`,
+        details: [
+          { label: currentLanguage === "zh" ? "上传成功" : "Success", value: `${uploadedFiles.length} 个文件` },
+          { label: currentLanguage === "zh" ? "上传失败" : "Failed", value: failedFiles.length > 0 ? `${failedFiles.length} 个文件` : '0 个文件' },
+          { label: currentLanguage === "zh" ? "总大小" : "Total Size", value: formatFileSize(uploadedFiles.reduce((sum, file) => sum + file.size, 0)) },
+          { label: currentLanguage === "zh" ? "完成时间" : "Completed", value: new Date().toLocaleString() }
+        ],
+        actions: [
+          {
+            text: currentLanguage === "zh" ? "查看文档" : "View Documents",
+            primary: true,
+            icon: '📄',
+            onClick: () => {
+              setSuccessModal(prev => ({ ...prev, open: false }));
+              setActiveTab("documents");
+            }
+          },
+          {
+            text: currentLanguage === "zh" ? "上传更多" : "Upload More",
+            icon: '📤',
+            onClick: () => {
+              setSuccessModal(prev => ({ ...prev, open: false }));
+              setActiveTab("upload");
+            }
+          },
+          ...(failedFiles.length > 0 ? [{
+            text: currentLanguage === "zh" ? "查看错误" : "View Errors",
+            icon: '❌',
+            onClick: () => {
+              showInfo(
+                currentLanguage === "zh" ? "上传错误详情" : "Upload Error Details",
+                currentLanguage === "zh" 
+                  ? `以下文件上传失败:\n${failedFiles.map(f => `• ${f.file.name}: ${f.error.message}`).join('\n')}`
+                  : `The following files failed to upload:\n${failedFiles.map(f => `• ${f.file.name}: ${f.error.message}`).join('\n')}`
+              );
+            }
+          }] : [])
+        ],
+        autoClose: false
+      });
+
     } catch (error) {
       console.error("文件上传失败:", error);
-      alert(currentLanguage === "zh" ? "文件上传失败" : "Failed to upload files");
+      
+      // 关闭loading modal
+      setLoadingModal(s => ({ ...s, open: false }));
+
+      // 显示错误通知
+      showError(
+        currentLanguage === "zh" ? "上传失败" : "Upload Failed",
+        currentLanguage === "zh" ? `文件上传失败: ${error.message}` : `File upload failed: ${error.message}`,
+        {
+          actions: [
+            {
+              text: currentLanguage === "zh" ? "重试" : "Retry",
+              primary: true,
+              onClick: () => {
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = "";
+                  fileInputRef.current.click();
+                }
+              }
+            },
+            {
+              text: currentLanguage === "zh" ? "查看详情" : "View Details",
+              primary: false,
+              onClick: () => {
+                console.error("详细错误信息:", error);
+              }
+            }
+          ]
+        }
+      );
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -671,37 +1009,183 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
 
   // 删除文档
   const handleDeleteDocument = async (docId) => {
-    if (!window.confirm(currentLanguage === "zh" ? "确定要删除这个文档吗？" : "Are you sure you want to delete this document?")) {
-      return;
-    }
+    const doc = documents.find(d => d.id === docId);
+    if (!doc) return;
+
+    // 添加删除确认通知
+    const confirmNotificationId = showWarning(
+      currentLanguage === "zh" ? "删除确认" : "Confirm Delete",
+      currentLanguage === "zh" 
+        ? `确定要删除文档"${doc.title}"吗？此操作无法撤销。`
+        : `Are you sure you want to delete "${doc.title}"? This action cannot be undone.`,
+      {
+        persistent: true,
+        actions: [
+          {
+            text: currentLanguage === "zh" ? "删除" : "Delete",
+            primary: true,
+            onClick: async () => {
+              removeNotification(confirmNotificationId);
+              await performDocumentDelete(docId, doc);
+            }
+          },
+          {
+            text: currentLanguage === "zh" ? "取消" : "Cancel",
+            onClick: () => removeNotification(confirmNotificationId)
+          }
+        ]
+      }
+    );
+  };
+
+  // 执行文档删除
+  const performDocumentDelete = async (docId, doc) => {
+    const loadingNotificationId = showInfo(
+      currentLanguage === "zh" ? "删除文档" : "Deleting Document",
+      currentLanguage === "zh" 
+        ? `正在删除文档"${doc.title}"...`
+        : `Deleting "${doc.title}"...`,
+      { persistent: true }
+    );
 
     try {
-      console.log(`🗑️ 开始删除文档: ${docId}`);
+      // 显示删除进度模态框
+      setLoadingModal({
+        open: true,
+        title: currentLanguage === "zh" ? "删除文档" : "Deleting Document",
+        message: currentLanguage === "zh" 
+          ? `正在从知识库中删除文档"${doc.title}"...`
+          : `Removing "${doc.title}" from knowledge base...`,
+        progress: 0,
+        steps: [
+          {
+            id: 'remove_vectors',
+            title: currentLanguage === "zh" ? "移除向量数据" : "Removing Vector Data",
+            description: currentLanguage === "zh" ? "从向量数据库中删除文档向量" : "Deleting document vectors from vector database",
+            status: 'pending'
+          },
+          {
+            id: 'remove_metadata',
+            title: currentLanguage === "zh" ? "清理元数据" : "Cleaning Metadata",
+            description: currentLanguage === "zh" ? "删除文档元数据和记录" : "Removing document metadata and records",
+            status: 'pending'
+          },
+          {
+            id: 'update_index',
+            title: currentLanguage === "zh" ? "更新索引" : "Updating Index",
+            description: currentLanguage === "zh" ? "更新知识库索引" : "Updating knowledge base index",
+            status: 'pending'
+          },
+          {
+            id: 'complete',
+            title: currentLanguage === "zh" ? "删除完成" : "Deletion Complete",
+            description: currentLanguage === "zh" ? "文档已成功删除" : "Document successfully deleted",
+            status: 'pending'
+          }
+        ],
+        cancelable: false,
+        onCancel: null
+      });
+
+      // 步骤1: 移除向量数据
+      updateLoadingModalStep('remove_vectors', 'in_progress', 25);
+      await new Promise(resolve => setTimeout(resolve, 500)); // 模拟处理时间
       await knowledgeBaseManager.deleteDocument(docId);
-      console.log(`✅ 文档删除成功: ${docId}`);
-      
-      // 重新加载数据
+
+      // 步骤2: 清理元数据
+      updateLoadingModalStep('remove_metadata', 'in_progress', 50);
+      await new Promise(resolve => setTimeout(resolve, 300)); // 模拟处理时间
+
+      // 步骤3: 更新索引
+      updateLoadingModalStep('update_index', 'in_progress', 75);
       await loadDocuments();
       await loadStatistics();
-      
-      // 延迟再次刷新统计信息，确保Qdrant索引更新
+
+      // 步骤4: 完成
+      updateLoadingModalStep('complete', 'in_progress', 100);
+      await new Promise(resolve => setTimeout(resolve, 500)); // 显示完成状态
+      updateLoadingModalStep('complete', 'completed', 100);
+
+      // 延迟关闭模态框
+      setTimeout(() => {
+        setLoadingModal(prev => ({ ...prev, open: false }));
+      }, 1000);
+
+      // 移除加载通知
+      removeNotification(loadingNotificationId);
+
+      // 显示成功通知
+      showSuccess(
+        currentLanguage === "zh" ? "删除成功" : "Delete Successful",
+        currentLanguage === "zh" 
+          ? `文档"${doc.title}"已成功删除`
+          : `"${doc.title}" has been successfully deleted`,
+        {
+          actions: [
+            {
+              text: currentLanguage === "zh" ? "查看详情" : "View Details",
+              onClick: () => {
+                showInfo(
+                  currentLanguage === "zh" ? "删除详情" : "Deletion Details",
+                  currentLanguage === "zh" 
+                    ? `• 文档: ${doc.title}\n• 删除时间: ${new Date().toLocaleString()}\n• 状态: 已完成`
+                    : `• Document: ${doc.title}\n• Deleted: ${new Date().toLocaleString()}\n• Status: Complete`
+                );
+              }
+            }
+          ]
+        }
+      );
+
+      // 延迟刷新统计信息确保Qdrant索引更新
       setTimeout(async () => {
-        console.log('🔄 延迟刷新统计信息...');
         await loadStatistics();
-        console.log('✅ 统计信息已更新');
       }, 2000);
-      
-      console.log('📊 数据重新加载完成');
-      alert(currentLanguage === "zh" ? "文档已删除" : "Document deleted");
+
     } catch (error) {
-      console.error("❌ 删除文档失败:", error);
-      alert(currentLanguage === "zh" ? "删除文档失败: " + error.message : "Failed to delete document: " + error.message);
+      console.error('❌ 删除文档失败:', error);
+      
+      // 移除加载通知
+      removeNotification(loadingNotificationId);
+      
+      // 关闭加载模态框
+      setLoadingModal(prev => ({ ...prev, open: false }));
+
+      // 显示错误通知
+      showError(
+        currentLanguage === "zh" ? "删除失败" : "Delete Failed",
+        currentLanguage === "zh" 
+          ? `删除文档"${doc.title}"时发生错误: ${error.message}`
+          : `Error deleting "${doc.title}": ${error.message}`,
+        {
+          persistent: true,
+          actions: [
+            {
+              text: currentLanguage === "zh" ? "重试" : "Retry",
+              primary: true,
+              onClick: () => performDocumentDelete(docId, doc)
+            },
+            {
+              text: currentLanguage === "zh" ? "查看错误" : "View Error",
+              onClick: () => {
+                showInfo(
+                  currentLanguage === "zh" ? "错误详情" : "Error Details",
+                  currentLanguage === "zh" 
+                    ? `• 错误类型: ${error.name || '未知错误'}\n• 错误信息: ${error.message}\n• 文档: ${doc.title}\n• 时间: ${new Date().toLocaleString()}`
+                    : `• Error Type: ${error.name || 'Unknown Error'}\n• Message: ${error.message}\n• Document: ${doc.title}\n• Time: ${new Date().toLocaleString()}`
+                );
+              }
+            }
+          ]
+        }
+      );
     }
   };
 
   if (!isOpen) return null;
 
   return (
+    <>
     <div className="knowledge-base-overlay">
       <div className="knowledge-base-modal">
         <div className="knowledge-base-header">
@@ -796,12 +1280,6 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
               {currentLanguage === "zh" ? "文档列表" : "Documents"}
             </button>
             <button
-              className={`tab-button ${activeTab === "search" ? "active" : ""}`}
-              onClick={() => setActiveTab("search")}
-            >
-              {currentLanguage === "zh" ? "搜索" : "Search"}
-            </button>
-            <button
               className={`tab-button ${activeTab === "upload" ? "active" : ""}`}
               onClick={() => setActiveTab("upload")}
             >
@@ -821,12 +1299,12 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
               <div className="documents-header">
                 <h3>{currentLanguage === "zh" ? "文档列表" : "Document List"}</h3>
                 <div className="header-actions">
-                  <button
+                  {/* <button
                     className="cleanup-duplicates-button"
                     onClick={cleanupDuplicateDocuments}
                     title={currentLanguage === "zh" ? "清理重复文档" : "Clean duplicate documents"}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M3 6h18"/>
                       <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                       <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -841,7 +1319,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                     onClick={clearAllDocuments}
                     title={currentLanguage === "zh" ? "清理所有文档" : "Clear all documents"}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M3 6h18"/>
                       <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                       <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -851,20 +1329,69 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                       <path d="M20 2l-4 4"/>
                     </svg>
                     {currentLanguage === "zh" ? "清空全部" : "Clear All"}
+                  </button> */}
+                  
+                  <button
+                    className="compact-add-text-btn"
+                    onClick={() => setShowTextModal(true)}
+                    title={currentLanguage === "zh" ? "添加文本" : "Add Text"}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10 9 9 9 8 9"/>
+                    </svg>
                   </button>
                   
                   <button
-                    className="add-document-button"
+                    className="compact-add-document-btn"
                     onClick={() => setShowAddDocument(true)}
+                    title={currentLanguage === "zh" ? "添加文档" : "Add Document"}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 5v14"/>
-                      <path d="M5 12h14"/>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 5v14M5 12h14"/>
                     </svg>
-                    {currentLanguage === "zh" ? "添加文档" : "Add Document"}
                   </button>
                 </div>
               </div>
+
+              {/* 搜索栏 */}
+              <div className="document-search-bar">
+                <div className="search-input-wrapper">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="search-icon">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  <input
+                    type="text"
+                    value={documentSearchQuery}
+                    onChange={(e) => setDocumentSearchQuery(e.target.value)}
+                    placeholder={currentLanguage === "zh" ? "搜索文档名称..." : "Search document names..."}
+                    className="document-search-input"
+                  />
+                  {documentSearchQuery && (
+                    <button 
+                      className="search-clear-btn"
+                      onClick={() => setDocumentSearchQuery("")}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                multiple
+                accept=".pdf,.doc,.docx,.txt,.md,.xls,.xlsx,.ppt,.pptx,.csv,.json,.xml,.html,.css,.js,.ts,.jsx,.tsx,.rtf"
+                onChange={handleFileUpload}
+              />
 
               {showAddDocument && (
                 <div className="add-document-form">
@@ -897,51 +1424,37 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                 </div>
               )}
 
-              <div className="documents-list">
-                {documents.length === 0 ? (
+              <div className="document-grid">
+                {filteredDocuments.length === 0 ? (
                   <div className="empty-state">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                      <path d="M8 7h8"/>
-                      <path d="M8 11h8"/>
-                      <path d="M8 15h5"/>
-                    </svg>
-                    <p>{currentLanguage === "zh" ? "暂无文档" : "No documents yet"}</p>
-                    <button
-                      className="add-document-button"
-                      onClick={() => setShowAddDocument(true)}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 5v14"/>
-                        <path d="M5 12h14"/>
-                      </svg>
-                      {currentLanguage === "zh" ? "+ 添加文档" : "+ Add Document"}
-                    </button>
+                    <div className="empty-state-icon">📚</div>
+                    <div className="empty-state-text">暂无文档</div>
+                    <div className="empty-state-subtext">上传文档开始构建您的知识库</div>
                   </div>
                 ) : (
-                  documents.map((doc, index) => (
-                    <div key={doc.id || `doc_${index}`} className="document-item">
-                      <div className="document-info">
-                        <h4>{doc.title}</h4>
-                        <p className="document-meta">
-                          {doc.sourceType || 'manual'} • {new Date(doc.createdAt || doc.created_at || Date.now()).toLocaleDateString()}
-                        </p>
-                        <p className="document-preview">
-                          {doc.content.substring(0, 100)}...
-                        </p>
+                  filteredDocuments.map((doc, index) => (
+                    <div key={doc.id || `doc_${index}`} className="document-card">
+                      <div className="document-card-icon">
+                        <FileIcon fileName={doc.title || doc.fileName || 'document'} size={48} />
                       </div>
-                      <div className="document-actions">
+                      <div className="document-card-info">
+                        <div className="document-card-title" title={doc.title || doc.fileName}>
+                          {doc.title || doc.fileName}
+                        </div>
+                        <div className="document-card-meta">
+                          {doc.fileSize ? formatFileSize(doc.fileSize) : (doc.sourceType || 'manual')}
+                        </div>
+                        <div className="document-card-date">
+                          {new Date(doc.createdAt || doc.created_at || doc.uploadTime || Date.now()).toLocaleDateString('zh-CN')}
+                        </div>
+                      </div>
+                      <div className="document-card-actions">
                         <button
-                          className="delete-button"
+                          className="document-card-delete"
                           onClick={() => handleDeleteDocument(doc.id)}
-                          title={currentLanguage === "zh" ? "删除文档" : "Delete document"}
+                          title="删除文档"
                         >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M3 6h18"/>
-                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                          </svg>
+                          🗑️
                         </button>
                       </div>
                     </div>
@@ -951,65 +1464,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
             </div>
           )}
 
-          {/* 搜索标签页 */}
-          {activeTab === "search" && (
-            <div className="tab-content">
-              <div className="search-section">
-                <div className="search-input-group">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={currentLanguage === "zh" ? "搜索知识库..." : "Search knowledge base..."}
-                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-                  />
-                  <button
-                    className="search-button"
-                    onClick={handleSearch}
-                    disabled={isSearching}
-                  >
-                    {isSearching ? (
-                      <svg className="spinner" width="16" height="16" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="31.416" strokeDashoffset="31.416">
-                          <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-                          <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
-                        </circle>
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="M21 21l-4.35-4.35"/>
-                      </svg>
-                    )}
-                  </button>
-                </div>
-
-                <div className="search-results">
-                  {searchResults.length === 0 && searchQuery ? (
-                    <div className="empty-state">
-                      <p>{currentLanguage === "zh" ? "未找到相关文档" : "No documents found"}</p>
-                    </div>
-                  ) : (
-                    searchResults.map((result, index) => (
-                      <div key={index} className="search-result-item">
-                        <div className="result-header">
-                          <h4>{result.title}</h4>
-                          <span className="similarity-score">
-                            {result.score !== undefined ? (result.score * 100).toFixed(1) : 'N/A'}%
-                          </span>
-                        </div>
-                        <p className="result-content">{result.content}</p>
-                        <div className="result-meta">
-                          {result.sourceType} • 块 {result.chunkIndex}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
+  
           {/* 测试标签页 */}
           {activeTab === "test" && (
             <div className="tab-content">
@@ -1244,58 +1699,49 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
           {activeTab === "upload" && (
             <div className="tab-content">
               <div className="upload-section">
-                {/* 单一上传入口 */}
-                <div className="traditional-upload-section">
-                  <div className="upload-area">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept=".pdf,.docx,.xlsx,.xls,.csv,.txt"
-                      onChange={handleFileUpload}
-                      style={{ display: "none" }}
-                    />
-                    
-                    <div
-                      className="upload-dropzone"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                <div className="simple-upload-area">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.txt,.md,.xls,.xlsx,.ppt,.pptx,.csv,.json,.xml,.html,.css,.js,.ts,.jsx,.tsx,.rtf"
+                    onChange={handleFileUpload}
+                    style={{ display: "none" }}
+                  />
+                  
+                  <div
+                    className="upload-zone"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <div className="upload-icon">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7,10 12,15 17,10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
                       </svg>
-                      <h3>{currentLanguage === "zh" ? "上传到知识库" : "Upload to Knowledge Base"}</h3>
-                      <p>{currentLanguage === "zh" ? "支持 PDF, DOCX, XLSX/XLS, CSV, TXT" : "Supports PDF, DOCX, XLSX/XLS, CSV, TXT"}</p>
-                      <button className="upload-button">
-                        {currentLanguage === "zh" ? "选择文件" : "Choose Files"}
-                      </button>
+                    </div>
+                    <div className="upload-text">
+                      <h3>{currentLanguage === "zh" ? "点击或拖拽上传文件" : "Click or drag to upload"}</h3>
+                      <p>{currentLanguage === "zh" ? "支持多种文档格式" : "Support multiple document formats"}</p>
                     </div>
                   </div>
-
-                  {isUploading && (
-                    <div className="upload-progress">
-                      <div className="progress-bar">
-                        <div
-                          className="progress-fill"
-                          style={{ width: `${uploadProgress}%` }}
-                        />
-                      </div>
-                      <span className="progress-text">
-                        {currentLanguage === "zh" ? "上传中..." : "Uploading..."} {uploadProgress.toFixed(0)}%
-                      </span>
-                    </div>
-                  )}
                 </div>
 
-                <div className="upload-tips">
-                  <h4>{currentLanguage === "zh" ? "上传提示" : "Upload Tips"}</h4>
-                  <ul>
-                    <li>{currentLanguage === "zh" ? "支持多种文档格式" : "Supports multiple document formats"}</li>
-                    <li>{currentLanguage === "zh" ? "大文件会自动分块处理" : "Large files will be automatically chunked"}</li>
-                    <li>{currentLanguage === "zh" ? "上传后会自动生成向量嵌入" : "Vector embeddings will be generated automatically"}</li>
-                    <li>{currentLanguage === "zh" ? "支持批量上传多个文件" : "Supports batch upload of multiple files"}</li>
-                  </ul>
+                <div className="upload-formats">
+                  <h4>{currentLanguage === "zh" ? "支持的格式" : "Supported Formats"}</h4>
+                  <div className="format-tags">
+                    <span className="format-tag">PDF</span>
+                    <span className="format-tag">DOC</span>
+                    <span className="format-tag">DOCX</span>
+                    <span className="format-tag">XLS</span>
+                    <span className="format-tag">XLSX</span>
+                    <span className="format-tag">TXT</span>
+                    <span className="format-tag">MD</span>
+                    <span className="format-tag">JSON</span>
+                    <span className="format-tag">HTML</span>
+                    <span className="format-tag">CSS</span>
+                    <span className="format-tag">JS</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1303,6 +1749,43 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         </div>
       </div>
     </div>
+    
+    {/* 成功完成模态框 */}
+    <SuccessModal
+      open={successModal.open}
+      onClose={() => setSuccessModal(prev => ({ ...prev, open: false }))}
+      title={successModal.title}
+      message={successModal.message}
+      details={successModal.details}
+      actions={successModal.actions}
+      autoClose={successModal.autoClose}
+      autoCloseDelay={successModal.autoCloseDelay}
+    />
+    
+    {/* 通知容器 */}
+    <NotificationContainer
+      notifications={notifications}
+      onClose={removeNotification}
+    />
+    
+    <StatusModal
+      isOpen={statusModal.open}
+      title={statusModal.title}
+      message={statusModal.message}
+      confirmText={statusModal.confirmText}
+      cancelText={statusModal.cancelText}
+      onConfirm={statusModal.onConfirm}
+      onCancel={() => setStatusModal((s) => ({ ...s, open: false }))}
+      isLoading={statusModal.loading}
+    />
+    
+    <TextModal
+      isOpen={showTextModal}
+      onClose={() => setShowTextModal(false)}
+      onAddText={handleAddText}
+      currentLanguage={currentLanguage}
+    />
+    </>
   );
 };
 

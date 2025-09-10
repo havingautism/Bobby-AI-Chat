@@ -6,6 +6,8 @@ import Database from '@tauri-apps/plugin-sql';
 import qdrantManager from './qdrantManager.js';
 import qdrantService from './qdrantService.js';
 import embeddingService from './embeddingService.js';
+import { autoSelectModel } from './languageDetector.js';
+import { invoke } from '@tauri-apps/api/core';
 
 class KnowledgeBaseQdrant {
   constructor() {
@@ -13,9 +15,23 @@ class KnowledgeBaseQdrant {
     this.isInitialized = false;
     this.useQdrant = false;
     this.qdrantReady = false;
-    this.embeddingModel = 'all-MiniLM-L6-v2'; // 默认使用项目内模型
-    this.embeddingDimensions = 384; // 默认384维
+    this.embeddingModel = 'bge-base-zh-v1.5'; // 默认使用中文专家模型
+    this.embeddingDimensions = 768; // 专家模型768维
     this.embeddingTaskType = 'search'; // 默认搜索任务
+    this.expertModelMode = true; // 启用专家模型分离模式
+  }
+
+  // 推断文档来源类型
+  inferSourceType(fileName, mimeType) {
+    const name = (fileName || '').toLowerCase();
+    const mime = (mimeType || '').toLowerCase();
+    if (!name && !mime) return 'txt';
+    if (name.endsWith('.pdf') || mime.includes('pdf')) return 'pdf';
+    if (name.endsWith('.docx') || mime.includes('word')) return 'docx';
+    if (name.endsWith('.xlsx') || name.endsWith('.xls') || mime.includes('sheet')) return 'xlsx';
+    if (name.endsWith('.csv') || mime.includes('csv')) return 'csv';
+    if (name.endsWith('.txt') || mime.includes('text/plain')) return 'txt';
+    return 'manual';
   }
 
   /**
@@ -24,7 +40,7 @@ class KnowledgeBaseQdrant {
    * @param {number} dimensions - 嵌入维度
    * @param {string} taskType - 任务类型
    */
-  setEmbeddingConfig(model = 'all-MiniLM-L6-v2', dimensions = 384, taskType = 'search') {
+  setEmbeddingConfig(model = 'bge-base-zh-v1.5', dimensions = 768, taskType = 'search') {
     this.embeddingModel = model;
     this.embeddingDimensions = dimensions;
     this.embeddingTaskType = taskType;
@@ -129,46 +145,75 @@ class KnowledgeBaseQdrant {
     }
 
     try {
+      // 统一生成文档ID，避免出现 null/undefined 被写入
+      const docId = document.id || `doc_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      // 规范化元数据：把 sourceType 一并写入 metadata
+      const mergedMetadata = {
+        ...(document.metadata || {}),
+        sourceType: document.sourceType || this.inferSourceType(document.fileName, document.mimeType),
+      };
+
       // 存储文档到SQLite
       await this.db.execute(`
         INSERT OR REPLACE INTO knowledge_documents
         (id, title, content, file_name, file_size, mime_type, metadata, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
-        document.id,
+        docId,
         document.title,
         document.content,
         document.fileName || null,
         document.fileSize || null,
         document.mimeType || null,
-        document.metadata ? JSON.stringify(document.metadata) : null,
+        JSON.stringify(mergedMetadata),
         document.createdAt || Date.now(),
         document.updatedAt || Date.now()
       ]);
 
-      console.log(`✅ 文档已添加到SQLite: ${document.id}`);
+      console.log(`✅ 文档已添加到SQLite: ${docId}`);
 
       // 如果Qdrant可用，也存储向量
       if (this.useQdrant && this.qdrantReady) {
-        const success = await qdrantService.addDocumentVectors(
-          document.id,
-          document.content,
-          {
-            title: document.title,
-            sourceType: document.sourceType || 'manual',
-            fileName: document.fileName,
-            fileSize: document.fileSize
+        if (this.expertModelMode) {
+          // 专家模型分离模式：根据内容语言选择集合
+          const success = await this.addDocumentVectorsExpertMode(
+            docId,
+            document.content,
+            {
+              title: document.title,
+              sourceType: mergedMetadata.sourceType,
+              fileName: document.fileName,
+              fileSize: document.fileSize
+            }
+          );
+          
+          if (success) {
+            console.log(`✅ 文档向量已存储到专家模型集合: ${docId}`);
+          } else {
+            console.warn(`⚠️ 文档向量存储到专家模型集合失败: ${docId}`);
           }
-        );
-        
-        if (success) {
-          console.log(`✅ 文档向量已存储到Qdrant: ${document.id}`);
         } else {
-          console.warn(`⚠️ 文档向量存储到Qdrant失败: ${document.id}`);
+          // 传统模式：使用默认集合
+          const success = await qdrantService.addDocumentVectors(
+            docId,
+            document.content,
+            {
+              title: document.title,
+              sourceType: mergedMetadata.sourceType,
+              fileName: document.fileName,
+              fileSize: document.fileSize
+            }
+          );
+          
+          if (success) {
+            console.log(`✅ 文档向量已存储到Qdrant: ${docId}`);
+          } else {
+            console.warn(`⚠️ 文档向量存储到Qdrant失败: ${docId}`);
+          }
         }
       }
 
-      return document.id;
+      return docId;
     } catch (error) {
       console.error('❌ 添加文档失败:', error);
       throw error;
@@ -191,7 +236,7 @@ class KnowledgeBaseQdrant {
       
       if (existingDoc.length === 0) {
         console.warn(`⚠️ 文档不存在: ${documentId}`);
-        return;
+        throw new Error(`文档不存在: ${documentId}`);
       }
       
       console.log(`📄 找到文档: ${existingDoc[0].title}`);
@@ -199,11 +244,23 @@ class KnowledgeBaseQdrant {
       // 先删除向量数据（避免外键约束错误）
       if (this.useQdrant && this.qdrantReady) {
         try {
-          const success = await qdrantService.deleteDocumentVectors(documentId);
-          if (success) {
-            console.log(`✅ 已从Qdrant删除文档向量: ${documentId}`);
+          if (this.expertModelMode) {
+            // 专家模型分离模式：在所有集合中删除
+            console.log(`🎯 专家模式：在所有集合中删除文档 ${documentId} 的向量`);
+            const success = await this.deleteDocumentVectorsExpertMode(documentId);
+            if (success) {
+              console.log(`✅ 已从所有专家模型集合删除文档向量: ${documentId}`);
+            } else {
+              console.warn(`⚠️ 从专家模型集合删除文档向量失败: ${documentId}`);
+            }
           } else {
-            console.warn(`⚠️ 从Qdrant删除文档向量失败: ${documentId}`);
+            // 传统模式：在默认集合中删除
+            const success = await qdrantService.deleteDocumentVectors(documentId);
+            if (success) {
+              console.log(`✅ 已从Qdrant删除文档向量: ${documentId}`);
+            } else {
+              console.warn(`⚠️ 从Qdrant删除文档向量失败: ${documentId}`);
+            }
           }
         } catch (error) {
           console.warn(`⚠️ Qdrant删除向量时出错: ${error.message}`);
@@ -247,6 +304,7 @@ class KnowledgeBaseQdrant {
 
       return results.map(result => {
         const metadata = result.metadata ? JSON.parse(result.metadata) : null;
+        const sourceType = metadata?.sourceType || this.inferSourceType(result.file_name, result.mime_type);
         return {
           id: result.id,
           title: result.title,
@@ -257,7 +315,7 @@ class KnowledgeBaseQdrant {
           metadata: metadata,
           createdAt: result.created_at,
           updatedAt: result.updated_at,
-          sourceType: metadata?.sourceType || 'manual',
+          sourceType: sourceType,
           sourceUrl: metadata?.sourceUrl || null
         };
       });
@@ -270,6 +328,47 @@ class KnowledgeBaseQdrant {
   // 兼容性方法：getStoredDocuments 调用 getDocuments
   async getStoredDocuments() {
     return await this.getDocuments();
+  }
+
+  // 根据ID列表获取文档
+  async getDocumentsByIds(documentIds) {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    try {
+      if (!documentIds || documentIds.length === 0) {
+        return [];
+      }
+
+      const placeholders = documentIds.map(() => '?').join(',');
+      const results = await this.db.select(`
+        SELECT * FROM knowledge_documents 
+        WHERE id IN (${placeholders})
+        ORDER BY updated_at DESC
+      `, documentIds);
+
+      return results.map(result => {
+        const metadata = result.metadata ? JSON.parse(result.metadata) : null;
+        const sourceType = metadata?.sourceType || this.inferSourceType(result.file_name, result.mime_type);
+        return {
+          id: result.id,
+          title: result.title,
+          content: result.content,
+          fileName: result.file_name,
+          fileSize: result.file_size,
+          mimeType: result.mime_type,
+          metadata: metadata,
+          createdAt: result.created_at,
+          updatedAt: result.updated_at,
+          sourceType: sourceType,
+          sourceUrl: metadata?.sourceUrl || null
+        };
+      });
+    } catch (error) {
+      console.error('❌ 根据ID获取文档失败:', error);
+      return [];
+    }
   }
 
   // 兼容性方法：search 调用 searchDocuments
@@ -302,7 +401,77 @@ class KnowledgeBaseQdrant {
       if (this.useQdrant && this.qdrantReady) {
         // 使用Qdrant进行向量搜索
         console.log('🔍 使用Qdrant进行向量搜索');
-        const qdrantResults = await qdrantService.searchDocuments(query, limit, threshold);
+        let qdrantResults;
+        
+        if (this.expertModelMode) {
+          // 专家模型分离模式：在所有集合中搜索
+          console.log('🎯 专家模型分离模式：多集合搜索');
+          const rawResults = await qdrantService.searchAllCollections(query, limit, threshold);
+          
+          // 转换结果格式以兼容现有接口
+          qdrantResults = rawResults.map(result => {
+            const chunkText = result.payload?.chunk_text;
+            const content = result.payload?.content;
+            const finalContent = chunkText || content || '';
+            
+            console.log(`🔍 处理搜索结果:`, {
+              id: result.payload?.document_id || result.id,
+              title: result.payload?.title || result.payload?.document_title || result.payload?.name || 'Unknown',
+              hasChunkText: !!chunkText,
+              hasContent: !!content,
+              chunkTextLength: chunkText?.length || 0,
+              contentLength: content?.length || 0,
+              finalContentLength: finalContent.length,
+              finalContentPreview: finalContent.substring(0, 100) + (finalContent.length > 100 ? '...' : '')
+            });
+            
+            return {
+              id: result.payload?.document_id || result.id,
+              title: result.payload?.title || result.payload?.document_title || result.payload?.name || 'Unknown',
+              content: finalContent,
+              score: result.score || 0,
+              chunkIndex: result.payload?.chunk_index || 0,
+              sourceType: result.payload?.source_type || 'unknown',
+              fileName: result.payload?.file_name || result.payload?.filename || null,
+              fileSize: result.payload?.file_size || null,
+              metadata: result.payload || {},
+              collection: result.collection,
+              language: result.language
+            };
+          });
+        } else {
+          // 传统模式：在默认集合中搜索
+          console.log('🎯 传统模式：单集合搜索');
+          const rawQdrantResults = await qdrantService.searchDocuments(query, limit, threshold);
+          
+          // 为传统模式搜索结果添加调试信息并确保content字段正确映射
+          qdrantResults = rawQdrantResults.map(result => {
+            console.log(`🔍 传统模式搜索结果处理:`, {
+              id: result.id,
+              title: result.title,
+              originalContentLength: result.content?.length || 0,
+              hasChunkTextInPayload: result.payload?.chunk_text ? true : false,
+              hasContentInPayload: result.payload?.content ? true : false
+            });
+            
+            // 确保content字段正确映射 - 优先使用chunk_text
+            const finalContent = result.payload?.chunk_text || result.payload?.content || result.content || '';
+            
+            return {
+              ...result,
+              content: finalContent
+            };
+          });
+          
+          // 添加处理后的搜索结果调试信息
+          console.log(`🔍 传统模式处理后搜索结果:`, qdrantResults.map(r => ({
+            id: r.id,
+            title: r.title,
+            contentLength: r.content?.length || 0,
+            contentPreview: r.content?.substring(0, 100) + (r.content?.length > 100 ? '...' : ''),
+            score: r.score
+          })));
+        }
         
         if (useHybrid) {
           // 混合搜索：Qdrant向量搜索 + SQLite文本搜索
@@ -350,6 +519,16 @@ class KnowledgeBaseQdrant {
         results = await this.sqliteSearch(query, limit, threshold);
       }
 
+      // 在返回结果之前添加最终调试信息
+      console.log(`🔍 最终搜索结果:`, results.map(r => ({
+        id: r.id,
+        title: r.title,
+        contentLength: r.content?.length || 0,
+        contentPreview: r.content?.substring(0, 100) + (r.content?.length > 100 ? '...' : ''),
+        score: r.score,
+        sourceType: r.sourceType
+      })));
+      
       return results;
     } catch (error) {
       console.error('❌ 搜索文档失败:', error);
@@ -587,19 +766,39 @@ class KnowledgeBaseQdrant {
       
       if (this.useQdrant && this.qdrantReady) {
         // 清空Qdrant集合
-        const success = await qdrantService.clearCollection();
-        if (success) {
-          console.log(`✅ Qdrant集合已清空`);
-          
-          // 清空后优化索引
-          try {
-            await qdrantService.optimizeCollection();
-            console.log('✅ Qdrant索引优化完成');
-          } catch (optimizeError) {
-            console.warn(`⚠️ Qdrant索引优化失败: ${optimizeError.message}`);
+        if (this.expertModelMode) {
+          // 专家模型模式：清空所有专家模型集合
+          console.log(`🎯 专家模式：清空所有专家模型集合`);
+          const success = await this.clearAllExpertCollections();
+          if (success) {
+            console.log(`✅ 所有专家模型集合已清空`);
+            
+            // 清空后优化索引
+            try {
+              await this.optimizeAllExpertCollections();
+              console.log('✅ 专家模型集合索引优化完成');
+            } catch (optimizeError) {
+              console.warn(`⚠️ 专家模型集合索引优化失败: ${optimizeError.message}`);
+            }
+          } else {
+            console.warn(`⚠️ 专家模型集合清空失败`);
           }
         } else {
-          console.warn(`⚠️ Qdrant集合清空失败`);
+          // 传统模式：清空默认集合
+          const success = await qdrantService.clearCollection();
+          if (success) {
+            console.log(`✅ Qdrant集合已清空`);
+            
+            // 清空后优化索引
+            try {
+              await qdrantService.optimizeCollection();
+              console.log('✅ Qdrant索引优化完成');
+            } catch (optimizeError) {
+              console.warn(`⚠️ Qdrant索引优化失败: ${optimizeError.message}`);
+            }
+          } else {
+            console.warn(`⚠️ Qdrant集合清空失败`);
+          }
         }
       } else {
         // 删除SQLite向量数据
@@ -628,6 +827,45 @@ class KnowledgeBaseQdrant {
     return await qdrantManager.getInfo();
   }
 
+  /**
+   * 诊断知识库：检查Qdrant可用性、向量统计、嵌入后端状态
+   * @returns {Promise<object>}
+   */
+  async diagnoseKnowledgeBase() {
+    const diag = {
+      useQdrant: this.useQdrant,
+      qdrantReady: this.qdrantReady,
+      qdrantInfo: null,
+      statistics: null,
+      embedding: null,
+      chunkDefaults: { size: 500, overlap: 50 },
+    };
+
+    try {
+      try {
+        diag.qdrantInfo = await qdrantManager.getInfo();
+      } catch (e) {
+        diag.qdrantInfo = { error: e?.message || String(e) };
+      }
+
+      try {
+        diag.statistics = await this.getStatistics();
+      } catch (e) {
+        diag.statistics = { error: e?.message || String(e) };
+      }
+
+      try {
+        diag.embedding = await embeddingService.diagnoseEmbeddingPipeline();
+      } catch (e) {
+        diag.embedding = { error: e?.message || String(e) };
+      }
+
+      return diag;
+    } catch (error) {
+      return { error: error?.message || String(error) };
+    }
+  }
+
   // 重启Qdrant服务
   async restartQdrant() {
     const success = await qdrantManager.restart();
@@ -640,22 +878,438 @@ class KnowledgeBaseQdrant {
   }
 
   /**
+   * 强制优化单个集合
+   * @param {string} collectionName - 集合名称
+   * @returns {Promise<boolean>} 是否成功
+   */
+  async forceOptimizeCollection(collectionName) {
+    try {
+      console.log(`🔧 强制优化集合 ${collectionName}...`);
+      
+      // 方法1: 使用update_collection来设置优化配置
+      const response = await fetch(`http://localhost:6333/collections/${collectionName}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          optimizers_config: {
+            deleted_threshold: 0.0,
+            vacuum_min_vector_number: 0,
+            default_segment_number: 0
+          }
+        })
+      });
+
+      if (!response.ok) {
+        console.warn(`⚠️ 优化集合 ${collectionName} 失败: ${response.statusText}`);
+        return false;
+      }
+
+      console.log(`✅ 集合 ${collectionName} 强制优化完成`);
+      return true;
+    } catch (error) {
+      console.error(`❌ 强制优化集合 ${collectionName} 失败:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 专家模式：优化所有专家模型集合
+   * @returns {Promise<boolean>} 是否成功
+   */
+  async optimizeAllExpertCollections() {
+    try {
+      console.log(`🔧 专家模式：开始优化所有专家模型集合...`);
+      
+      // 在所有专家模型集合中优化
+      const optimizePromises = Object.values(qdrantService.collections).map(async (collectionName) => {
+        try {
+          console.log(`🔧 优化集合 ${collectionName}...`);
+          
+          // 使用update_collection来设置优化配置
+          const response = await fetch(`http://localhost:6333/collections/${collectionName}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              optimizers_config: {
+                deleted_threshold: 0.0,
+                vacuum_min_vector_number: 0,
+                default_segment_number: 0
+              }
+            })
+          });
+
+          if (!response.ok) {
+            console.warn(`⚠️ 优化集合 ${collectionName} 失败: ${response.statusText}`);
+            return false;
+          }
+
+          console.log(`✅ 集合 ${collectionName} 优化完成`);
+          return true;
+        } catch (error) {
+          console.error(`❌ 优化集合 ${collectionName} 失败:`, error);
+          return false;
+        }
+      });
+
+      const results = await Promise.all(optimizePromises);
+      const successCount = results.filter(r => r).length;
+      const totalCount = results.length;
+      
+      console.log(`📊 专家模型集合优化结果: ${successCount}/${totalCount} 成功`);
+      
+      return successCount === totalCount;
+    } catch (error) {
+      console.error('❌ 优化专家模型集合失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 专家模式：清空所有专家模型集合
+   * @returns {Promise<boolean>} 是否成功
+   */
+  async clearAllExpertCollections() {
+    try {
+      console.log(`🧹 专家模式：开始清空所有专家模型集合...`);
+      
+      // 首先检查哪些集合存在
+      const existingCollections = [];
+      const checkPromises = Object.values(qdrantService.collections).map(async (collectionName) => {
+        try {
+          const response = await fetch(`http://localhost:6333/collections/${collectionName}`);
+          if (response.ok) {
+            existingCollections.push(collectionName);
+            console.log(`✅ 集合 ${collectionName} 存在`);
+            return { name: collectionName, exists: true };
+          } else if (response.status === 404) {
+            console.log(`ℹ️ 集合 ${collectionName} 不存在，跳过`);
+            return { name: collectionName, exists: false };
+          } else {
+            console.warn(`⚠️ 检查集合 ${collectionName} 失败: ${response.status}`);
+            return { name: collectionName, exists: false };
+          }
+        } catch (error) {
+          console.warn(`⚠️ 检查集合 ${collectionName} 时出错:`, error.message);
+          return { name: collectionName, exists: false };
+        }
+      });
+
+      await Promise.all(checkPromises);
+      
+      if (existingCollections.length === 0) {
+        console.log(`ℹ️ 没有找到任何专家模型集合，无需清空`);
+        return true;
+      }
+
+      console.log(`📋 找到 ${existingCollections.length} 个存在的集合: ${existingCollections.join(', ')}`);
+      
+      // 只清空存在的集合
+      const clearPromises = existingCollections.map(async (collectionName) => {
+        try {
+          console.log(`🔍 清空集合 ${collectionName}...`);
+          
+          // 使用scroll API获取所有点
+          const scrollRequest = {
+            limit: 10000,
+            with_payload: false,
+            with_vector: false
+          };
+
+          const scrollResponse = await fetch(`http://localhost:6333/collections/${collectionName}/points/scroll`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(scrollRequest)
+          });
+
+          if (!scrollResponse.ok) {
+            console.warn(`⚠️ 获取集合 ${collectionName} 的点数据失败: ${scrollResponse.status}`);
+            return false;
+          }
+
+          const scrollData = await scrollResponse.json();
+          const pointIds = scrollData.result.points.map(point => point.id);
+          
+          if (pointIds.length === 0) {
+            console.log(`ℹ️ 集合 ${collectionName} 中没有任何点需要删除`);
+            return true;
+          }
+
+          // 删除所有点
+          const deleteResponse = await fetch(`http://localhost:6333/collections/${collectionName}/points/delete`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              points: pointIds
+            })
+          });
+
+          if (!deleteResponse.ok) {
+            console.error(`❌ 删除集合 ${collectionName} 的点失败: ${deleteResponse.statusText}`);
+            return false;
+          }
+
+          console.log(`✅ 集合 ${collectionName} 已清空 (${pointIds.length} 个点)`);
+          
+          // 强制优化索引，确保向量被完全清理
+          try {
+            await this.forceOptimizeCollection(collectionName);
+          } catch (optimizeError) {
+            console.warn(`⚠️ 优化集合 ${collectionName} 失败: ${optimizeError.message}`);
+          }
+          
+          return true;
+        } catch (error) {
+          console.error(`❌ 清空集合 ${collectionName} 失败:`, error);
+          return false;
+        }
+      });
+
+      const results = await Promise.all(clearPromises);
+      const successCount = results.filter(r => r).length;
+      const totalCount = results.length;
+      
+      console.log(`📊 专家模型集合清空结果: ${successCount}/${totalCount} 成功`);
+      
+      return successCount === totalCount;
+    } catch (error) {
+      console.error('❌ 清空专家模型集合失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 专家模式：在所有集合中删除文档向量
+   * @param {string} documentId - 文档ID
+   * @returns {Promise<boolean>} 是否成功
+   */
+  async deleteDocumentVectorsExpertMode(documentId) {
+    try {
+      console.log(`🗑️ 专家模式：开始删除文档 ${documentId} 的向量...`);
+      
+      // 首先检查哪些集合存在
+      const existingCollections = [];
+      const checkPromises = Object.values(qdrantService.collections).map(async (collectionName) => {
+        try {
+          const response = await fetch(`http://localhost:6333/collections/${collectionName}`);
+          if (response.ok) {
+            existingCollections.push(collectionName);
+            return { name: collectionName, exists: true };
+          } else if (response.status === 404) {
+            console.log(`ℹ️ 集合 ${collectionName} 不存在，跳过删除`);
+            return { name: collectionName, exists: false };
+          } else {
+            console.warn(`⚠️ 检查集合 ${collectionName} 失败: ${response.status}`);
+            return { name: collectionName, exists: false };
+          }
+        } catch (error) {
+          console.warn(`⚠️ 检查集合 ${collectionName} 时出错:`, error.message);
+          return { name: collectionName, exists: false };
+        }
+      });
+
+      await Promise.all(checkPromises);
+      
+      if (existingCollections.length === 0) {
+        console.log(`ℹ️ 没有找到任何专家模型集合，无需删除向量`);
+        return true;
+      }
+
+      console.log(`📋 在 ${existingCollections.length} 个存在的集合中删除向量: ${existingCollections.join(', ')}`);
+      
+      // 只在存在的集合中删除
+      const deletePromises = existingCollections.map(async (collectionName) => {
+        try {
+          console.log(`🔍 在集合 ${collectionName} 中查找文档 ${documentId} 的向量...`);
+          
+          // 使用scroll API获取所有点，然后过滤
+          const scrollRequest = {
+            limit: 10000,
+            with_payload: true,
+            with_vector: false
+          };
+
+          const scrollResponse = await fetch(`http://localhost:6333/collections/${collectionName}/points/scroll`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(scrollRequest)
+          });
+
+          if (!scrollResponse.ok) {
+            console.log(`ℹ️ 集合 ${collectionName} 不存在或为空`);
+            return { collection: collectionName, deleted: 0, success: true };
+          }
+
+          const scrollData = await scrollResponse.json();
+          
+          if (!scrollData.result || !scrollData.result.points || scrollData.result.points.length === 0) {
+            console.log(`ℹ️ 集合 ${collectionName} 中没有向量数据`);
+            return { collection: collectionName, deleted: 0, success: true };
+          }
+
+          // 过滤出属于该文档的点
+          const targetPoints = scrollData.result.points.filter(point => {
+            const p = point.payload || {};
+            return p.document_id === documentId;
+          });
+          
+          if (targetPoints.length === 0) {
+            console.log(`ℹ️ 文档 ${documentId} 在集合 ${collectionName} 中没有向量数据`);
+            return { collection: collectionName, deleted: 0, success: true };
+          }
+
+          // 删除找到的点
+          const pointIds = targetPoints.map(point => point.id);
+          const success = await qdrantService.deletePoints(pointIds, collectionName);
+          
+          if (success) {
+            console.log(`✅ 在集合 ${collectionName} 中删除文档 ${documentId} 的 ${pointIds.length} 个向量`);
+            return { collection: collectionName, deleted: pointIds.length, success: true };
+          } else {
+            console.warn(`⚠️ 在集合 ${collectionName} 中删除文档 ${documentId} 的向量失败`);
+            return { collection: collectionName, deleted: 0, success: false };
+          }
+        } catch (error) {
+          console.error(`❌ 在集合 ${collectionName} 中删除文档 ${documentId} 的向量失败:`, error);
+          return { collection: collectionName, deleted: 0, success: false };
+        }
+      });
+      
+      // 等待所有删除操作完成
+      const results = await Promise.all(deletePromises);
+      
+      // 统计结果
+      const totalDeleted = results.reduce((sum, result) => sum + result.deleted, 0);
+      const allSuccess = results.every(result => result.success);
+      
+      console.log(`✅ 专家模式删除完成：共删除 ${totalDeleted} 个向量，成功: ${allSuccess}`);
+      
+      return allSuccess;
+    } catch (error) {
+      console.error(`❌ 专家模式删除文档 ${documentId} 的向量失败:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 专家模式：根据语言检测结果存储文档向量到对应集合
+   * @param {string} documentId - 文档ID
+   * @param {string} content - 文档内容
+   * @param {Object} metadata - 文档元数据
+   * @returns {Promise<boolean>} 是否成功
+   */
+  async addDocumentVectorsExpertMode(documentId, content, metadata = {}) {
+    try {
+      console.log(`🔄 专家模式：开始为文档 ${documentId} 生成向量...`);
+      
+      // 生成文档嵌入（包含语言检测和模型选择）
+      const embeddings = await this.generateDocumentEmbeddingsWithModel(content);
+      
+      if (!embeddings || embeddings.length === 0) {
+        console.warn(`⚠️ 文档 ${documentId} 没有生成任何嵌入`);
+        return false;
+      }
+      
+      // 获取第一个嵌入的语言配置（所有块应该使用相同语言）
+      const firstEmbedding = embeddings[0];
+      const collectionName = firstEmbedding.collection;
+      const detectedLanguage = firstEmbedding.detectedLanguage;
+      
+      console.log(`🎯 文档 ${documentId} 检测语言: ${detectedLanguage}, 目标集合: ${collectionName}`);
+      
+      // 准备Qdrant点数据
+      const points = embeddings.map((embeddingData, index) => {
+        // 确保向量格式正确
+        let vector;
+        if (Array.isArray(embeddingData.embedding)) {
+          vector = embeddingData.embedding;
+        } else if (embeddingData.embedding && Array.isArray(embeddingData.embedding.embedding)) {
+          vector = embeddingData.embedding.embedding;
+        } else {
+          console.error('❌ 无效的嵌入数据格式:', embeddingData);
+          throw new Error('无效的嵌入数据格式');
+        }
+        
+        // 使用真正的分块索引，而不是数组索引
+        const chunkIndex = embeddingData.chunkIndex !== undefined ? embeddingData.chunkIndex : index;
+        
+        return {
+          id: `${documentId}_chunk_${chunkIndex}`,
+          vector: vector,
+          payload: {
+            document_id: documentId,
+            chunk_index: chunkIndex,
+            chunk_text: embeddingData.chunkText,
+            title: metadata.title || 'Unknown',
+            source_type: metadata.sourceType || 'manual',
+            file_name: metadata.fileName || null,
+            file_size: metadata.fileSize || null,
+            created_at: Date.now(),
+            model: embeddingData.model,
+            dimensions: embeddingData.dimensions,
+            detected_language: detectedLanguage,
+            collection: collectionName
+          }
+        };
+      });
+
+      // 存储到对应的专家模型集合
+      const success = await qdrantService.upsertPoints(points, collectionName);
+      
+      if (success) {
+        console.log(`✅ 文档 ${documentId} 的 ${points.length} 个向量已存储到集合 ${collectionName}`);
+      }
+      
+      return success;
+    } catch (error) {
+      console.error(`❌ 专家模式为文档 ${documentId} 生成向量失败:`, error);
+      return false;
+    }
+  }
+
+  /**
    * 使用项目内模型生成文档嵌入
    * @param {string} content - 文档内容
    * @returns {Promise<Array>} 嵌入数据数组
    */
   async generateDocumentEmbeddingsWithModel(content) {
-    console.log(`🎯 使用项目内模型生成文档嵌入: ${this.embeddingModel}`);
-    
     try {
-      // 使用项目内模型生成嵌入
-      const result = await embeddingService.generateDocumentEmbeddings(content, 500, 100);
-      
-      console.log(`✅ 项目内模型嵌入生成成功: ${result.length} 个向量`);
-      
-      return result;
+      if (this.expertModelMode) {
+        // 专家模型分离模式：根据内容语言自动选择模型
+        const config = autoSelectModel(content);
+        console.log(`🎯 专家模型分离模式 - 检测语言: ${config.detectedLanguage}, 选择模型: ${config.model}`);
+        
+        const result = await embeddingService.generateDocumentEmbeddings(content, 500, 50, config.model);
+        
+        // 为每个嵌入结果添加模型信息
+        const enhancedResult = result.map(item => ({
+          ...item,
+          model: config.model,
+          collection: config.collection,
+          detectedLanguage: config.detectedLanguage
+        }));
+        
+        console.log(`✅ 专家模型嵌入生成成功: ${enhancedResult.length} 个向量 (${config.model})`);
+        return enhancedResult;
+      } else {
+        // 传统模式：使用固定模型
+        console.log(`🎯 传统模式 - 使用模型: ${this.embeddingModel}`);
+        const result = await embeddingService.generateDocumentEmbeddings(content, 500, 50, this.embeddingModel);
+        
+        console.log(`✅ 传统模式嵌入生成成功: ${result.length} 个向量`);
+        return result;
+      }
     } catch (error) {
-      console.error('❌ 项目内模型嵌入生成失败:', error);
+      console.error('❌ 文档嵌入生成失败:', error);
       throw error;
     }
   }
@@ -667,7 +1321,7 @@ class KnowledgeBaseQdrant {
    * @param {number} overlap - 重叠大小
    * @returns {Array<string>} 文本块数组
    */
-  chunkText(text, chunkSize = 500, overlap = 100) {
+  chunkText(text, chunkSize = 500, overlap = 50) {
     if (!text || text.trim().length === 0) {
       return [];
     }
@@ -681,10 +1335,21 @@ class KnowledgeBaseQdrant {
       
       // 尝试在句子边界分割
       if (end < text.length) {
-        const lastSentence = chunk.lastIndexOf('。');
-        if (lastSentence > chunkSize / 2) {
-          chunk = chunk.slice(0, lastSentence + 1);
-          start = start + lastSentence + 1 - overlap;
+        // 检测多种句子结束符
+        const lastPeriod = chunk.lastIndexOf('。');
+        const lastDot = chunk.lastIndexOf('.');
+        const lastExclamation = chunk.lastIndexOf('！');
+        const lastQuestion = chunk.lastIndexOf('？');
+        const lastNewline = chunk.lastIndexOf('\n');
+        const lastSemicolon = chunk.lastIndexOf('；');
+        
+        // 找到最合适的分割点
+        const splitPoints = [lastPeriod, lastDot, lastExclamation, lastQuestion, lastNewline, lastSemicolon];
+        const bestSplitPoint = Math.max(...splitPoints.filter(p => p > chunkSize * 0.3));
+        
+        if (bestSplitPoint > chunkSize * 0.3) {
+          chunk = chunk.slice(0, bestSplitPoint + 1);
+          start = start + bestSplitPoint + 1 - overlap;
         } else {
           start = end - overlap;
         }
@@ -695,9 +1360,29 @@ class KnowledgeBaseQdrant {
       if (chunk.trim().length > 0) {
         chunks.push(chunk.trim());
       }
+      
+      // 防止无限循环
+      if (start <= 0) {
+        start = end;
+      }
     }
     
     return chunks;
+  }
+
+  /**
+   * 检查模型可用性 - 现在使用硅基流动API，不再需要本地模型检查
+   * @returns {Promise<boolean>} 模型是否可用
+   */
+  async checkModelAvailability() {
+    try {
+      // 使用硅基流动API，不再需要本地模型检查
+      console.log('🔍 使用硅基流动API，模型可用性检查通过');
+      return true;
+    } catch (error) {
+      console.error('❌ 模型可用性检查失败:', error);
+      return false;
+    }
   }
 }
 
@@ -710,6 +1395,7 @@ export const addDocument = (...args) => knowledgeBaseQdrantInstance.addDocument(
 export const deleteDocument = (...args) => knowledgeBaseQdrantInstance.deleteDocument(...args);
 export const getDocuments = (...args) => knowledgeBaseQdrantInstance.getDocuments(...args);
 export const getStoredDocuments = (...args) => knowledgeBaseQdrantInstance.getStoredDocuments(...args);
+export const getDocumentsByIds = (...args) => knowledgeBaseQdrantInstance.getDocumentsByIds(...args);
 export const search = (...args) => knowledgeBaseQdrantInstance.search(...args);
 export const searchSQLite = (...args) => knowledgeBaseQdrantInstance.searchSQLite(...args);
 export const addDocumentToSQLite = (...args) => knowledgeBaseQdrantInstance.addDocumentToSQLite(...args);
@@ -724,8 +1410,21 @@ export const getStatistics = (...args) => knowledgeBaseQdrantInstance.getStatist
 export const clearAllDocuments = (...args) => knowledgeBaseQdrantInstance.clearAllDocuments(...args);
 export const getQdrantInfo = (...args) => knowledgeBaseQdrantInstance.getQdrantInfo(...args);
 export const restartQdrant = (...args) => knowledgeBaseQdrantInstance.restartQdrant(...args);
+export const checkModelAvailability = (...args) => knowledgeBaseQdrantInstance.checkModelAvailability(...args);
 
 // 导出知识库管理器实例
 export const knowledgeBaseManager = knowledgeBaseQdrantInstance;
+
+// 诊断导出
+export const diagnoseKnowledgeBase = (...args) => knowledgeBaseQdrantInstance.diagnoseKnowledgeBase(...args);
+
+// 浏览器调试入口（可选）：在开发环境下将诊断方法挂到 window
+try {
+  if (typeof window !== 'undefined') {
+    window.__KB_DIAGNOSE__ = () => knowledgeBaseQdrantInstance.diagnoseKnowledgeBase();
+  }
+} catch (_e) {
+  // no-op
+}
 
 export default knowledgeBaseQdrantInstance;

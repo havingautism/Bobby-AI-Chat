@@ -5,7 +5,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14,9 +16,11 @@
 }
 
 .knowledge-base-modal {
-  background: linear-gradient(135deg, rgb(255 255 255 / 80%) 0%, rgb(251 251 251 / 96%) 100%);
-  backdrop-filter: var(--glass-blur-strong);
-  -webkit-backdrop-filter: var(--glass-blur-strong);
+  background: linear-gradient(135deg, 
+    var(--glass-bg-light) 0%, 
+    var(--glass-bg-dark) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border-light);
   border-radius: var(--border-radius-xl);
   width: 100%;
@@ -30,8 +34,12 @@
 
 [data-theme="dark"] .knowledge-base-modal {
   background: linear-gradient(135deg, 
-    var(--glass-bg-dark) 0%, 
-    var(--glass-bg-dark) 100%);
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.02) 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .knowledge-base-header {
@@ -43,8 +51,8 @@
   border-bottom: 1px solid var(--glass-border-light);
   flex-shrink: 0;
   background: linear-gradient(135deg, 
-    var(--glass-bg-light) 0%, 
-    var(--glass-bg-dark) 100%);
+    rgba(255, 255, 255, 0.15) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
 }
@@ -101,7 +109,11 @@
   gap: 24px;
   padding: 20px 24px;
   border-bottom: 1px solid var(--glass-border-light);
-  background: var(--glass-bg-light);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 /* 向量生成区域样式 */
@@ -1004,7 +1016,11 @@
 .knowledge-tabs {
   display: flex;
   border-bottom: 1px solid var(--glass-border-light);
-  background: var(--glass-bg-light);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .tab-button {
@@ -1016,19 +1032,43 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   position: relative;
+  overflow: hidden;
+}
+
+.tab-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .tab-button:hover {
   color: var(--text-primary);
-  background: var(--glass-bg-medium);
+}
+
+.tab-button:hover::before {
+  opacity: 1;
 }
 
 .tab-button.active {
   color: var(--accent-primary);
-  background: var(--glass-bg-medium);
   font-weight: 600;
+}
+
+.tab-button.active::before {
+  opacity: 1;
+  background: linear-gradient(135deg, 
+    rgba(59, 130, 246, 0.1) 0%, 
+    rgba(139, 92, 246, 0.05) 100%);
 }
 
 .tab-button.active::after {
@@ -1081,16 +1121,10 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   position: relative;
   overflow: hidden;
-}
-
-.add-document-button:hover {
-  background: linear-gradient(135deg, var(--accent-secondary) 0%, var(--accent-tertiary) 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 .add-document-button::before {
@@ -1104,6 +1138,17 @@
   background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
   transition: width 0.6s, height 0.6s;
+}
+
+.add-document-button:hover {
+  background: linear-gradient(135deg, var(--accent-secondary) 0%, var(--accent-tertiary) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.add-document-button:hover::before {
+  width: 300px;
+  height: 300px;
 }
 
 .add-document-button:active::before {
@@ -1251,23 +1296,51 @@
 .documents-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
+  padding-bottom: 6px;
 }
 
 .document-item {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
   padding: 16px;
-  background: var(--glass-bg-light);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border-light);
   border-radius: var(--border-radius-lg);
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.document-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.1), 
+    transparent);
+  transition: left 0.5s ease;
 }
 
 .document-item:hover {
-  background: var(--glass-bg-medium);
-  border-color: var(--glass-border-medium);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.12) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.document-item:hover::before {
+  left: 100%;
 }
 
 .document-info {
@@ -1315,6 +1388,26 @@
 .delete-button:hover {
   background: var(--danger-color-light);
   color: var(--danger-color);
+}
+
+.compact-add-text-btn {
+  padding: 8px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: var(--border-radius-sm);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.compact-add-text-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
 /* 空状态 */
@@ -1511,18 +1604,46 @@
 }
 
 .upload-dropzone {
-  border: 2px dashed var(--border-color);
+  border: 2px dashed var(--glass-border-light);
   border-radius: var(--border-radius-lg);
   padding: 60px 20px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: var(--glass-bg-light);
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-dropzone::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(59, 130, 246, 0.1) 0%, 
+    rgba(139, 92, 246, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .upload-dropzone:hover {
-  border-color: var(--primary-color);
-  background: var(--glass-bg-medium);
+  border-color: var(--accent-primary);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.12) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.upload-dropzone:hover::before {
+  opacity: 1;
 }
 
 .upload-dropzone svg {

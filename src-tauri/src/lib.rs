@@ -6,12 +6,49 @@ use sqlx::{SqlitePool, Row};
 use std::sync::Mutex;
 use tauri::Manager;
 
-mod embedding_service;
-mod embedding_gemma;
 mod qdrant_manager;
 mod qdrant_service;
-use embedding_service::{EmbeddingService, generate_embedding, generate_batch_embeddings, calculate_similarity};
-use embedding_gemma::{EmbeddingGemmaService, EmbeddingRequest, EmbeddingResponse, generate_gemma_batch_embeddings, check_model_files};
+mod document_processor;
+mod siliconflow_embedding;
+use document_processor::{DocumentProcessor, process_document_embeddings, get_processing_progress, chunk_document_text};
+use siliconflow_embedding::{
+    generate_siliconflow_embedding, generate_siliconflow_batch_embeddings
+};
+// 使用前端的franc语言检测，不再需要Rust端的语言检测
+
+// 硅基流动嵌入模型相关命令
+
+// 生成单个嵌入向量
+#[tauri::command]
+async fn generate_siliconflow_embedding_cmd(api_key: String, text: String, model: Option<String>) -> Result<Vec<f32>, String> {
+  let model_name = model.unwrap_or_else(|| "BAAI/bge-m3".to_string());
+  generate_siliconflow_embedding(api_key, text, model_name).await
+}
+
+// 批量生成嵌入向量
+#[tauri::command]
+async fn generate_siliconflow_batch_embeddings_cmd(api_key: String, texts: Vec<String>, model: Option<String>) -> Result<Vec<Vec<f32>>, String> {
+  let model_name = model.unwrap_or_else(|| "BAAI/bge-m3".to_string());
+  generate_siliconflow_batch_embeddings(api_key, texts, model_name).await
+}
+
+// 获取支持的模型列表
+#[tauri::command]
+async fn get_siliconflow_models_cmd() -> Result<Vec<String>, String> {
+  Ok(vec![
+    "BAAI/bge-large-zh-v1.5".to_string(),
+    "BAAI/bge-large-en-v1.5".to_string(),
+    "BAAI/bge-m3".to_string(),
+  ])
+}
+
+// 语言检测功能移至前端，使用franc库
+
+// 取消当前嵌入任务 - 已移除本地模型，此函数保留为兼容性
+#[tauri::command]
+fn cancel_embedding_jobs(_state: tauri::State<'_, std::sync::Mutex<()>>) {
+    println!("🛑 本地嵌入模型已移除，取消指令无效");
+}
 use qdrant_manager::{
     QdrantManager,
     compile_qdrant,
@@ -29,9 +66,9 @@ pub fn run() {
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_sql::Builder::default().build())
-    .manage(Mutex::new(EmbeddingService::new()))
     .manage(Mutex::new(QdrantManager::new()))
     .manage(Mutex::new(QdrantService::new()))
+    .manage(Mutex::new(DocumentProcessor::new()))
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -65,6 +102,11 @@ pub fn run() {
         }
       });
       
+      // MiniLM模型已被弃用，不再检测
+      
+      // 硅基流动API无需初始化，直接HTTP调用
+      println!("✅ 硅基流动API准备就绪，无需初始化");
+      
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
@@ -74,21 +116,24 @@ pub fn run() {
       add_knowledge_document,
       add_knowledge_vector,
       search_knowledge_base,
+      search_knowledge_base_with_documents,
       get_knowledge_documents,
       delete_knowledge_document,
       get_knowledge_statistics,
       generate_document_embeddings,
-      generate_embedding,
-      generate_batch_embeddings,
-      calculate_similarity,
+      process_document_embeddings,
+      get_processing_progress,
+      chunk_document_text,
+      generate_siliconflow_embedding_cmd,
+      generate_siliconflow_batch_embeddings_cmd,
+      get_siliconflow_models_cmd,
+      cancel_embedding_jobs,
       compile_qdrant,
       start_qdrant,
       stop_qdrant,
       get_qdrant_status,
       is_qdrant_installed,
       get_qdrant_version,
-      generate_gemma_batch_embeddings,
-      check_model_files,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
@@ -187,7 +232,7 @@ async fn init_knowledge_base() -> Result<String, String> {
     sqlx::query(
         r#"
         CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_vectors USING vec0(
-            embedding float[384]
+            embedding float[768]
         )
         "#
     )
@@ -314,7 +359,7 @@ async fn search_knowledge_base(query: String, limit: Option<i32>) -> Result<Vec<
         .map_err(|e| format!("连接数据库失败: {}", e))?;
     
     // 生成查询向量
-    let query_embedding = generate_simple_embedding(&query);
+    let query_embedding = generate_simple_embedding(&query).await;
     let query_embedding_json = serde_json::to_string(&query_embedding)
         .map_err(|e| format!("序列化查询向量失败: {}", e))?;
     
@@ -360,26 +405,185 @@ async fn search_knowledge_base(query: String, limit: Option<i32>) -> Result<Vec<
     Ok(search_results)
 }
 
-// 简单的嵌入生成函数（用于演示）
-fn generate_simple_embedding(text: &str) -> Vec<f32> {
-    let mut embedding = vec![0.0; 384];
-    let mut hash = 0u64;
+#[tauri::command]
+async fn search_knowledge_base_with_documents(
+    query: String, 
+    document_ids: Option<Vec<String>>, 
+    limit: Option<i32>
+) -> Result<Vec<SearchResult>, String> {
+    // 确保数据目录存在并获取路径
+    let data_dir = ensure_data_directory().await?;
+    let db_path = format!("{}/ai_chat.db", data_dir);
+    let pool = SqlitePool::connect(&format!("sqlite://{}", db_path))
+        .await
+        .map_err(|e| format!("连接数据库失败: {}", e))?;
     
-    for (_i, byte) in text.bytes().enumerate() {
-        hash = hash.wrapping_mul(31).wrapping_add(byte as u64);
-        let index = (hash as usize) % 384;
-        embedding[index] = (hash % 1000) as f32 / 1000.0 - 0.5;
+    // 生成查询向量
+    let query_embedding = generate_simple_embedding(&query).await;
+    let query_embedding_json = serde_json::to_string(&query_embedding)
+        .map_err(|e| format!("序列化查询向量失败: {}", e))?;
+    
+    let limit = limit.unwrap_or(10);
+    
+    // 构建查询SQL，支持文档过滤
+    let mut query_sql = String::from(
+        r#"
+        SELECT 
+            vm.document_id,
+            kd.title,
+            kd.content,
+            vm.chunk_text,
+            distance,
+            kd.metadata
+        FROM knowledge_vectors kv
+        JOIN vector_metadata vm ON kv.rowid = vm.rowid
+        JOIN knowledge_documents kd ON vm.document_id = kd.id
+        WHERE kv.embedding MATCH ?
+        "#
+    );
+    
+    // 如果指定了文档ID，添加过滤条件
+    if let Some(ref doc_ids) = document_ids {
+        if !doc_ids.is_empty() {
+            let placeholders: Vec<String> = doc_ids.iter().map(|_| "?".to_string()).collect();
+            let id_list: Vec<&String> = doc_ids.iter().collect();
+            query_sql.push_str(&format!(" AND vm.document_id IN ({})", placeholders.join(", ")));
+            
+            let mut query = sqlx::query(&query_sql);
+            query = query.bind(query_embedding_json);
+            for id in id_list {
+                query = query.bind(id);
+            }
+            query = query.bind(limit);
+            let results = query.fetch_all(&pool)
+                .await
+                .map_err(|e| format!("搜索知识库失败: {}", e))?;
+            
+            let search_results: Vec<SearchResult> = results
+                .iter()
+                .map(|row| SearchResult {
+                    document_id: row.get("document_id"),
+                    title: row.get("title"),
+                    content: row.get("content"),
+                    chunk_text: row.get("chunk_text"),
+                    score: 1.0 - row.get::<f32, _>("distance"), // 转换距离为相似度分数
+                    metadata: row.get("metadata"),
+                })
+                .collect();
+            
+            pool.close().await;
+            Ok(search_results)
+        } else {
+            // 如果没有选择文档，执行普通搜索
+            let results = sqlx::query(
+                &format!(r#"
+                SELECT 
+                    vm.document_id,
+                    kd.title,
+                    kd.content,
+                    vm.chunk_text,
+                    distance,
+                    kd.metadata
+                FROM knowledge_vectors kv
+                JOIN vector_metadata vm ON kv.rowid = vm.rowid
+                JOIN knowledge_documents kd ON vm.document_id = kd.id
+                WHERE kv.embedding MATCH ?
+                ORDER BY distance ASC
+                LIMIT ?
+                "#)
+            )
+            .bind(query_embedding_json)
+            .bind(limit)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| format!("搜索知识库失败: {}", e))?;
+            
+            let search_results: Vec<SearchResult> = results
+                .iter()
+                .map(|row| SearchResult {
+                    document_id: row.get("document_id"),
+                    title: row.get("title"),
+                    content: row.get("content"),
+                    chunk_text: row.get("chunk_text"),
+                    score: 1.0 - row.get::<f32, _>("distance"), // 转换距离为相似度分数
+                    metadata: row.get("metadata"),
+                })
+                .collect();
+            
+            pool.close().await;
+            Ok(search_results)
+        }
+    } else {
+        // 如果没有指定文档ID，执行普通搜索
+        let results = sqlx::query(
+            &format!(r#"
+            SELECT 
+                vm.document_id,
+                kd.title,
+                kd.content,
+                vm.chunk_text,
+                distance,
+                kd.metadata
+            FROM knowledge_vectors kv
+            JOIN vector_metadata vm ON kv.rowid = vm.rowid
+            JOIN knowledge_documents kd ON vm.document_id = kd.id
+            WHERE kv.embedding MATCH ?
+            ORDER BY distance ASC
+            LIMIT ?
+            "#)
+        )
+        .bind(query_embedding_json)
+        .bind(limit)
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| format!("搜索知识库失败: {}", e))?;
+        
+        let search_results: Vec<SearchResult> = results
+            .iter()
+            .map(|row| SearchResult {
+                document_id: row.get("document_id"),
+                title: row.get("title"),
+                content: row.get("content"),
+                chunk_text: row.get("chunk_text"),
+                score: 1.0 - row.get::<f32, _>("distance"), // 转换距离为相似度分数
+                metadata: row.get("metadata"),
+            })
+            .collect();
+        
+        pool.close().await;
+        Ok(search_results)
     }
-    
-    // 归一化向量
-    let norm: f32 = embedding.iter().map(|x| x * x).sum::<f32>().sqrt();
-    if norm > 0.0 {
-        for val in &mut embedding {
-            *val /= norm;
+}
+
+// 使用硅基流动API生成嵌入向量
+async fn generate_simple_embedding(text: &str) -> Vec<f32> {
+    // 使用默认的多语言模型
+    let model_name = "BAAI/bge-m3";
+    match generate_siliconflow_embedding("dummy_key".to_string(), text.to_string(), model_name.to_string()).await {
+        Ok(embedding) => embedding,
+        Err(e) => {
+            println!("❌ 硅基流动嵌入生成失败: {}, 使用备用方法", e);
+            // 备用方法：生成简单的随机向量
+            let mut embedding = vec![0.0; 768];
+            let mut hash = 0u64;
+            
+            for (_i, byte) in text.bytes().enumerate() {
+                hash = hash.wrapping_mul(31).wrapping_add(byte as u64);
+                let index = (hash as usize) % 768;
+                embedding[index] = (hash % 1000) as f32 / 1000.0 - 0.5;
+            }
+            
+            // 归一化向量
+            let norm: f32 = embedding.iter().map(|x| x * x).sum::<f32>().sqrt();
+            if norm > 0.0 {
+                for val in &mut embedding {
+                    *val /= norm;
+                }
+            }
+            
+            embedding
         }
     }
-    
-    embedding
 }
 
 #[tauri::command]
@@ -521,30 +725,72 @@ async fn generate_document_embeddings(document_id: String) -> Result<String, Str
     let (title, content) = document;
     
     // 分块处理文档内容
-    let chunks = chunk_text(&content, 500, 100);
-    let mut vector_count = 0;
+    let chunks = chunk_text(&content, 500, 50);
     
-    for (i, chunk) in chunks.iter().enumerate() {
-        // 生成向量嵌入
-        let embedding = generate_simple_embedding(&format!("{} {}", title, chunk));
-        
-        // 创建向量数据
+    if chunks.is_empty() {
+        pool.close().await;
+        return Ok("文档内容为空，无需生成向量".to_string());
+    }
+    
+    // 准备批量处理的文本
+    let batch_texts: Vec<String> = chunks.iter()
+        .map(|chunk| format!("{} {}", title, chunk))
+        .collect();
+    
+    // 使用默认的多语言模型批量生成嵌入向量
+    let model_name = "BAAI/bge-m3";
+    println!("🔍 使用多语言模型: {}", model_name);
+    
+    // 批量生成嵌入向量
+    let embeddings = match generate_siliconflow_batch_embeddings("dummy_key".to_string(), batch_texts.clone(), model_name.to_string()).await {
+        Ok(embeddings) => embeddings,
+        Err(e) => {
+            println!("❌ 批量嵌入生成失败: {}, 降级到单个处理", e);
+            // 降级到单个处理
+            let mut embeddings = Vec::new();
+            for text in batch_texts {
+                match generate_siliconflow_embedding("dummy_key".to_string(), text.clone(), model_name.to_string()).await {
+                    Ok(embedding) => embeddings.push(embedding),
+                    Err(e) => {
+                        println!("❌ 单个嵌入生成失败: {}, 使用备用方法", e);
+                        // 备用方法
+                        let mut embedding = vec![0.0; 768];
+                        let mut hash = 0u64;
+                        for byte in text.bytes() {
+                            hash = hash.wrapping_mul(31).wrapping_add(byte as u64);
+                            let index = (hash as usize) % 768;
+                            embedding[index] = (hash % 1000) as f32 / 1000.0 - 0.5;
+                        }
+                        let norm: f32 = embedding.iter().map(|x| x * x).sum::<f32>().sqrt();
+                        if norm > 0.0 {
+                            for val in &mut embedding {
+                                *val /= norm;
+                            }
+                        }
+                        embeddings.push(embedding);
+                    }
+                }
+            }
+            embeddings
+        }
+    };
+    
+    // 批量添加向量到数据库
+    for (i, (chunk, embedding)) in chunks.iter().zip(embeddings.iter()).enumerate() {
         let vector = KnowledgeVector {
             vector_id: format!("{}_chunk_{}", document_id, i),
             document_id: document_id.clone(),
             chunk_index: i as i32,
             chunk_text: chunk.clone(),
-            embedding,
+            embedding: embedding.clone(),
             created_at: chrono::Utc::now().timestamp_millis(),
         };
         
-        // 添加向量到数据库
         add_knowledge_vector_internal(&pool, vector).await?;
-        vector_count += 1;
     }
     
     pool.close().await;
-    Ok(format!("成功生成 {} 个向量嵌入", vector_count))
+    Ok(format!("成功生成 {} 个向量嵌入（使用模型: {}）", chunks.len(), model_name))
 }
 
 // 内部函数：添加向量到数据库

@@ -81,19 +81,7 @@ class SimpleSQLiteStorage {
         )
       `);
 
-      // 创建API会话表
-      await this.db.execute(`
-        CREATE TABLE IF NOT EXISTS api_sessions (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          model TEXT NOT NULL,
-          api_key TEXT NOT NULL,
-          base_url TEXT,
-          created_at INTEGER NOT NULL,
-          last_used INTEGER NOT NULL
-        )
-      `);
-
+      
       console.log('数据库表结构创建完成');
     } catch (error) {
       console.error('创建数据库表失败:', error);
@@ -323,10 +311,7 @@ class SimpleSQLiteStorage {
       const settingResult = await this.db.select('SELECT COUNT(*) as count FROM settings');
       const settingCount = settingResult[0].count;
       
-      // 获取API会话数量
-      const apiResult = await this.db.select('SELECT COUNT(*) as count FROM api_sessions');
-      const apiSessionCount = apiResult[0].count;
-      
+            
       // 计算消息数量
       const conversations = await this.loadChatHistory();
       const messageCount = conversations.reduce((total, conv) => total + conv.messages.length, 0);
@@ -337,7 +322,6 @@ class SimpleSQLiteStorage {
         conversationCount,
         messageCount,
         settingCount,
-        apiSessionCount,
         totalSize: (totalSize / (1024 * 1024)).toFixed(2) + ' MB',
         error: null
       };
@@ -349,72 +333,13 @@ class SimpleSQLiteStorage {
         conversationCount: 0,
         messageCount: 0,
         settingCount: 0,
-        apiSessionCount: 0,
         totalSize: '0.00 MB',
         error: error.message
       };
     }
   }
 
-  // 保存API会话
-  async saveApiSessions(sessions) {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-
-    try {
-      // 清空现有数据
-      await this.db.execute('DELETE FROM api_sessions');
-      
-      // 批量插入API会话
-      for (const session of sessions) {
-        await this.db.execute(
-          'INSERT OR REPLACE INTO api_sessions (id, name, model, api_key, base_url, created_at, last_used) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [
-            session.id,
-            session.name,
-            session.model,
-            session.api_key,
-            session.base_url || '',
-            session.createdAt || Date.now(),
-            session.lastUsed || Date.now()
-          ]
-        );
-      }
-      
-      console.log(`已保存 ${sessions.length} 个API会话到SQLite`);
-    } catch (error) {
-      console.error('保存API会话到SQLite失败:', error);
-      throw error;
-    }
-  }
-
-  // 加载API会话
-  async loadApiSessions() {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-
-    try {
-      const result = await this.db.select('SELECT * FROM api_sessions ORDER BY last_used DESC');
-      const sessions = result.map(row => ({
-        id: row.id,
-        name: row.name,
-        model: row.model,
-        api_key: row.api_key,
-        base_url: row.base_url || null,
-        createdAt: row.created_at,
-        lastUsed: row.last_used
-      }));
-      
-      console.log(`从SQLite加载了 ${sessions.length} 个API会话`);
-      return sessions;
-    } catch (error) {
-      console.error('从SQLite加载API会话失败:', error);
-      return [];
-    }
-  }
-
+  
   // 清理旧数据
   cleanOldConversations(conversations) {
     try {
@@ -449,7 +374,5 @@ export const clearChatHistory = (...args) => simpleSQLiteStorageInstance.clearCh
 export const saveSetting = (...args) => simpleSQLiteStorageInstance.saveSetting(...args);
 export const loadSetting = (...args) => simpleSQLiteStorageInstance.loadSetting(...args);
 export const getStorageInfo = (...args) => simpleSQLiteStorageInstance.getStorageInfo(...args);
-export const saveApiSessions = (...args) => simpleSQLiteStorageInstance.saveApiSessions(...args);
-export const loadApiSessions = (...args) => simpleSQLiteStorageInstance.loadApiSessions(...args);
 
 export default simpleSQLiteStorageInstance;

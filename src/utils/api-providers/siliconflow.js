@@ -1,5 +1,6 @@
 import { BaseApiProvider } from './base.js';
 import axios from 'axios';
+import { knowledgeBaseManager } from "../knowledgeBaseQdrant.js";
 
 export class SiliconFlowProvider extends BaseApiProvider {
   constructor(config = {}) {
@@ -109,12 +110,119 @@ export class SiliconFlowProvider extends BaseApiProvider {
       // 转换消息格式
       let apiMessages = this.transformMessages(messages, options);
 
+      // 处理知识库搜索
+      let knowledgeContext = "";
+      if (options.selectedDocuments && options.selectedDocuments.length > 0) {
+        try {
+          // 使用知识库管理器进行搜索
+          await knowledgeBaseManager.initialize();
+          const userMessage = messages[messages.length - 1];
+          
+          console.log(`🔍 搜索选中的文档:`, options.selectedDocuments);
+          console.log(`🔍 用户问题:`, userMessage.content);
+          
+          const searchResults = await knowledgeBaseManager.searchDocuments(
+            userMessage.content,
+            20, // 增加搜索结果数量以获得更多选择
+            0.01,
+            true
+          );
+          
+          console.log(`🔍 搜索结果总数:`, searchResults.length);
+          console.log(`🔍 搜索结果ID:`, searchResults.map(r => r.id));
+          console.log(`🔍 搜索结果详情:`, searchResults.map(r => ({ 
+            id: r.id, 
+            title: r.title, 
+            score: r.score,
+            contentLength: r.content?.length || 0,
+            contentPreview: r.content?.substring(0, 100) + (r.content?.length > 100 ? '...' : ''),
+            sourceType: r.sourceType
+          })));
+          
+                // 首先尝试过滤选中文档中的相关内容
+          const filteredResults = searchResults.filter(result => {
+            const isSelected = options.selectedDocuments.includes(result.id);
+            console.log(`🔍 文档 "${result.title}" (ID: ${result.id}) 是否被选中: ${isSelected}`);
+            return isSelected;
+          });
+          
+          console.log(`🔍 选中文档中的相关结果数量:`, filteredResults.length);
+          
+          // 如果选中文档中有相关内容，优先使用这些内容
+          if (filteredResults.length > 0) {
+            // 按分数排序，取前5个
+            const topResults = filteredResults
+              .sort((a, b) => (b.score || 0) - (a.score || 0))
+              .slice(0, 5);
+            
+            console.log(`🔍 使用选中文档中分数最高的 ${topResults.length} 个结果:`, topResults.map(d => ({ title: d.title, score: d.score })));
+            knowledgeContext = "请根据以下多个知识库文档块来回答问题...\n\n";
+            knowledgeContext += "<knowledge_base>\n";
+            topResults.forEach((result, index) => {
+              console.log(`🔍 添加文档 ${index + 1} 到上下文:`, {
+                title: result.title,
+                score: result.score,
+                contentLength: result.content?.length || 0,
+                contentPreview: result.content?.substring(0, 100) + (result.content?.length > 100 ? '...' : '')
+              });
+              knowledgeContext += `  <document index="${index + 1}" source="${result.title || 'Unknown'}">\n`;
+              knowledgeContext += `    <content>\n`;
+              knowledgeContext += `      ${result.content}\n`;
+              knowledgeContext += `    </content>\n`;
+              knowledgeContext += `  </document>\n\n`;
+            });
+            knowledgeContext += "</knowledge_base>\n\n";
+          } else {
+            // 如果选中文档中没有相关内容，使用所有搜索结果中分数最高的前5个
+            console.log(`🔍 选中文档中未找到相关内容，使用全局搜索结果中分数最高的前5个`);
+            const topResults = searchResults
+              .sort((a, b) => (b.score || 0) - (a.score || 0))
+              .slice(0, 5);
+            
+            console.log(`🔍 使用全局搜索结果中分数最高的 ${topResults.length} 个结果:`, topResults.map(d => ({ title: d.title, score: d.score })));
+            knowledgeContext = "请根据以下多个知识库文档块来回答问题...\n\n";
+            knowledgeContext += "<knowledge_base>\n";
+            topResults.forEach((result, index) => {
+              console.log(`🔍 添加文档 ${index + 1} 到上下文:`, {
+                title: result.title,
+                score: result.score,
+                contentLength: result.content?.length || 0,
+                contentPreview: result.content?.substring(0, 100) + (result.content?.length > 100 ? '...' : '')
+              });
+              knowledgeContext += `  <document index="${index + 1}" source="${result.title || 'Unknown'}">\n`;
+              knowledgeContext += `    <content>\n`;
+              knowledgeContext += `      ${result.content}\n`;
+              knowledgeContext += `    </content>\n`;
+              knowledgeContext += `  </document>\n\n`;
+            });
+            knowledgeContext += "</knowledge_base>\n\n";
+          }
+        } catch (error) {
+          console.warn('知识库搜索失败:', error);
+        }
+      }
+
       // 如果有系统提示词，添加到消息开头
       if (options.systemPrompt) {
         apiMessages.unshift({
           role: "system",
           content: options.systemPrompt,
         });
+      }
+
+      // 如果有知识库上下文，添加到系统消息中
+      if (knowledgeContext) {
+        console.log(`🔍 添加知识库上下文到系统消息:`, knowledgeContext.substring(0, 200) + '...');
+        if (apiMessages[0]?.role === "system") {
+          apiMessages[0].content = knowledgeContext + "\n\n" + apiMessages[0].content;
+        } else {
+          apiMessages.unshift({
+            role: "system",
+            content: knowledgeContext,
+          });
+        }
+      } else {
+        console.log(`🔍 没有知识库上下文可添加`);
       }
 
       // 构建请求体
@@ -127,7 +235,10 @@ export class SiliconFlowProvider extends BaseApiProvider {
         isMultimodalModel: this.isMultimodalModel(requestBody.model),
         maxTokens: requestBody.max_tokens,
         temperature: requestBody.temperature,
-        stream: true
+        stream: true,
+        messagesCount: requestBody.messages?.length || 0,
+        hasKnowledgeContext: !!knowledgeContext,
+        systemMessageLength: requestBody.messages?.[0]?.content?.length || 0
       });
 
       // 发送流式请求
@@ -258,12 +369,119 @@ export class SiliconFlowProvider extends BaseApiProvider {
       // 转换消息格式
       let apiMessages = this.transformMessages(messages, options);
 
+      // 处理知识库搜索
+      let knowledgeContext = "";
+      if (options.selectedDocuments && options.selectedDocuments.length > 0) {
+        try {
+          // 使用知识库管理器进行搜索
+          await knowledgeBaseManager.initialize();
+          const userMessage = messages[messages.length - 1];
+          
+          console.log(`🔍 搜索选中的文档:`, options.selectedDocuments);
+          console.log(`🔍 用户问题:`, userMessage.content);
+          
+          const searchResults = await knowledgeBaseManager.searchDocuments(
+            userMessage.content,
+            20, // 增加搜索结果数量以获得更多选择
+            0.01,
+            true
+          );
+          
+          console.log(`🔍 搜索结果总数:`, searchResults.length);
+          console.log(`🔍 搜索结果ID:`, searchResults.map(r => r.id));
+          console.log(`🔍 搜索结果详情:`, searchResults.map(r => ({ 
+            id: r.id, 
+            title: r.title, 
+            score: r.score,
+            contentLength: r.content?.length || 0,
+            contentPreview: r.content?.substring(0, 100) + (r.content?.length > 100 ? '...' : ''),
+            sourceType: r.sourceType
+          })));
+          
+                // 首先尝试过滤选中文档中的相关内容
+          const filteredResults = searchResults.filter(result => {
+            const isSelected = options.selectedDocuments.includes(result.id);
+            console.log(`🔍 文档 "${result.title}" (ID: ${result.id}) 是否被选中: ${isSelected}`);
+            return isSelected;
+          });
+          
+          console.log(`🔍 选中文档中的相关结果数量:`, filteredResults.length);
+          
+          // 如果选中文档中有相关内容，优先使用这些内容
+          if (filteredResults.length > 0) {
+            // 按分数排序，取前5个
+            const topResults = filteredResults
+              .sort((a, b) => (b.score || 0) - (a.score || 0))
+              .slice(0, 5);
+            
+            console.log(`🔍 使用选中文档中分数最高的 ${topResults.length} 个结果:`, topResults.map(d => ({ title: d.title, score: d.score })));
+            knowledgeContext = "请根据以下多个知识库文档块来回答问题...\n\n";
+            knowledgeContext += "<knowledge_base>\n";
+            topResults.forEach((result, index) => {
+              console.log(`🔍 添加文档 ${index + 1} 到上下文:`, {
+                title: result.title,
+                score: result.score,
+                contentLength: result.content?.length || 0,
+                contentPreview: result.content?.substring(0, 100) + (result.content?.length > 100 ? '...' : '')
+              });
+              knowledgeContext += `  <document index="${index + 1}" source="${result.title || 'Unknown'}">\n`;
+              knowledgeContext += `    <content>\n`;
+              knowledgeContext += `      ${result.content}\n`;
+              knowledgeContext += `    </content>\n`;
+              knowledgeContext += `  </document>\n\n`;
+            });
+            knowledgeContext += "</knowledge_base>\n\n";
+          } else {
+            // 如果选中文档中没有相关内容，使用所有搜索结果中分数最高的前5个
+            console.log(`🔍 选中文档中未找到相关内容，使用全局搜索结果中分数最高的前5个`);
+            const topResults = searchResults
+              .sort((a, b) => (b.score || 0) - (a.score || 0))
+              .slice(0, 5);
+            
+            console.log(`🔍 使用全局搜索结果中分数最高的 ${topResults.length} 个结果:`, topResults.map(d => ({ title: d.title, score: d.score })));
+            knowledgeContext = "请根据以下多个知识库文档块来回答问题...\n\n";
+            knowledgeContext += "<knowledge_base>\n";
+            topResults.forEach((result, index) => {
+              console.log(`🔍 添加文档 ${index + 1} 到上下文:`, {
+                title: result.title,
+                score: result.score,
+                contentLength: result.content?.length || 0,
+                contentPreview: result.content?.substring(0, 100) + (result.content?.length > 100 ? '...' : '')
+              });
+              knowledgeContext += `  <document index="${index + 1}" source="${result.title || 'Unknown'}">\n`;
+              knowledgeContext += `    <content>\n`;
+              knowledgeContext += `      ${result.content}\n`;
+              knowledgeContext += `    </content>\n`;
+              knowledgeContext += `  </document>\n\n`;
+            });
+            knowledgeContext += "</knowledge_base>\n\n";
+          }
+        } catch (error) {
+          console.warn('知识库搜索失败:', error);
+        }
+      }
+
       // 如果有系统提示词，添加到消息开头
       if (options.systemPrompt) {
         apiMessages.unshift({
           role: "system",
           content: options.systemPrompt,
         });
+      }
+
+      // 如果有知识库上下文，添加到系统消息中
+      if (knowledgeContext) {
+        console.log(`🔍 添加知识库上下文到系统消息:`, knowledgeContext.substring(0, 200) + '...');
+        if (apiMessages[0]?.role === "system") {
+          apiMessages[0].content = knowledgeContext + "\n\n" + apiMessages[0].content;
+        } else {
+          apiMessages.unshift({
+            role: "system",
+            content: knowledgeContext,
+          });
+        }
+      } else {
+        console.log(`🔍 没有知识库上下文可添加`);
       }
 
       // 构建请求体
@@ -275,7 +493,10 @@ export class SiliconFlowProvider extends BaseApiProvider {
         isReasoningModel: this.isReasoningModel(requestBody.model),
         maxTokens: requestBody.max_tokens,
         temperature: requestBody.temperature,
-        timeout: this.isReasoningModel(requestBody.model) ? 60000 : 30000
+        timeout: this.isReasoningModel(requestBody.model) ? 60000 : 30000,
+        messagesCount: requestBody.messages?.length || 0,
+        hasKnowledgeContext: !!knowledgeContext,
+        systemMessageLength: requestBody.messages?.[0]?.content?.length || 0
       });
 
       const response = await axios.post(

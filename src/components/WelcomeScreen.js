@@ -73,7 +73,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
     "🎯 Create a learning plan",
   ];
 
-  const handleSubmit = (message, uploadedFile) => {
+  const handleSubmit = (message, uploadedFile, options = {}) => {
     if ((message.trim() || uploadedFile) && !disabled) {
       const selectedRoleData = roles.find((role) => role.id === selectedRole);
       onSendMessage(message, uploadedFile, {
@@ -81,6 +81,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
         temperature: selectedRoleData.temperature,
         systemPrompt: selectedRoleData.systemPrompt,
         responseMode: responseMode,
+        selectedDocuments: options.selectedDocuments || null,
       });
     }
   };
@@ -106,6 +107,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
       temperature: selectedRoleData.temperature,
       systemPrompt: selectedRoleData.systemPrompt,
       responseMode: responseMode,
+      selectedDocuments: null, // 快速提示不包含知识库选择
     });
   };
 

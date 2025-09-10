@@ -59,7 +59,7 @@ body {
 
 /* 输入框主题 */
 input, textarea {
-  background: var(--bg-primary) !important;
+  /* background: var(--bg-primary) !important; */
   color: var(--text-primary) !important;
   border-color: var(--border-color) !important;
 }

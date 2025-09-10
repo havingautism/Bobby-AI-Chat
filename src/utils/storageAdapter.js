@@ -190,25 +190,7 @@ export const storageAdapter = {
     };
   },
 
-  // API会话历史相关
-  saveApiSessions: async (sessions) => {
-    if (isTauriEnvironment()) {
-      await tauriStorage.saveApiSessions(sessions);
-    } else {
-      // Web环境使用设置存储
-      await indexedDBStorage.saveSetting('api-sessions', sessions);
-    }
-  },
-
-  loadApiSessions: async () => {
-    if (isTauriEnvironment()) {
-      return await tauriStorage.loadApiSessions();
-    } else {
-      // Web环境使用设置存储
-      return await indexedDBStorage.loadSetting('api-sessions', []);
-    }
-  },
-};
+  };
 
 // 导出所有函数，保持与原始storage.js的API兼容
 export const {
@@ -223,8 +205,6 @@ export const {
   migrateFromIndexedDB,
   setCustomDataDir,
   getDataDirectoryInfo,
-  saveApiSessions,
-  loadApiSessions,
   getStorageType,
   switchToSQLite,
   switchToJsonStorage

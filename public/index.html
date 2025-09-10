@@ -54,5 +54,47 @@
         console.log('PWA installed successfully');
       });
     </script>
+    
+    <!-- 存储诊断工具 -->
+    <script>
+      // 快速存储诊断 - 在页面加载时运行
+      window.addEventListener('load', async () => {
+        console.log('🔍 开始快速存储诊断...');
+        
+        // 检查localStorage设置
+        const useSqliteStorage = localStorage.getItem('use-sqlite-storage');
+        const isTauri = window.__TAURI__ || window.__TAURI_IPC__;
+        
+        console.log('📊 快速诊断结果:');
+        console.log('  - Tauri环境:', isTauri ? '是' : '否');
+        console.log('  - SQLite存储设置:', useSqliteStorage);
+        console.log('  - 当前存储类型:', isTauri ? (useSqliteStorage !== 'false' ? 'sqlite' : 'json') : 'indexeddb');
+        
+        // 检查IndexedDB中的会话数据
+        if (!isTauri) {
+          try {
+            const request = indexedDB.open('ai_chat_db', 1);
+            request.onsuccess = (event) => {
+              const db = event.target.result;
+              if (db.objectStoreNames.contains('conversations')) {
+                const tx = db.transaction('conversations', 'readonly');
+                const store = tx.objectStore('conversations');
+                const count = store.count();
+                
+                count.onsuccess = () => {
+                  console.log('  - IndexedDB会话数量:', count.result);
+                };
+              }
+            };
+          } catch (error) {
+            console.log('  - IndexedDB检查失败:', error.message);
+          }
+        }
+        
+        // 提供诊断命令
+        console.log('💡 完整诊断命令:');
+        console.log('  - 在控制台运行: window.storageDiagnostic?.generateReport()');
+      });
+    </script>
   </body>
 </html>

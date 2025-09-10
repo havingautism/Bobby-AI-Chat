@@ -492,8 +492,8 @@ class KnowledgeBaseSQLite {
       }
     });
     
-    // 生成384维向量
-    const embedding = new Array(384).fill(0);
+    // 生成768维向量
+    const embedding = new Array(768).fill(0);
     const wordsList = Object.keys(wordFreq);
     
     // 使用多个哈希函数生成向量
@@ -504,7 +504,7 @@ class KnowledgeBaseSQLite {
       
       // 为每个词生成多个维度的贡献
       for (let j = 0; j < 8; j++) {
-        const dim = (hash + j * 1000) % 384;
+        const dim = (hash + j * 1000) % 768;
         embedding[dim] += freq * Math.sin(hash + j) * 0.1;
       }
     }

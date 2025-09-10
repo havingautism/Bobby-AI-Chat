@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getCurrentLanguage, t } from "../utils/language";
 import { isModelSupportResponseModes } from "../utils/modelUtils";
-import { isTauriEnvironment } from "../utils/tauriDetector";
+// import { isTauriEnvironment } from "../utils/tauriDetector";
+import { knowledgeBaseManager } from "../utils/knowledgeBaseQdrant";
+import FileIcon from "./FileIcon";
 import "./ChatInput.css";
 
 const ChatInput = ({ 
@@ -24,25 +26,84 @@ const ChatInput = ({
   const [message, setMessage] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [showQuickResponseDropdown, setShowQuickResponseDropdown] = useState(false);
+  const [showKnowledgeBaseDropdown, setShowKnowledgeBaseDropdown] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [uploadedFile, setUploadedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [responseMode, setResponseMode] = useState(externalResponseMode || "normal"); // normal 或 thinking
+  const [selectedDocuments, setSelectedDocuments] = useState([]); // 多选的文档列表
+  const [knowledgeDocuments, setKnowledgeDocuments] = useState([]); // 知识库文档列表
+  const [documentSearchQuery, setDocumentSearchQuery] = useState(''); // 文档搜索查询
   const dropdownRef = useRef(null);
   const quickResponseRef = useRef(null);
+  const knowledgeBaseRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+
+ const isTauriEnvironment = () => {
+  if (typeof window === 'undefined') return false;
+  
+  // 检查多种Tauri标识
+  return Boolean(
+    window.__TAURI__ !== undefined || 
+    window.__TAURI_IPC__ !== undefined ||
+    window.__TAURI_INTERNALS__ !== undefined ||
+    window.__TAURI_METADATA__ !== undefined ||
+    navigator.userAgent.includes('Tauri') ||
+    Object.keys(window).some(key => key.includes('TAURI'))
+  );
+};
 
   // 判断当前模型是否支持响应模式
   const supportsResponseModes = isModelSupportResponseModes(currentModel);
 
+  // 加载知识库文档
+  const loadKnowledgeDocuments = async () => {
+    try {
+      await knowledgeBaseManager.initialize();
+      const docs = await knowledgeBaseManager.getDocuments();
+      setKnowledgeDocuments(docs);
+    } catch (error) {
+      console.error('加载知识库文档失败:', error);
+    }
+  };
+
+  // 处理文档选择
+  const toggleDocumentSelection = (docId) => {
+    setSelectedDocuments(prev => {
+      if (prev.includes(docId)) {
+        return prev.filter(id => id !== docId);
+      } else {
+        return [...prev, docId];
+      }
+    });
+  };
+
+  // 清除所有选择的文档
+  const clearSelectedDocuments = () => {
+    setSelectedDocuments([]);
+  };
+
+  // 过滤文档列表
+  const filteredDocuments = knowledgeDocuments.filter(doc => {
+    if (!documentSearchQuery.trim()) return true;
+    const query = documentSearchQuery.toLowerCase();
+    return (
+      doc.title.toLowerCase().includes(query) ||
+      (doc.fileName && doc.fileName.toLowerCase().includes(query)) ||
+      (doc.sourceType && doc.sourceType.toLowerCase().includes(query))
+    );
+  });
 
   // 使用知识库结果的功能已内联到onClick处理函数中
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if ((message.trim() || uploadedFile) && !disabled) {
-      onSendMessage(message, uploadedFile, { responseMode });
+      onSendMessage(message, uploadedFile, { 
+        responseMode,
+        selectedDocuments: selectedDocuments.length > 0 ? selectedDocuments : null
+      });
       setMessage("");
       setUploadedFile(null);
       setFilePreview(null);
@@ -85,15 +146,18 @@ const ChatInput = ({
       if (quickResponseRef.current && !quickResponseRef.current.contains(event.target)) {
         setShowQuickResponseDropdown(false);
       }
+      if (knowledgeBaseRef.current && !knowledgeBaseRef.current.contains(event.target)) {
+        setShowKnowledgeBaseDropdown(false);
+      }
     };
 
-    if (showDropdown || showQuickResponseDropdown) {
+    if (showDropdown || showQuickResponseDropdown || showKnowledgeBaseDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [showDropdown, showQuickResponseDropdown]);
+  }, [showDropdown, showQuickResponseDropdown, showKnowledgeBaseDropdown]);
 
   // 动态调整chat-messages的padding-bottom以适应输入框高度
   useEffect(() => {
@@ -131,6 +195,13 @@ const ChatInput = ({
       window.removeEventListener('inputHeightChange', handleInputChange);
     };
   }, [className]); // 添加className依赖
+
+  // 当知识库下拉菜单打开时加载文档
+  useEffect(() => {
+    if (showKnowledgeBaseDropdown) {
+      loadKnowledgeDocuments();
+    }
+  }, [showKnowledgeBaseDropdown]);
 
   // 监听message状态变化，当消息被清空时重置输入框高度
   useEffect(() => {
@@ -430,24 +501,164 @@ const ChatInput = ({
                 </div>
               )}
 
-              {/* 知识库按钮 */}
-              {isTauriEnvironment() && onOpenKnowledgeBase && (
-                <button
-                  type="button"
-                  className="knowledge-base-btn"
-                  onClick={onOpenKnowledgeBase}
-                  disabled={disabled}
-                  title="知识库"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                    <path d="M8 7h8"/>
-                    <path d="M8 11h8"/>
-                    <path d="M8 15h5"/>
-                  </svg>
-                  <span>知识库</span>
-                </button>
+              {/* 知识库下拉按钮 */}
+              {isTauriEnvironment() && (
+                <div className="knowledge-base-dropdown" ref={knowledgeBaseRef}>
+                  <button
+                    type="button"
+                    className={`knowledge-base-btn ${selectedDocuments.length > 0 ? 'active' : ''}`}
+                    onClick={() => setShowKnowledgeBaseDropdown(!showKnowledgeBaseDropdown)}
+                    disabled={disabled}
+                    title="知识库"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                      <path d="M8 7h8"/>
+                      <path d="M8 11h8"/>
+                      <path d="M8 15h5"/>
+                    </svg>
+                    <span>知识库</span>
+                    {selectedDocuments.length > 0 && (
+                      <span className="selected-count">{selectedDocuments.length}</span>
+                    )}
+                    {/* <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg> */}
+                  </button>
+
+                  {/* 知识库下拉菜单 */}
+                  {showKnowledgeBaseDropdown && (
+                    <div className="knowledge-base-menu">
+                      <div className="knowledge-base-header">
+                        <h4>选择知识库文档</h4>
+                        <div className="knowledge-base-actions">
+                          <button 
+                            className="manage-kb-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenKnowledgeBase();
+                              setShowKnowledgeBaseDropdown(false);
+                            }}
+                          >
+                            管理知识库
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* 搜索框 */}
+                      <div className="document-search-container">
+                        <div className="document-search-input">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                          </svg>
+                          <input
+                            type="text"
+                            placeholder="搜索文档..."
+                            value={documentSearchQuery}
+                            onChange={(e) => setDocumentSearchQuery(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          {documentSearchQuery && (
+                            <button 
+                              className="clear-search-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDocumentSearchQuery('');
+                              }}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                        <div className="kb-selection-bar">
+                          <div className="kb-selection-info">
+                            {selectedDocuments.length > 0 ? (
+                              <span>已选择 {selectedDocuments.length} 项</span>
+                            ) : (
+                              <span>未选择文档</span>
+                            )}
+                          </div>
+                          <div className="kb-selection-actions">
+                            {selectedDocuments.length > 0 && (
+                              <button 
+                                className="clear-selection-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  clearSelectedDocuments();
+                                }}
+                              >
+                                清除选择
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="documents-list">
+                        {filteredDocuments.length === 0 ? (
+                          <div className="empty-documents">
+                            <p>{documentSearchQuery ? '没有找到匹配的文档' : '暂无知识库文档'}</p>
+                            <button 
+                              className="add-document-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenKnowledgeBase();
+                                setShowKnowledgeBaseDropdown(false);
+                              }}
+                            >
+                              添加文档
+                            </button>
+                          </div>
+                        ) : (
+                          filteredDocuments.map((doc) => (
+                            <div 
+                              key={doc.id} 
+                              className={`document-item ${selectedDocuments.includes(doc.id) ? 'selected' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleDocumentSelection(doc.id);
+                              }}
+                            >
+                              <div className="document-icon">
+                                <FileIcon 
+                                  fileName={doc.fileName || doc.title} 
+                                  mimeType={doc.mimeType}
+                                  sourceType={doc.sourceType}
+                                  size="small"
+                                />
+                              </div>
+                              <div className="document-info">
+                                <div className="document-title">{doc.title}</div>
+                                <div className="document-meta">
+                                  <span className="document-type">{doc.sourceType || 'manual'}</span>
+                                  <span className="document-date">
+                                    {new Date(doc.created_at || doc.createdAt || Date.now()).toLocaleDateString()}
+                                  </span>
+                                  {doc.fileSize && (
+                                    <span className="document-size">
+                                      {(doc.fileSize / 1024).toFixed(1)} KB
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="kb-check-icon" aria-hidden="true">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M20 6L9 17l-5-5" />
+                                </svg>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      
+                      {/* 已选统计移至搜索框下方，这里不再显示 */}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
