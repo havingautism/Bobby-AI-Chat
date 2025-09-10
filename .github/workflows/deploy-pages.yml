@@ -28,7 +28,7 @@ jobs:
 
       - name: Install dependencies
         # 使用 npm ci 以确保构建环境的一致性
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       # 我们已经不再需要任何伪造脚本了！
 
@@ -52,4 +52,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
