@@ -86,6 +86,16 @@
   min-width: 0;
 }
 
+.model-name-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.model-selector-icon {
+  flex-shrink: 0;
+}
+
 .model-name {
   font-weight: 500;
   color: var(--text-primary);
@@ -207,6 +217,7 @@
   align-items: flex-start;
   flex: 1;
   min-width: 0;
+  margin-left: 8px;
 }
 
 .model-option-name {

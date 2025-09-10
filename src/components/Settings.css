@@ -324,6 +324,19 @@
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-model-icon {
+  flex-shrink: 0;
+}
+
+/* Settings中下拉框的ModelIcon样式 */
+.dropdown-option .model-icon {
+  flex-shrink: 0;
+  margin-right: 8px;
 }
 
 .dropdown-description {
@@ -413,7 +426,7 @@
   border: none;
   cursor: pointer;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   transition: var(--transition-smooth);

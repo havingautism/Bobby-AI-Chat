@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getCurrentLanguage, t } from "../utils/language";
+import ModelIcon from "./ModelIcon";
 import "./ModelSelector.css";
 
 const ModelSelector = ({ 
@@ -202,19 +203,18 @@ const ModelSelector = ({
                  {isMobile ? (
            // 移动端只显示图标
            <div className="model-icon">
-           
-
-    <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 32 32" >{/* Icon from Carbon by IBM - undefined */}<path fill="currentColor" d="M27 19c1.654 0 3-1.346 3-3s-1.346-3-3-3a2.995 2.995 0 0 0-2.816 2h-5.77l7.3-7.3c.392.187.824.3 1.286.3c1.654 0 3-1.346 3-3s-1.346-3-3-3s-3 1.346-3 3c0 .462.114.894.3 1.285L16 14.586V8c0-1.102.897-2 2-2h2V4h-2c-1.2 0-2.266.543-3 1.382A3.98 3.98 0 0 0 12 4h-1c-4.962 0-9 4.037-9 9v6c0 4.963 4.038 9 9 9h1c1.2 0 2.266-.542 3-1.382c.734.84 1.8 1.382 3 1.382h2v-2h-2c-1.103 0-2-.897-2-2v-6.586l8.3 8.301c-.187.391-.3.823-.3 1.285c0 1.655 1.346 3 3 3s3-1.345 3-3s-1.346-3-3-3a2.96 2.96 0 0 0-1.285.301l-7.301-7.3h5.77A2.995 2.995 0 0 0 27 19m0-4a1 1 0 0 1 0 2a1 1 0 0 1 0-2m0-11a1.001 1.001 0 0 1 0 2a1 1 0 0 1 0-2m-13 8h-2v2h2v4h-2c-1.654 0-3 1.346-3 3v2h2v-2a1 1 0 0 1 1-1h2v4c0 1.103-.897 2-2 2h-1c-3.52 0-6.432-2.613-6.92-6H6v-2H4v-4h3c1.654 0 3-1.346 3-3V9H8v2a1 1 0 0 1-1 1H4.08c.488-3.387 3.4-6 6.92-6h1c1.103 0 2 .898 2 2zm14 15a1.001 1.001 0 0 1-2 0c0-.551.449-1 1-1s1 .449 1 1" /></svg>
-  
-
+            <ModelIcon modelId={currentModel} size={20} />
            </div>
          ) : (
           // PC端显示完整信息
           <div className="model-info">
-            <span className="model-name">
-              {currentModelInfo.name}
-              {currentModelInfo.isPro && <span className="pro-badge">Pro</span>}
-            </span>
+            <div className="model-name-container">
+              <ModelIcon modelId={currentModel} size={18} className="model-selector-icon" />
+              <span className="model-name">
+                {currentModelInfo.name}
+                {currentModelInfo.isPro && <span className="pro-badge">Pro</span>}
+              </span>
+            </div>
             <span className="model-description">{currentModelInfo.description}</span>
           </div>
         )}
@@ -233,6 +233,7 @@ const ModelSelector = ({
                     className={`model-option ${model.id === currentModel ? 'selected' : ''}`}
                     onClick={() => handleModelSelect(model.id)}
                   >
+                    <ModelIcon modelId={model.id} size={16} className={model.isPro ? 'pro' : ''} />
                     <div className="model-option-info">
                       <span className="model-option-name">
                         {model.name}

@@ -3,6 +3,7 @@ import { getApiConfig, updateApiConfig } from "../utils/api";
 import { getCurrentLanguage, t } from "../utils/language";
 import { storageAdapter } from "../utils/storageAdapter";
 import { isTauriEnvironment } from "../utils/tauriDetector";
+import ModelIcon from "./ModelIcon";
 import "./Settings.css";
 
 // 优化的Tooltip组件
@@ -50,6 +51,7 @@ const ModelOption = React.memo(({
         transform: isSelected ? 'translateX(2px)' : 'none'
       }}
     >
+      <ModelIcon modelId={model.id} size={16} className={model.isPro ? 'pro' : ''} />
       <div className="dropdown-option-info">
         <div className="dropdown-option-name">
           {model.name}
@@ -496,6 +498,7 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
                               .find(model => model.id === config.model);
                             return selectedModel ? (
                               <>
+                                <ModelIcon modelId={selectedModel.id} size={16} className="settings-model-icon" />
                                 {selectedModel.name}
                                 {selectedModel.isPro && <span className="pro-badge">Pro</span>}
                               </>
