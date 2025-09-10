@@ -21,12 +21,16 @@ const getDbPath = async () => {
       throw new Error('Not in Tauri environment');
     }
     
-    // 直接使用相对路径，与后端保持一致
-    return `./data/${DB_NAME}`;
+    // 使用Tauri API获取用户数据目录，与后端保持一致
+    const { appDataDir } = await import('@tauri-apps/api/path');
+    const dataDir = await appDataDir();
+    const dbPath = `${dataDir}${DB_NAME}`;
+    console.log('使用Tauri用户数据目录:', dbPath);
+    return dbPath;
   } catch (error) {
     console.error('获取数据库路径失败:', error);
-    // 如果获取路径失败，使用相对路径
-    return `./data/${DB_NAME}`;
+    // 如果获取路径失败，使用默认路径
+    return DB_NAME;
   }
 };
 

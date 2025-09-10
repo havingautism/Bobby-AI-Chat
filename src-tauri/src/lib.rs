@@ -178,14 +178,19 @@ struct SearchResult {
 async fn ensure_data_directory() -> Result<String, String> {
   use std::fs;
   
+  // 统一使用用户数据目录，避免debug和release模式路径不一致
   let data_dir = if cfg!(debug_assertions) {
-    "./data".to_string()
+    // debug模式也使用用户数据目录，保持一致性
+    let app_data = std::env::var("APPDATA").unwrap_or_else(|_| ".".to_string());
+    format!("{}/ai_chat", app_data)
   } else {
+    // release模式使用用户数据目录
     let app_data = std::env::var("APPDATA").unwrap_or_else(|_| ".".to_string());
     format!("{}/ai_chat", app_data)
   };
   
   fs::create_dir_all(&data_dir).map_err(|e| format!("创建数据目录失败: {}", e))?;
+  println!("📁 数据目录: {}", data_dir);
   Ok(data_dir)
 }
 
