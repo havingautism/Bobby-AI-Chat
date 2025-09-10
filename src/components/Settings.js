@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { getApiConfig, updateApiConfig } from "../utils/api";
 import { getCurrentLanguage, t } from "../utils/language";
 import { storageAdapter } from "../utils/storageAdapter";
 import { isTauriEnvironment } from "../utils/tauriDetector";
 import "./Settings.css";
 
-// Tooltip组件
-const Tooltip = ({ children, content, position = "top" }) => {
+// 优化的Tooltip组件
+const Tooltip = React.memo(({ children, content, position = "top" }) => {
   const [isVisible, setIsVisible] = useState(false);
   const tooltipRef = useRef(null);
 
-  const showTooltip = () => setIsVisible(true);
-  const hideTooltip = () => setIsVisible(false);
+  const showTooltip = useCallback(() => setIsVisible(true), []);
+  const hideTooltip = useCallback(() => setIsVisible(false), []);
 
   return (
     <div 
@@ -28,7 +28,68 @@ const Tooltip = ({ children, content, position = "top" }) => {
       )}
     </div>
   );
-};
+});
+
+// 优化的模型选项组件
+const ModelOption = React.memo(({ 
+  model, 
+  isSelected, 
+  onSelect, 
+  isMobile 
+}) => {
+  const handleClick = useCallback(() => {
+    onSelect(model.id);
+  }, [model.id, onSelect]);
+
+  return (
+    <button
+      className={`dropdown-option ${isSelected ? "selected" : ""}`}
+      onClick={handleClick}
+      style={{
+        willChange: 'transform',
+        transform: isSelected ? 'translateX(2px)' : 'none'
+      }}
+    >
+      <div className="dropdown-option-info">
+        <div className="dropdown-option-name">
+          {model.name}
+          {model.isPro && <span className="pro-badge">PRO</span>}
+        </div>
+        <div className="dropdown-option-description">
+          {model.description}
+        </div>
+      </div>
+      {isSelected && (
+        <svg className="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 6L9 17l-5-5" />
+        </svg>
+      )}
+    </button>
+  );
+});
+
+// 优化的模型分类组件
+const ModelCategory = React.memo(({ 
+  category, 
+  selectedModel, 
+  onModelSelect, 
+  isMobile 
+}) => {
+  return (
+    <div className="dropdown-category">
+      <div className="dropdown-category-header">{category.name}</div>
+      {category.models.map((model) => (
+        <ModelOption
+          key={model.id}
+          model={model}
+          isSelected={selectedModel === model.id}
+          onSelect={onModelSelect}
+          isMobile={isMobile}
+        />
+      ))}
+    </div>
+  );
+});
 
 const Settings = ({ isOpen, onClose, onModelChange }) => {
   const [config, setConfig] = useState({
@@ -53,6 +114,11 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
   const [currentStorageType, setCurrentStorageType] = useState(() => storageAdapter.getStorageType());
   const dropdownRef = useRef(null);
   const [dropdownWidth, setDropdownWidth] = useState(undefined);
+  
+  // 检测是否为移动设备
+  const isMobile = useMemo(() => {
+    return typeof window !== 'undefined' && window.innerWidth <= 768;
+  }, []);
 
   // 获取会话数量的函数
   const getConversationCount = () => {

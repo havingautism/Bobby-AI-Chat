@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: space-between;
   background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  border: none;
   border-radius: var(--border-radius-sm);
   padding: 8px 12px;
   cursor: pointer;
@@ -59,7 +59,7 @@
   background: linear-gradient(135deg, 
     var(--glass-bg-light-hover) 0%, 
     var(--glass-bg-dark-hover) 100%);
-  border-color: var(--accent-primary);
+  border-color: none ;
   transform: scale(1.05);
   box-shadow: var(--glass-shadow-dark);
 }

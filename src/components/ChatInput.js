@@ -6,6 +6,13 @@ import { knowledgeBaseManager } from "../utils/knowledgeBaseQdrant";
 import FileIcon from "./FileIcon";
 import "./ChatInput.css";
 
+// 导入PDF和Word文档解析库
+const pdfjsLib = require('pdfjs-dist');
+const mammoth = require('mammoth');
+
+// 配置PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
 const ChatInput = ({ 
   onSendMessage, 
   disabled, 
@@ -30,6 +37,7 @@ const ChatInput = ({
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [uploadedFile, setUploadedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [showUploadDropdown, setShowUploadDropdown] = useState(false);
   const [responseMode, setResponseMode] = useState(externalResponseMode || "normal"); // normal 或 thinking
   const [selectedDocuments, setSelectedDocuments] = useState([]); // 多选的文档列表
   const [knowledgeDocuments, setKnowledgeDocuments] = useState([]); // 知识库文档列表
@@ -37,6 +45,7 @@ const ChatInput = ({
   const dropdownRef = useRef(null);
   const quickResponseRef = useRef(null);
   const knowledgeBaseRef = useRef(null);
+  const uploadDropdownRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -149,15 +158,18 @@ const ChatInput = ({
       if (knowledgeBaseRef.current && !knowledgeBaseRef.current.contains(event.target)) {
         setShowKnowledgeBaseDropdown(false);
       }
+      if (uploadDropdownRef.current && !uploadDropdownRef.current.contains(event.target)) {
+        setShowUploadDropdown(false);
+      }
     };
 
-    if (showDropdown || showQuickResponseDropdown || showKnowledgeBaseDropdown) {
+    if (showDropdown || showQuickResponseDropdown || showKnowledgeBaseDropdown || showUploadDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [showDropdown, showQuickResponseDropdown, showKnowledgeBaseDropdown]);
+  }, [showDropdown, showQuickResponseDropdown, showKnowledgeBaseDropdown, showUploadDropdown]);
 
   // 动态调整chat-messages的padding-bottom以适应输入框高度
   useEffect(() => {
@@ -259,6 +271,212 @@ const ChatInput = ({
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
+  };
+
+  // 触发文档上传
+  const triggerDocumentUpload = () => {
+    setShowUploadDropdown(false);
+    // 创建临时文件输入框
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.txt,.md,.html,.htm';
+    input.onchange = (e) => handleDocumentUpload(e);
+    input.click();
+  };
+
+  // 触发图片上传
+  const triggerImageUpload = () => {
+    setShowUploadDropdown(false);
+    // 创建临时文件输入框
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => handleImageUpload(e);
+    input.click();
+  };
+
+  // 处理文档上传
+  const handleDocumentUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      // 读取文档内容
+      const text = await readDocumentContent(file);
+      if (text) {
+        // 将文档内容添加到system prompt
+        setUploadedFile({
+          name: file.name,
+          type: 'document',
+          content: text,
+          size: file.size
+        });
+        setFilePreview(null);
+      }
+    } catch (error) {
+      console.error('Error reading document:', error);
+      // 错误已经在readDocumentContent函数中处理，这里不需要重复提示
+    }
+  };
+
+  // 处理图片上传
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      // 压缩图片
+      const compressedFile = await compressImage(file);
+      
+      // 创建预览
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setUploadedFile({
+          name: compressedFile.name,
+          type: 'image',
+          file: compressedFile,
+          size: compressedFile.size
+        });
+        setFilePreview(e.target.result);
+      };
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      alert(currentLanguage === "zh" ? "图片处理失败" : "Failed to process image");
+    }
+  };
+
+  // 读取文档内容
+  const readDocumentContent = async (file) => {
+    try {
+      let text = '';
+      
+      // 根据文件类型选择解析方法
+      if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        // 纯文本文件
+        text = await readTextFile(file);
+      } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        // PDF文件
+        text = await readPdfFile(file);
+      } else if (file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+        // Word文档
+        text = await readWordFile(file);
+      } else if (file.type === 'text/html' || file.name.endsWith('.html') || file.name.endsWith('.htm')) {
+        // HTML文件
+        text = await readTextFile(file);
+      } else {
+        throw new Error('Unsupported file type');
+      }
+      
+      // 检查文本长度（限制为2000-4000 Tokens，大约1000-3000个汉字）
+      // 中文字符通常算作2个Tokens，英文字符算作1个Token
+      // 这里使用字符数作为近似估算，限制在3000个字符以内
+      const maxChars = 3000;
+      if (text.length > maxChars) {
+        alert(currentLanguage === "zh" ? `文档内容过长（${text.length}字符），超过3000字符限制，请添加到知识库中处理` : `Document content too long (${text.length} characters), exceeds 3000 character limit, please add to knowledge base`);
+        throw new Error('Text too large');
+      }
+      
+      return text;
+    } catch (error) {
+      console.error('Error reading document:', error);
+      if (error.message === 'Unsupported file type') {
+        alert(currentLanguage === "zh" ? "不支持的文件格式，请上传文本文件、PDF或Word文档" : "Unsupported file format, please upload text files, PDF or Word documents");
+      }
+      throw error;
+    }
+  };
+
+  // 读取纯文本文件
+  const readTextFile = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+  };
+
+  // 读取PDF文件
+  const readPdfFile = async (file) => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      
+      let fullText = '';
+      
+      // 读取每一页的文本
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+      
+      return fullText.trim();
+    } catch (error) {
+      console.error('Error reading PDF:', error);
+      throw new Error('Failed to read PDF file');
+    }
+  };
+
+  // 读取Word文件
+  const readWordFile = async (file) => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+      return result.value.trim();
+    } catch (error) {
+      console.error('Error reading Word document:', error);
+      throw new Error('Failed to read Word document');
+    }
+  };
+
+  // 压缩图片
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // 计算新尺寸（最大800px）
+        const MAX_SIZE = 800;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height && width > MAX_SIZE) {
+          height = height * (MAX_SIZE / width);
+          width = MAX_SIZE;
+        } else if (height > MAX_SIZE) {
+          width = width * (MAX_SIZE / height);
+          height = MAX_SIZE;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // 绘制压缩后的图片
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // 转换为blob
+        canvas.toBlob((blob) => {
+          if (blob) {
+            // 创建新的File对象
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(compressedFile);
+          } else {
+            reject(new Error('Failed to compress image'));
+          }
+        }, 'image/jpeg', 0.8);
+      };
+      
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
   };
 
 
@@ -456,18 +674,53 @@ const ChatInput = ({
           <div className="input-toolbar">
             {/* 左侧按钮组 */}
             <div className="toolbar-left">
-              {/* 加号按钮 */}
-              <button
-                type="button"
-                className="plus-button-inline"
-                onClick={triggerFileUpload}
-                disabled={disabled}
-                title={t("upload", currentLanguage)}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14m-7-7h14" />
-                </svg>
-              </button>
+              {/* 上传按钮 */}
+              <div className="upload-button-container" ref={uploadDropdownRef}>
+                <button
+                  type="button"
+                  className="plus-button-inline"
+                  onClick={() => setShowUploadDropdown(!showUploadDropdown)}
+                  disabled={disabled}
+                  title={t("upload", currentLanguage)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 5v14m-7-7h14" />
+                  </svg>
+                </button>
+                
+                {/* 上传选项下拉框 */}
+                {showUploadDropdown && (
+                  <div className="upload-dropdown">
+                    <button
+                      type="button"
+                      className="upload-option"
+                      onClick={triggerDocumentUpload}
+                      disabled={true}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10,9 9,9 8,9"/>
+                      </svg>
+                      <span>{currentLanguage === "zh" ? "上传文档(即将支持)" : "Upload Document(coming soon)"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="upload-option"
+                      onClick={triggerImageUpload}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21,15 16,10 5,21"/>
+                      </svg>
+                      <span>{currentLanguage === "zh" ? "上传图片" : "Upload Image"}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* 响应模式滑动切换按钮 */}
               {supportsResponseModes && (

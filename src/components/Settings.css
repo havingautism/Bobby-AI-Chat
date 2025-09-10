@@ -907,6 +907,11 @@
   .settings-modal {
     max-height: 94vh;
     border-radius: var(--border-radius-lg);
+    /* 移动端禁用复杂的玻璃拟态效果 */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
   }
   
   .settings-header {
@@ -998,6 +1003,12 @@
   
   .dropdown-menu {
     max-height: 280px;
+    /* 移动端禁用复杂的玻璃拟态效果 */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
   
   .dropdown-trigger {
@@ -1015,6 +1026,13 @@
   
   .dropdown-option {
     padding: 14px 16px;
+    /* 移动端简化hover效果 */
+    transition: background-color 0.15s ease;
+  }
+  
+  .dropdown-option:hover {
+    background: var(--bg-hover);
+    transform: none;
   }
   
   .dropdown-option-name {
@@ -1154,6 +1172,19 @@
     max-height: 220px;
     margin-right: 4px;
     overflow: hidden;
+  }
+  
+  /* 移动端禁用复杂的按钮动画 */
+  .test-button::before,
+  .save-button::before,
+  .cancel-button::before {
+    display: none;
+  }
+  
+  .test-button:active,
+  .save-button:active,
+  .cancel-button:active {
+    transform: scale(0.98);
   }
   
   .dropdown-trigger {
