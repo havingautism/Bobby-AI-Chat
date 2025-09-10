@@ -555,6 +555,7 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
                           }`}
                           onClick={() => handleModelChange(model.id)}
                         >
+                          <ModelIcon modelId={model.id} size={16} className={model.isPro ? 'pro' : ''} />
                           <div className="dropdown-option-info">
                             <div className="dropdown-option-name">
                               {model.name}
