@@ -29,8 +29,8 @@ export class BaseApiProvider {
   // 转换消息格式（子类可重写）
   transformMessages(messages, options = {}) {
     return messages.map((msg) => {
-      if (msg.role === "user" && msg.uploadedFile && msg.uploadedFile.type && msg.uploadedFile.type.startsWith('image/')) {
-        // 多模态消息处理
+      if (msg.role === "user" && msg.content && msg.content.includes('data:image/')) {
+        // 多模态消息处理（通过检查内容是否包含图片数据）
         return this.transformMultimodalMessage(msg);
       } else {
         // 普通文本消息
@@ -46,25 +46,29 @@ export class BaseApiProvider {
   transformMultimodalMessage(msg) {
     const content = [];
     
-    // 添加图片
-    if (msg.content.includes('data:image')) {
-      const imageData = msg.content.split('\n').find(line => line.startsWith('data:image'));
-      if (imageData) {
+    // 提取图片数据（从content中查找base64图片数据）
+    const imageMatch = msg.content.match(/data:image\/[^;]+;base64,[^\s]+/);
+    if (imageMatch) {
+      content.push({
+        type: "image_url",
+        image_url: {
+          url: imageMatch[0]
+        }
+      });
+      
+      // 移除图片数据，只保留文本
+      const textContent = msg.content.replace(/data:image\/[^;]+;base64,[^\s]+/g, '').replace(/\n\s*\n/g, '\n').trim();
+      if (textContent) {
         content.push({
-          type: "image_url",
-          image_url: {
-            url: imageData
-          }
+          type: "text",
+          text: textContent
         });
       }
-    }
-    
-    // 添加文本（排除base64数据）
-    const textContent = msg.content.split('\n').filter(line => !line.startsWith('data:image')).join('\n').trim();
-    if (textContent) {
+    } else {
+      // 如果没有图片，作为纯文本处理
       content.push({
         type: "text",
-        text: textContent
+        text: msg.content
       });
     }
     
@@ -90,8 +94,21 @@ export class BaseApiProvider {
       stream: options.stream || false,
     };
     
-    // 如果用户选择了思考模式，添加enable_thinking参数
-    if (options.responseMode === "thinking") {
+    // 定义支持思考模式的模型列表
+    const thinkingModels = [
+      'Qwen/Qwen3-8B',
+      'Qwen/Qwen3-14B', 
+      'Qwen/Qwen3-32B',
+      'Qwen/Qwen3-30B-A3B',
+      'Qwen/Qwen3-235B-A22B',
+      'tencent/Hunyuan-A13B-Instruct',
+      'zai-org/GLM-4.5V',
+      'deepseek-ai/DeepSeek-V3.1',
+      'Pro/deepseek-ai/DeepSeek-V3.1'
+    ];
+    
+    // 只在支持的模型上启用思考模式参数
+    if (options.responseMode === "thinking" && thinkingModels.includes(modelToUse)) {
       requestBody.enable_thinking = true;
       requestBody.thinking_budget = thinkingBudget;
       // 对于思考模式，调整默认参数以获得更好的推理效果

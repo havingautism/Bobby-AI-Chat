@@ -292,8 +292,23 @@ const ChatInterface = ({
 
     let fileContent = "";
     let imageData = null;
-    if (uploadedFile && uploadedFile.type) {
-      if (uploadedFile.type.startsWith('image/')) {
+    
+    // 处理不同类型的上传文件
+    if (uploadedFile) {
+      if (uploadedFile.type === 'image' && uploadedFile.file) {
+        // 处理图片文件（来自ChatInput的图片上传）
+        const reader = new FileReader();
+        imageData = await new Promise((resolve) => {
+          reader.onload = (e) => {
+            resolve(e.target.result);
+          };
+          reader.readAsDataURL(uploadedFile.file);
+        });
+      } else if (uploadedFile.type === 'document' && uploadedFile.content) {
+        // 处理文档文件（来自ChatInput的文档上传）
+        fileContent = `[文档: ${uploadedFile.name}]\n${uploadedFile.content}`;
+      } else if (uploadedFile.type && uploadedFile.type.startsWith('image/')) {
+        // 处理直接上传的图片文件
         const reader = new FileReader();
         imageData = await new Promise((resolve) => {
           reader.onload = (e) => {
@@ -301,7 +316,8 @@ const ChatInterface = ({
           };
           reader.readAsDataURL(uploadedFile);
         });
-      } else {
+      } else if (uploadedFile.type && (uploadedFile.type.startsWith('text/') || uploadedFile.type === 'application/json')) {
+        // 处理文本文件
         const reader = new FileReader();
         fileContent = await new Promise((resolve) => {
           reader.onload = (e) => {
@@ -309,6 +325,9 @@ const ChatInterface = ({
           };
           reader.readAsText(uploadedFile);
         });
+      } else {
+        // 对于其他类型的文件，提供文件信息但不读取内容
+        fileContent = `[文件: ${uploadedFile.name || '未知文件'}]\n类型: ${uploadedFile.type || '未知类型'}\n大小: ${uploadedFile.size ? (uploadedFile.size / 1024).toFixed(2) + ' KB' : '未知大小'}\n(此文件类型不支持预览)`;
       }
     }
 
@@ -322,9 +341,9 @@ const ChatInterface = ({
       options: { ...options, responseMode },
       uploadedFile: uploadedFile
         ? {
-            name: uploadedFile.name,
-            type: uploadedFile.type,
-            size: uploadedFile.size,
+            name: uploadedFile.name || (uploadedFile.file && uploadedFile.file.name) || '未知文件',
+            type: uploadedFile.type || (uploadedFile.file && uploadedFile.file.type) || '未知类型',
+            size: uploadedFile.size || (uploadedFile.file && uploadedFile.file.size) || 0,
           }
         : null,
     };

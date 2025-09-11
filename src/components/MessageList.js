@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { isApiConfigured } from "../utils/api";
 import { getRoleById } from "../utils/roles";
 import { getCurrentLanguage, t } from "../utils/language";
@@ -66,17 +66,30 @@ const MessageList = ({
     }
   };
 
-  const [previewImage, setPreviewImage] = useState(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-
+  // 使用useRef来避免状态重置问题
+  const previewStateRef = useRef({
+    isOpen: false,
+    imageSrc: null
+  });
+  
+  const [forceRender, setForceRender] = useState(0);
+  
   const handleImageClick = (imageSrc) => {
-    setPreviewImage(imageSrc);
-    setIsPreviewOpen(true);
+    if (imageSrc) {
+      previewStateRef.current = {
+        isOpen: true,
+        imageSrc: imageSrc
+      };
+      setForceRender(prev => prev + 1);
+    }
   };
 
   const closePreview = () => {
-    setIsPreviewOpen(false);
-    setPreviewImage(null);
+    previewStateRef.current = {
+      isOpen: false,
+      imageSrc: null
+    };
+    setForceRender(prev => prev + 1);
   };
 
   const handleCopy = async (text, messageId) => {
@@ -221,31 +234,68 @@ const MessageList = ({
                     )}
                     
                     {/* 显示图片预览 */}
-                    {message.uploadedFile && message.uploadedFile.type && message.uploadedFile.type.startsWith('image/') && (
+                    {(message.uploadedFile && 
+                      ((message.uploadedFile.type && message.uploadedFile.type.startsWith('image/')) || 
+                       message.uploadedFile.type === 'image') || 
+                      (message.content && message.content.includes('data:image/'))) && (
                       <div className="uploaded-image-preview">
-                        <img 
-                          src={message.content.includes('data:image') ? 
-                            message.content.split('\n').find(line => line.startsWith('data:image')) : 
-                            null
-                          } 
-                          alt="上传的图片" 
-                          className="preview-image clickable-image"
-                          onClick={() => {
-                            const imageSrc = message.content.split('\n').find(line => line.startsWith('data:image'));
-                            if (imageSrc) {
-                              handleImageClick(imageSrc);
-                            }
-                          }}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
+                        {(() => {
+                          const imageMatch = message.content?.match(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/);
+                          const imageSrc = imageMatch ? imageMatch[0] : '';
+                          
+                          return imageSrc ? (
+                            <div style={{ position: 'relative' }}>
+                              <img 
+                                src={imageSrc} 
+                                alt="上传的图片" 
+                                className="preview-image clickable-image"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleImageClick(imageSrc);
+                                }}
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                                style={{
+                                  pointerEvents: 'auto',
+                                  cursor: 'pointer',
+                                  position: 'relative',
+                                  zIndex: 1
+                                }}
+                              />
+                              <div 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleImageClick(imageSrc);
+                                }}
+                                style={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  cursor: 'pointer',
+                                  zIndex: 2,
+                                  background: 'transparent'
+                                }}
+                              />
+                            </div>
+                          ) : null;
+                        })()}
                       </div>
                     )}
                     
                     {/* 显示文本内容（排除base64数据） */}
                     <div className="message-text-content">
-                      {message.content.split('\n').filter(line => !line.startsWith('data:image')).join('\n')}
+                      {(() => {
+                        if (!message.content) return '';
+                        // 移除所有base64图片数据
+                        const textContent = message.content.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '');
+                        // 清理多余的空行
+                        return textContent.replace(/\n\s*\n/g, '\n').trim();
+                      })()}
                     </div>
                   </>
                 )}
@@ -283,8 +333,8 @@ const MessageList = ({
       
       {/* 图片预览模态框 */}
       <ImagePreviewModal 
-        isOpen={isPreviewOpen}
-        imageSrc={previewImage}
+        isOpen={previewStateRef.current.isOpen}
+        imageSrc={previewStateRef.current.imageSrc}
         onClose={closePreview}
       />
     </div>
