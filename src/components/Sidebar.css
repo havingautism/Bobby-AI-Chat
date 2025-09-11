@@ -657,6 +657,11 @@
   opacity: 1;
 }
 
+/* 当更多菜单打开时，始终显示操作区，避免移出后消失 */
+.conversation-actions.menu-open {
+  opacity: 1;
+}
+
 .menu-btn {
   background: none;
   border: none;

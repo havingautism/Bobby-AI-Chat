@@ -763,7 +763,7 @@ const ConversationItem = ({
               {getRoleById(conversation.role).name}
             </div>
           )}
-          <div className="conversation-actions">
+          <div className={`conversation-actions${showMenu ? " menu-open" : ""}`}>
             <button
               className="menu-btn"
               onClick={handleMenuClick}
