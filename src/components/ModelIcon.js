@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { 
   DeepSeek, 
   Qwen, 
@@ -13,112 +13,45 @@ import {
 } from './icons';
 import './ModelIcon.css';
 
-// 模型图标组件
-const ModelIcon = ({ modelId, size = 24, className = "" }) => {
-  // 根据模型ID获取图标组件
-  const getModelIcon = (modelId) => {
+// 优化的模型图标组件
+const ModelIcon = React.memo(({ modelId, size = 24, className = "" }) => {
+  // 使用useMemo缓存图标信息计算
+  const iconInfo = useMemo(() => {
     const modelLower = modelId.toLowerCase();
     
-    // DeepSeek系列
-    if (modelLower.includes('deepseek')) {
-      return {
-        component: DeepSeek,
-        color: '#4D6BFE',
-        name: 'DeepSeek',
-        hasIcon: true
-      };
+    // 图标映射配置
+    const iconMap = {
+      'deepseek': { component: DeepSeek, color: '#4D6BFE', name: 'DeepSeek' },
+      'qwen': { component: Qwen, color: '#059669', name: 'Qwen' },
+      'step': { component: Stepfun, color: '#f59e0b', name: 'Stepfun' },
+      'glm': { component: ChatGLM, color: '#dc2626', name: 'GLM' },
+      'ernie': { component: Baidu, color: '#3b82f6', name: 'Baidu' },
+      'baidu': { component: Baidu, color: '#3b82f6', name: 'Baidu' },
+      'kimi': { component: Kimi, color: '#ec4899', name: 'Kimi' },
+      'moonshot': { component: Kimi, color: '#ec4899', name: 'Kimi' },
+      'hunyuan': { component: Tencent, color: '#f97316', name: 'Tencent' },
+      'tencent': { component: Tencent, color: '#f97316', name: 'Tencent' },
+      'minimax': { component: Minimax, color: '#06b6d4', name: 'Minimax' },
+      'gemma': { component: Gemma, color: '#a855f7', name: 'Gemma' },
+      'openai': { component: OpenAI, color: '#10b981', name: 'OpenAI' }
+    };
+    
+    // 查找匹配的图标
+    for (const [key, icon] of Object.entries(iconMap)) {
+      if (modelLower.includes(key)) {
+        return { ...icon, hasIcon: true };
+      }
     }
     
-    // Qwen系列
-    if (modelLower.includes('qwen')) {
-      return {
-        component: Qwen,
-        color: '#059669',
-        name: 'Qwen',
-        hasIcon: true
-      };
-    }
-    
-    // Step系列
-    if (modelLower.includes('step')) {
-      return {
-        component: Stepfun,
-        color: '#f59e0b',
-        name: 'Stepfun',
-        hasIcon: true
-      };
-    }
-    
-    // GLM系列
-    if (modelLower.includes('glm')) {
-      return {
-        component: ChatGLM,
-        color: '#dc2626',
-        name: 'GLM',
-        hasIcon: true
-      };
-    }
-    
-    // ERNIE系列
-    if (modelLower.includes('ernie') || modelLower.includes('baidu')) {
-      return {
-        component: Baidu,
-        color: '#3b82f6',
-        name: 'Baidu',
-        hasIcon: true
-      };
-    }
-    
-    // Kimi系列
-    if (modelLower.includes('kimi') || modelLower.includes('moonshot')) {
-      return {
-        component: Kimi,
-        color: '#ec4899',
-        name: 'Kimi',
-        hasIcon: true
-      };
-    }
-    
-    // Hunyuan系列
-    if (modelLower.includes('hunyuan') || modelLower.includes('tencent')) {
-      return {
-        component: Tencent,
-        color: '#f97316',
-        name: 'Tencent',
-        hasIcon: true
-      };
-    }
-    
-    // MiniMax系列
-    if (modelLower.includes('minimax')) {
-      return {
-        component: Minimax,
-        color: '#06b6d4',
-        name: 'Minimax',
-        hasIcon: true
-      };
-    }
-    
-    // Gemma系列
-    if (modelLower.includes('gemma')) {
-      return {
-        component: Gemma,
-        color: '#a855f7',
-        name: 'Gemma',
-        hasIcon: true
-      };
-    }
-    
-    // 没有lobehub图标
+    // 默认图标
     return {
       component: null,
       color: '#6b7280',
       name: 'Default',
       hasIcon: false
     };
-  };
+  }, [modelId]);
 
-  const iconInfo = getModelIcon(modelId);
   const IconComponent = iconInfo.component;
   
   // 如果没有图标，返回null
@@ -126,25 +59,39 @@ const ModelIcon = ({ modelId, size = 24, className = "" }) => {
     return null;
   }
   
+  // 使用useCallback优化事件处理
+  const handleClick = useCallback(() => {
+    // 可以在这里添加点击事件
+  }, []);
+  
   return (
     <div 
       className={`model-icon ${className}`}
       style={{
         width: size,
         height: size,
+        // 添加硬件加速
+        transform: 'translateZ(0)',
+        willChange: 'transform'
       }}
       title={iconInfo.name}
+      onClick={handleClick}
     >
       <IconComponent 
         size={size}
         style={{
           width: size,
           height: size,
-          color: iconInfo.color
+          color: iconInfo.color,
+          // 添加硬件加速
+          transform: 'translateZ(0)',
+          willChange: 'transform'
         }}
       />
     </div>
   );
-};
+});
+
+ModelIcon.displayName = 'ModelIcon';
 
 export default ModelIcon;

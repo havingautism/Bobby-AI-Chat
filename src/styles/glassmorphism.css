@@ -507,3 +507,149 @@
 
  
 }
+
+/* === 移动端性能优化 === */
+
+/* 移动端玻璃效果优化 */
+@media (max-width: 768px) {
+  .liquid-glass {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.9);
+    transition: background-color 0.15s ease;
+    will-change: background-color;
+    /* 添加硬件加速 */
+    transform: translateZ(0);
+  }
+  
+  /* 移动端禁用复杂悬停效果 */
+  .liquid-glass:hover {
+    transform: none;
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  /* 深色模式移动端优化 */
+  [data-theme="dark"] .liquid-glass {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  [data-theme="dark"] .liquid-glass:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: none;
+  }
+  
+  /* 移动端禁用非关键动画 */
+  .liquid-glass::before {
+    display: none;
+  }
+  
+  /* 简化液态卡片效果 */
+  .liquid-card {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.9);
+    transition: background-color 0.15s ease;
+    will-change: background-color;
+    transform: translateZ(0);
+  }
+  
+  .liquid-card:hover {
+    transform: none;
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  [data-theme="dark"] .liquid-card {
+    background: rgba(0, 0, 0, 0.7);
+  }
+  
+  [data-theme="dark"] .liquid-card:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: none;
+  }
+  
+  /* 移动端禁用卡片光晕效果 */
+  [data-theme="dark"] .liquid-card::before {
+    display: none;
+  }
+  
+  /* 优化侧边栏性能 */
+  .sidebar {
+    will-change: transform;
+    transform: translateZ(0);
+    transition: left 0.15s ease;
+  }
+  
+  /* 优化聊天界面性能 */
+  .chat-interface {
+    will-change: transform;
+    transform: translateZ(0);
+    transition: none;
+  }
+  
+  /* 优化按钮性能 */
+  .liquid-button {
+    transition: background-color 0.15s ease;
+    will-change: background-color;
+    transform: translateZ(0);
+  }
+  
+  .liquid-button::before {
+    display: none;
+  }
+  
+  /* 优化模型选择器性能 */
+  .model-selector-trigger {
+    transition: background-color 0.15s ease;
+    will-change: background-color;
+    transform: translateZ(0);
+  }
+  
+  .model-selector-trigger:hover {
+    transform: none;
+  }
+  
+  /* 禁用所有复杂动画 */
+  * {
+    animation-duration: 0.15s !important;
+    transition-duration: 0.15s !important;
+    transition-property: background-color, color, border-color !important;
+  }
+  
+  /* 优化滚动性能 */
+  .message-list {
+    will-change: scroll-position;
+    transform: translateZ(0);
+  }
+  
+  /* 优化输入框性能 */
+  .chat-input {
+    transition: border-color 0.15s ease;
+    will-change: border-color;
+    transform: translateZ(0);
+  }
+  
+  .chat-input:focus {
+    transform: none;
+  }
+}
+
+/* 超小屏幕进一步优化 */
+@media (max-width: 480px) {
+  .liquid-glass {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  [data-theme="dark"] .liquid-glass {
+    background: rgba(0, 0, 0, 0.8);
+  }
+  
+  /* 进一步简化动画 */
+  * {
+    animation-duration: 0.1s !important;
+    transition-duration: 0.1s !important;
+  }
+}

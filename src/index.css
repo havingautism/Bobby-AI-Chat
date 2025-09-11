@@ -1,5 +1,8 @@
 /* Streamdown 样式已通过组件自动加载 */
 
+/* 导入性能优化样式 */
+@import './styles/performance.css';
+
 * {
   margin: 0;
   padding: 0;

@@ -1,0 +1,136 @@
+/* === 移动端性能优化样式 === */
+
+/* 全局动画优化 */
+@media (max-width: 768px) {
+  /* 禁用hover效果 */
+  @media (hover: none) {
+    .liquid-glass:hover,
+    .liquid-card:hover,
+    .model-selector-trigger:hover,
+    .liquid-button:hover,
+    .chat-input:focus {
+      transform: none;
+      background: initial;
+      box-shadow: initial;
+    }
+  }
+
+  /* 优化动画性能 */
+  * {
+    animation-duration: 0.15s !important;
+    transition-duration: 0.15s !important;
+    transition-property: background-color, color, border-color, opacity !important;
+    transition-timing-function: ease-out !important;
+  }
+
+  /* 硬件加速 */
+  .liquid-glass,
+  .liquid-card,
+  .sidebar,
+  .chat-interface,
+  .model-selector-trigger,
+  .chat-input,
+  .message-list,
+  .glass-pane {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  /* 优化滚动性能 */
+  .message-list {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* 禁用不必要的动画 */
+  .liquid-glass::before,
+  .liquid-card::before,
+  .liquid-button::before,
+  [data-theme="dark"] .liquid-card::before {
+    display: none !important;
+  }
+
+  /* 简化过渡效果 */
+  .sidebar {
+    transition: left 0.15s ease-out !important;
+  }
+
+  .chat-interface {
+    transition: none !important;
+  }
+
+  /* 优化按钮性能 */
+  .liquid-button {
+    transition: background-color 0.15s ease-out !important;
+    transform: translateZ(0);
+  }
+
+  /* 优化输入框性能 */
+  .chat-input {
+    transition: border-color 0.15s ease-out !important;
+    transform: translateZ(0);
+  }
+
+  /* 优化模型选择器 */
+  .model-selector-trigger {
+    transition: background-color 0.15s ease-out !important;
+    transform: translateZ(0);
+  }
+
+  /* 禁用复杂的box-shadow动画 */
+  * {
+    transition-property: box-shadow none !important;
+  }
+
+  /* 优化图片加载 */
+  img {
+    content-visibility: auto;
+    contain-intrinsic-size: 300px;
+  }
+
+  /* 优化文本渲染 */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* 超小屏幕进一步优化 */
+@media (max-width: 480px) {
+  * {
+    animation-duration: 0.1s !important;
+    transition-duration: 0.1s !important;
+  }
+
+  .liquid-glass {
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+  }
+
+  /* 进一步简化阴影 */
+  .liquid-glass,
+  .liquid-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* 性能监控和调试 */
+.performance-debug {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  z-index: 9999;
+  font-family: monospace;
+}
+
+/* 禁用性能调试样式 */
+.performance-debug.hidden {
+  display: none;
+}
