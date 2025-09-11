@@ -54,15 +54,15 @@ const ModelIcon = React.memo(({ modelId, size = 24, className = "" }) => {
 
   const IconComponent = iconInfo.component;
   
-  // 如果没有图标，返回null
-  if (!iconInfo.hasIcon || !IconComponent) {
-    return null;
-  }
-  
   // 使用useCallback优化事件处理
   const handleClick = useCallback(() => {
     // 可以在这里添加点击事件
   }, []);
+  
+  // 如果没有图标，返回null
+  if (!iconInfo.hasIcon || !IconComponent) {
+    return null;
+  }
   
   return (
     <div 
