@@ -4,7 +4,6 @@ import Sidebar from "./components/Sidebar";
 import Settings from "./components/Settings";
 import KnowledgeBase from "./components/KnowledgeBase";
 import TauriInitializer from "./components/TauriInitializer";
-import PerformanceMonitor from "./components/PerformanceMonitor";
 import { storageAdapter } from "./utils/storageAdapter";
 import { initTheme } from "./utils/theme";
 import { getApiConfig } from "./utils/api";
@@ -17,7 +16,6 @@ import "./App.css";
 import "./styles/theme.css";
 import "./styles/glassmorphism.css"; // Import the new theme
 import "./utils/mobileFontOptimizer"; // Import mobile font optimizer
-import "./components/PerformanceMonitor.css"; // Import performance monitor styles
 
 function App() {
   const [conversations, setConversations] = useState([]);
@@ -286,8 +284,6 @@ function App() {
   return (
     <TauriInitializer>
       <div className="app-container">
-        {/* 性能监控组件 */}
-        <PerformanceMonitor />
         <Sidebar
         conversations={conversations}
         currentConversationId={currentConversationId}
