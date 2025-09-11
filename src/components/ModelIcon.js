@@ -10,7 +10,7 @@ import {
   Minimax,
   Gemma,
   OpenAI
-} from '@lobehub/icons';
+} from './icons';
 import './ModelIcon.css';
 
 // 模型图标组件
