@@ -1,0 +1,267 @@
+/* Mermaid流程图样式 */
+.mermaid-wrapper {
+  margin: 20px 0;
+}
+
+.mermaid-container {
+  margin: 20px 0;
+  /* padding: 24px; */
+  /* background: var(--bg-secondary); */
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  transition: all 0.3s ease;
+}
+
+.mermaid-container:hover {
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.07),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.mermaid-chart {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.mermaid-chart svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--text-secondary);
+  gap: 16px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.mermaid-error {
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 12px 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.mermaid-error-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.mermaid-error-message {
+  background: var(--error-bg);
+  color: var(--error-color);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid var(--error-border);
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
+}
+
+.mermaid-retry-button {
+  background: var(--accent-color);
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.mermaid-retry-button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.mermaid-retry-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.error-message {
+  color: var(--error-color);
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.mermaid-error pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 16px;
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.mermaid-error code {
+  font-family: 'Inter', 'Consolas', 'Monaco', 'Courier New', monospace;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* 流程图内部样式增强 */
+.mermaid-chart .node rect,
+.mermaid-chart .node circle,
+.mermaid-chart .node ellipse,
+.mermaid-chart .node polygon {
+  stroke-width: 2px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: all 0.2s ease;
+}
+
+.mermaid-chart .node:hover rect,
+.mermaid-chart .node:hover circle,
+.mermaid-chart .node:hover ellipse,
+.mermaid-chart .node:hover polygon {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+  transform: scale(1.02);
+}
+
+.mermaid-chart .edgePath path {
+  stroke-width: 2.5px;
+  fill: none;
+  transition: all 0.2s ease;
+}
+
+.mermaid-chart .edgeLabel {
+  background: var(--bg-primary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 修复连线标签在不同主题下的可见性 */
+.mermaid-chart .edgeLabel rect {
+  fill: var(--bg-primary) !important;
+  stroke: var(--border-color) !important;
+  stroke-width: 1px !important;
+}
+.mermaid-chart .edgeLabel text,
+.mermaid-chart .edgeLabel .label,
+.mermaid-chart .edgeLabel span {
+  fill: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.mermaid-chart .cluster rect {
+  fill: var(--bg-secondary);
+  stroke: var(--border-color);
+  stroke-width: 1.5px;
+  rx: 8px;
+  ry: 8px;
+}
+
+.mermaid-chart .label {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  fill: var(--text-primary);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .mermaid-container {
+    margin: 16px 0;
+    padding: 16px;
+    border-radius: 8px;
+  }
+  
+  .mermaid-chart {
+    padding: 12px;
+    transform: scale(0.95);
+    transform-origin: center;
+  }
+  
+  .mermaid-loading {
+    padding: 32px;
+  }
+  
+  .loading-spinner {
+    width: 24px;
+    height: 24px;
+    border-width: 2px;
+  }
+  
+  .mermaid-retry-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mermaid-container {
+    margin: 12px 0;
+    padding: 12px;
+  }
+  
+  .mermaid-chart {
+    padding: 8px;
+    transform: scale(0.85);
+  }
+}
+
+/* 深色主题支持 */
+/* 使用 data-theme 变量已自动适配暗色，无需单独媒体查询 */
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mermaid-container {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.mermaid-chart svg {
+  animation: fadeIn 0.5s ease-out;
+}

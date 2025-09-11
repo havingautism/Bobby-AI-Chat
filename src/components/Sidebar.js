@@ -3,6 +3,7 @@ import { AI_ROLES, getRoleById } from "../utils/roles";
 import { getCurrentTheme, toggleTheme } from "../utils/theme";
 import { getCurrentLanguage, t } from "../utils/language";
 import { isTauriEnvironment } from "../utils/tauriDetector";
+import { apiSessionManager } from "../utils/apiSessionManager";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import LanguageToggle from "./LanguageToggle";
 import "./Sidebar.css";
@@ -114,6 +115,7 @@ const Sidebar = ({
     setConversationToDelete(null);
   };
 
+  
   // 过滤对话
   const filteredConversations = useMemo(() => {
     let filtered = conversations;
@@ -588,7 +590,8 @@ const Sidebar = ({
         title={conversationToDelete?.title}
         currentLanguage={currentLanguage}
       />
-    </>
+      
+          </>
   );
 };
 
@@ -660,6 +663,7 @@ const ConversationItem = ({
     handleDeleteClick(e);
   };
 
+  
   // 处理键盘事件
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -803,7 +807,7 @@ const ConversationItem = ({
                       <span>{currentLanguage === "zh" ? "重命名对话" : "Rename conversation"}</span>
                     </button>
                   )}
-                  <button
+                                    <button
                     className="menu-item"
                     onClick={handleDelete}
                   >

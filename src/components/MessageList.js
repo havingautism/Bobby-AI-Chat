@@ -163,7 +163,7 @@ const MessageList = ({
                         isStreaming={message.isStreaming || false}
                       />
                     )}
-                    <StreamdownRenderer>{message.content}</StreamdownRenderer>
+                    <StreamdownRenderer isStreaming={message.isStreaming || false}>{message.content}</StreamdownRenderer>
                     {message.isStreaming && (
                       <div className="streaming-indicator">
                         <span className="streaming-text">正在生成回复...</span>

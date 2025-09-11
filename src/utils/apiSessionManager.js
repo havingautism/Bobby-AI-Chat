@@ -157,6 +157,13 @@ class ApiSessionManager {
 
       if (finalData.finalContent) {
         this.currentSession.finalContent = finalData.finalContent;
+        
+        // 检测是否包含mermaid流程图
+        const mermaidCharts = this.extractMermaidCharts(finalData.finalContent);
+        if (mermaidCharts.length > 0) {
+          this.currentSession.mermaidCharts = mermaidCharts;
+          console.log(`检测到 ${mermaidCharts.length} 个流程图`);
+        }
       }
 
       // 保存会话到历史
@@ -363,6 +370,23 @@ class ApiSessionManager {
   // 工具方法
   generateSessionId() {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  // 提取mermaid流程图
+  extractMermaidCharts(content) {
+    const charts = [];
+    const mermaidRegex = /```mermaid\s*\n([\s\S]*?)\n```/g;
+    let match;
+    
+    while ((match = mermaidRegex.exec(content)) !== null) {
+      charts.push({
+        id: `chart_${charts.length}`,
+        code: match[1].trim(),
+        index: match.index
+      });
+    }
+    
+    return charts;
   }
 
   generateRequestId() {
