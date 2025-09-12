@@ -19,7 +19,7 @@
   /* 固定定位元素 */
   --z-index-fixed: 1020;
   --z-index-header: 1030;
-  
+  --z-index-sidebar: 1035;
   /* 模态框相关 */
   --z-index-modal-backdrop: 1040;
   --z-index-modal: 1050;
