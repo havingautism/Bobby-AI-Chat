@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Streamdown } from "streamdown";
 import CodeBlock from "./CodeBlock";
+import MermaidModal from "./MermaidModal";
+import { apiSessionManager } from "../utils/apiSessionManager";
+import "./StreamdownRenderer.css";
 
 // 自定义表格组件
 const CustomTable = ({ children, ...props }) => {
@@ -109,35 +112,63 @@ const CustomTable = ({ children, ...props }) => {
   );
 };
 
-const StreamdownRenderer = ({ children, className }) => {
-  return (
-    <Streamdown
-      className={className}
-      components={{
-        code({ node, inline, className, children, ...props }) {
-          const match = /language-(\w+)/.exec(className || "");
-          const language = match ? match[1] : "text";
-          const content = String(children).replace(/\n$/, "");
+const StreamdownRenderer = ({ children, className, isStreaming = false, conversationId }) => {
+  const [showMermaidModal, setShowMermaidModal] = useState(false);
+  const [currentCharts, setCurrentCharts] = useState([]);
 
-          // 对于简单的文本内容（如单个单词、短语），使用span而不是div
-          const isSimpleText = content.length <= 50 && !content.includes('\n') && !content.includes(';') && !content.includes('{') && !content.includes('}');
-          
-          return !inline ? (
-            isSimpleText ? (
-              <span className="simple-text-block">
-                <span className="simple-text-content">{content}</span>
-              </span>
+  const handleViewMermaidCharts = (charts) => {
+    setCurrentCharts(charts);
+    setShowMermaidModal(true);
+  };
+
+  return (
+    <>
+      <Streamdown
+        className={className}
+        components={{
+          code({ node, inline, className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || "");
+            const language = match ? match[1] : "text";
+            const content = String(children).replace(/\n$/, "");
+
+            // 对于简单的文本内容（如单个单词、短语），使用span而不是div
+            const isSimpleText = content.length <= 50 && !content.includes('\n') && !content.includes(';') && !content.includes('{') && !content.includes('}');
+            
+            // 如果是 mermaid 语言，显示代码块和查看流程图按钮
+            if (language === 'mermaid' && !inline) {
+              return (
+                <div className="mermaid-code-block">
+                  <CodeBlock language="mermaid">
+                    {content}
+                  </CodeBlock>
+                  {!isStreaming && (
+                    <button 
+                      className="view-mermaid-btn"
+                      onClick={() => handleViewMermaidCharts([{ id: `chart_${Date.now()}`, code: content }])}
+                    >
+                      查看流程图
+                    </button>
+                  )}
+                </div>
+              );
+            }
+            
+            return !inline ? (
+              isSimpleText ? (
+                <span className="simple-text-block">
+                  <span className="simple-text-content">{content}</span>
+                </span>
+              ) : (
+                <CodeBlock language={language}>
+                  {content}
+                </CodeBlock>
+              )
             ) : (
-              <CodeBlock language={language}>
-                {content}
-              </CodeBlock>
-            )
-          ) : (
-            <code className="inline-code" {...props}>
-              {children}
-            </code>
-          );
-        },
+              <code className="inline-code" {...props}>
+                {children}
+              </code>
+            );
+          },
         // 自定义表格组件
         table: ({ children, ...props }) => (
           <CustomTable {...props}>
@@ -160,6 +191,13 @@ const StreamdownRenderer = ({ children, className }) => {
     >
       {children}
     </Streamdown>
+      
+      <MermaidModal 
+        isOpen={showMermaidModal}
+        onClose={() => setShowMermaidModal(false)}
+        charts={currentCharts}
+      />
+    </>
   );
 };
 

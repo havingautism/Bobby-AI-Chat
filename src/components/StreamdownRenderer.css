@@ -1,0 +1,36 @@
+/* Mermaid code block styles */
+.mermaid-code-block {
+  position: relative;
+  margin: 16px 0;
+}
+
+.view-mermaid-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: var(--accent-color, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.view-mermaid-btn:hover {
+  background: var(--accent-hover, #7c3aed);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.view-mermaid-btn:active {
+  transform: translateY(0);
+}
+
+.view-mermaid-btn::before {
+  content: "📊";
+  font-size: 16px;
+}
