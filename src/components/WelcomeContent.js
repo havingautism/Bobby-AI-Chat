@@ -7,7 +7,7 @@ import { getApiConfig } from "../utils/api";
 import ChatInput from "./ChatInput";
 import "./WelcomeScreen.css";
 
-const WelcomeContent = () => {
+const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }) => {
   const navigate = useNavigate();
   const { 
     createNewConversation,
@@ -119,17 +119,25 @@ const WelcomeContent = () => {
   };
 
   return (
-    <div className="welcome-screen">
-      <div className="welcome-content">
-        <div className="welcome-header">
-          <h1 className="welcome-title">
-            {roles.find((role) => role.id === selectedRole)?.name}{" "}
-            {roles.find((role) => role.id === selectedRole)?.icon}
-          </h1>
-          <p className="welcome-subtitle">
-            {roles.find((role) => role.id === selectedRole)?.description}
-          </p>
+    <>
+      <div className="chat-header">
+        <div className="header-left">
+          <button className="sidebar-toggle" onClick={onToggleSidebar}>
+            ☰
+          </button>
         </div>
+      </div>
+      <div className="welcome-screen">
+        <div className="welcome-content">
+          <div className="welcome-header">
+            <h1 className="welcome-title">
+              {roles.find((role) => role.id === selectedRole)?.name}{" "}
+              {roles.find((role) => role.id === selectedRole)?.icon}
+            </h1>
+            <p className="welcome-subtitle">
+              {roles.find((role) => role.id === selectedRole)?.description}
+            </p>
+          </div>
 
         <div className="role-selection">
           <h3 className="section-title">{currentLanguage === "zh" ? "选择AI角色" : "Choose AI Role"}</h3>
@@ -241,6 +249,7 @@ const WelcomeContent = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

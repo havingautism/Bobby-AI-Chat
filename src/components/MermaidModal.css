@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 99999999;
   backdrop-filter: blur(4px);
 }
 
@@ -153,11 +153,23 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 300px;
-  background: var(--bg-secondary);
+  min-height: 50vh;
+  background: #ffffff !important;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
+  overflow: auto;
+  cursor: grab;
+  /* 允许自定义触摸拖拽，禁用浏览器默认滚动/缩放手势 */
+  touch-action: none;
+  /* 隐藏滚动条（不影响滚动） */
+  scrollbar-width: none;           /* Firefox */
+  -ms-overflow-style: none;        /* IE/Edge 旧版 */
+}
+
+.mermaid-modal-chart-container::-webkit-scrollbar { /* WebKit */
+  width: 0;
+  height: 0;
 }
 
 .mermaid-modal-chart {
@@ -165,12 +177,47 @@
   justify-content: center;
   align-items: center;
   width: 100%;
+  background: #ffffff !important;
 }
 
 .mermaid-modal-chart svg {
   max-width: 100%;
   height: auto;
   max-height: 60vh;
+}
+
+/* 缩放包裹层，避免直接缩放滚动容器 */
+.mermaid-zoom-wrapper {
+  transform-origin: top left;
+  display: inline-block;
+}
+
+.mermaid-modal-chart-container.dragging {
+  cursor: grabbing;
+}
+
+/* 缩放按钮容器（放在右上角靠关闭按钮左侧） */
+.mermaid-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 8px;
+}
+
+.zoom-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.zoom-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
 }
 
 .mermaid-modal-navigation {
@@ -262,7 +309,7 @@
   
   .mermaid-modal-chart-container {
     padding: 16px;
-    min-height: 250px;
+    min-height: 50vh;
   }
   
   .mermaid-modal-navigation {
@@ -290,6 +337,6 @@
   
   .mermaid-modal-chart-container {
     padding: 12px;
-    min-height: 200px;
+    min-height: 50vh;
   }
 }

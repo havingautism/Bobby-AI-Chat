@@ -3,7 +3,7 @@
   justify-content: center;
   align-items: flex-start;
   height: 100vh;
-  padding: 40px 20px 120px 20px; /* 增加底部内边距，为对话框留出空间 */
+  padding: 20px 20px 120px 20px; /* 调整顶部内边距，为header留出空间 */
   overflow-y: auto;
 }
 

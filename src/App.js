@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from "react-router-dom";
 import { SessionProvider, useSession } from "./contexts/SessionContext";
 import ChatInterface from "./components/ChatInterface";
 import WelcomeContent from "./components/WelcomeContent";
@@ -130,36 +130,46 @@ const MainContent = () => {
         )}
         
         <div className={`glass-pane chat-interface ${isMobile && sidebarOpen && sidebarCollapsed ? 'with-collapsed-sidebar' : ''}`}>
-          <Routes>
-            <Route path="/" element={<WelcomeContent />} />
-            <Route path="/chat" element={
-              currentConversation ? (
-                <ChatInterface
-                  conversation={currentConversation}
-                  onUpdateConversation={updateConversation}
-                  onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                  onOpenSettings={() => setSettingsOpen(true)}
-                  onOpenKnowledgeBase={() => setKnowledgeBaseOpen(true)}
-                />
-              ) : (
-                <WelcomeContent />
-              )
-            } />
-            <Route path="/chat/:conversationId" element={
-              currentConversation ? (
-                <ChatInterface
-                  conversation={currentConversation}
-                  onUpdateConversation={updateConversation}
-                  onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                  onOpenSettings={() => setSettingsOpen(true)}
-                  onOpenKnowledgeBase={() => setKnowledgeBaseOpen(true)}
-                />
-              ) : (
-                <Navigate to="/chat" replace />
-              )
-            } />
-          </Routes>
-        </div>
+        <Routes>
+          <Route path="/" element={
+            <WelcomeContent 
+              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+              onOpenSettings={() => setSettingsOpen(true)}
+              onOpenKnowledgeBase={() => setKnowledgeBaseOpen(true)}
+            />
+          } />
+          <Route path="/chat" element={
+            currentConversation ? (
+              <ChatInterface
+                conversation={currentConversation}
+                onUpdateConversation={updateConversation}
+                onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                onOpenSettings={() => setSettingsOpen(true)}
+                onOpenKnowledgeBase={() => setKnowledgeBaseOpen(true)}
+              />
+            ) : (
+              <WelcomeContent 
+                onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                onOpenSettings={() => setSettingsOpen(true)}
+                onOpenKnowledgeBase={() => setKnowledgeBaseOpen(true)}
+              />
+            )
+          } />
+          <Route path="/chat/:conversationId" element={
+            currentConversation ? (
+              <ChatInterface
+                conversation={currentConversation}
+                onUpdateConversation={updateConversation}
+                onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                onOpenSettings={() => setSettingsOpen(true)}
+                onOpenKnowledgeBase={() => setKnowledgeBaseOpen(true)}
+              />
+            ) : (
+              <Navigate to="/chat" replace />
+            )
+          } />
+        </Routes>
+      </div>
 
         <Settings 
           isOpen={settingsOpen} 
