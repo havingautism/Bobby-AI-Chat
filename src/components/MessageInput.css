@@ -3,7 +3,7 @@
   background: var(--bg-primary);
   /* border-top: 1px solid var(--border-color); */
   position: relative;
-  z-index: 1000;
+  z-index: var(--z-index-dropdown);
 }
 
 /* 暗色模式下的输入框容器背景 */
@@ -147,7 +147,7 @@
 .plus-button-container {
   position: relative;
   flex-shrink: 0;
-  z-index: 2001;
+  z-index: var(--z-index-popover);
   overflow: visible;
 }
 
@@ -185,7 +185,7 @@
   box-shadow: var(--shadow-lg);
   padding: 8px 0;
   min-width: 160px;
-  z-index: 2000;
+  z-index: var(--z-index-dropdown);
   animation: dropdownFadeIn 0.2s ease-out;
   transform: translateY(0);
   position: absolute;
@@ -377,7 +377,7 @@
     padding: 8px 12px;
     /* background: var(--bg-primary); */
     /* border-top: 1px solid var(--border-color); */
-    z-index: 1000;
+    z-index: var(--z-index-dropdown);
     /* box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); */
   }
   
@@ -450,7 +450,7 @@
 .dropdown-menu {
   min-width: 140px;
   margin-bottom: 6px;
-  z-index: 2000;
+  z-index: var(--z-index-dropdown);
 }
 
 /* 确保下拉菜单在移动端正确显示 */
@@ -458,7 +458,7 @@
   .dropdown-menu {
     position: absolute;
     right: 0;
-    z-index: 2000;
+    z-index: var(--z-index-dropdown);
     max-width: calc(100vw - 24px);
   }
 }

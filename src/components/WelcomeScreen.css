@@ -203,7 +203,7 @@
   border: 1px solid var(--glass-border-light);
   border-radius: var(--border-radius-md);
   box-shadow: var(--glass-shadow-dark);
-  z-index: 9999; /* 确保在对话框之上 */
+  z-index: var(--z-index-notification); /* 确保在对话框之上 */
   margin-top: 4px;
   max-height: 300px;
   overflow-y: auto;
@@ -222,7 +222,8 @@
   align-items: center;
   gap: 12px;
   text-align: left;
-  margin: 2px 8px;
+  margin: 3px 0px;
+
   border-radius: var(--border-radius-sm);
   position: relative;
 }
@@ -233,7 +234,7 @@
     var(--glass-bg-dark-hover) 100%);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  transform: translateX(4px);
+  transform: translatey(2px);
 }
 
 .role-option:focus {
@@ -249,11 +250,13 @@
 }
 
 .role-option:first-child {
-  border-radius: 12px 12px 0 0;
+  /* border-radius: 12px 12px 0 0; */
+  margin-top: 0px;
 }
 
 .role-option:last-child {
-  border-radius: 0 0 12px 12px;
+  /* border-radius: 0 0 12px 12px; */
+  margin-bottom: 0px;
 }
 
 .role-option .role-info {

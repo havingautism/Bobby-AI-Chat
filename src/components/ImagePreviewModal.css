@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 99999999;
+  z-index: var(--z-index-modal);
   backdrop-filter: blur(4px);
   animation: fadeIn 0.2s ease-out;
 }
@@ -48,7 +48,7 @@
   color: white;
   backdrop-filter: blur(10px);
   transition: all 0.2s ease;
-  z-index: 99999999;
+  z-index: var(--z-index-modal);
 }
 
 .image-preview-close-btn:hover {
