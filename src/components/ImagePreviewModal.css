@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 99999999;
   backdrop-filter: blur(4px);
   animation: fadeIn 0.2s ease-out;
 }
@@ -34,7 +34,7 @@
 
 .image-preview-close-btn {
   position: absolute;
-  top: -40px;
+  top: -50px;
   right: 0;
   background: rgba(255, 255, 255, 0.1);
   border: none;
@@ -48,7 +48,7 @@
   color: white;
   backdrop-filter: blur(10px);
   transition: all 0.2s ease;
-  z-index: 10001;
+  z-index: 99999999;
 }
 
 .image-preview-close-btn:hover {
