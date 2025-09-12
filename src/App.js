@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from "react-router-dom";
 import { SessionProvider, useSession } from "./contexts/SessionContext";
 import ChatInterface from "./components/ChatInterface";
 import WelcomeContent from "./components/WelcomeContent";
