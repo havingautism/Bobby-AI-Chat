@@ -37,10 +37,28 @@ export const SessionProvider = ({ children }) => {
           }));
           setConversations(migratedConversations);
           
-          // 不自动设置currentConversationId，保持首页状态
-          setCurrentConversationId(null);
+          // 自动设置最新的空对话，如果没有空对话则创建新的
+          const emptyConversation = migratedConversations.find(conv => conv.messages.length === 0);
+          if (emptyConversation) {
+            setCurrentConversationId(emptyConversation.id);
+            console.log('自动设置最新空对话:', emptyConversation.id);
+          } else {
+            // 没有空对话，创建一个新的
+            const newConversation = {
+              id: uuidv4(),
+              title: "新对话",
+              messages: [],
+              createdAt: new Date().toISOString(),
+              role: null,
+              model: defaultModel,
+              responseMode: lastResponseMode,
+            };
+            setConversations([newConversation, ...migratedConversations]);
+            setCurrentConversationId(newConversation.id);
+            console.log('自动创建新对话:', newConversation.id);
+          }
         } else {
-          // 没有保存的对话，创建一个但不自动选择
+          // 没有保存的对话，创建一个并自动选择
           const initialConversation = {
             id: uuidv4(),
             title: "新对话",
@@ -51,7 +69,8 @@ export const SessionProvider = ({ children }) => {
             responseMode: lastResponseMode,
           };
           setConversations([initialConversation]);
-          setCurrentConversationId(null); // 不自动选择，保持首页状态
+          setCurrentConversationId(initialConversation.id);
+          console.log('首次创建对话:', initialConversation.id);
         }
       } catch (error) {
         console.error("初始化会话失败:", error);
@@ -65,7 +84,8 @@ export const SessionProvider = ({ children }) => {
           responseMode: lastResponseMode,
         };
         setConversations([fallbackConversation]);
-        setCurrentConversationId(null); // 不自动选择，保持首页状态
+        setCurrentConversationId(fallbackConversation.id);
+        console.log('错误恢复创建对话:', fallbackConversation.id);
       }
       setIsInitialized(true);
     };
@@ -88,13 +108,16 @@ export const SessionProvider = ({ children }) => {
   }, [conversations, isInitialized]);
 
   const createNewConversation = () => {
+    // 首先查找是否存在没有消息的空对话
     const emptyConversation = conversations.find(conv => conv.messages.length === 0);
     
     if (emptyConversation) {
+      // 复用空对话，确保状态正确设置
       setCurrentConversationId(emptyConversation.id);
+      console.log('复用空对话:', emptyConversation.id);
       return emptyConversation.id;
     } else {
-      const conversationsWithMessages = conversations.filter(conv => conv.messages.length > 0);
+      // 没有空对话时，创建新的对话
       const newConversation = {
         id: uuidv4(),
         title: "新对话",
@@ -104,8 +127,12 @@ export const SessionProvider = ({ children }) => {
         model: defaultModel,
         responseMode: lastResponseMode,
       };
-      setConversations([newConversation, ...conversationsWithMessages]);
+      
+      // 将新对话添加到列表开头
+      setConversations(prev => [newConversation, ...prev]);
       setCurrentConversationId(newConversation.id);
+      
+      console.log('创建新对话:', newConversation.id);
       return newConversation.id;
     }
   };

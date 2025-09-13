@@ -49,6 +49,7 @@
 body {
   background: var(--bg-secondary);
   color: var(--text-primary);
+  overflow-x: hidden;
 }
 
 /* 暗夜模式背景渐变 */

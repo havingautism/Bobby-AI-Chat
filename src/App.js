@@ -78,16 +78,25 @@ const MainContent = () => {
     }
   }, [conversations, conversationId, setCurrentConversationId, navigate]);
 
+  // 首页自动重定向到最新对话
+  useEffect(() => {
+    // 只有在首页（没有conversationId）且有currentConversationId时才重定向
+    if (!conversationId && currentConversationId && conversations.length > 0) {
+      console.log('首页自动重定向到最新对话:', currentConversationId);
+      navigate(`/chat/${currentConversationId}`, { replace: true });
+    }
+  }, [conversationId, currentConversationId, conversations.length, navigate]);
+
   
   const currentConversation = conversations.find(
     (conv) => conv.id === currentConversationId
   );
 
   const handleNewConversation = () => {
-    createNewConversation();
-    // 创建新对话后导航到聊天页面
+    const newConversationId = createNewConversation();
+    // 创建新对话后导航到聊天页面，使用具体的conversationId
     setTimeout(() => {
-      navigate('/chat');
+      navigate(`/chat/${newConversationId}`);
     }, 100);
     
     if (window.innerWidth <= 768) {

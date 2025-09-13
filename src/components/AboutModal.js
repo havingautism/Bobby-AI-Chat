@@ -80,18 +80,11 @@ const AboutModal = ({ isOpen, onClose }) => {
               </div>
               <div className="version-item">
                 <span className="version-label">开发者</span>
-                <span className="version-value">Bobby Team</span>
+                <span className="version-value">havingautism</span>
               </div>
             </div>
           </div>
 
-          <div className="about-section">
-            <h3>开源协议</h3>
-            <p>
-              本项目采用 MIT 开源协议，欢迎贡献代码和提出建议。
-              让我们一起打造更好的AI聊天体验！
-            </p>
-          </div>
         </div>
 
         <div className="about-footer">
@@ -101,7 +94,7 @@ const AboutModal = ({ isOpen, onClose }) => {
             <a href="#" className="footer-link">反馈</a>
           </div>
           <div className="footer-text">
-            Made with ❤️ by Bobby Team
+            Made with ❤️ by havingautism
           </div>
         </div>
       </div>
