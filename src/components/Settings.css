@@ -8,8 +8,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: var(--z-index-modal);
   padding: 16px;
+  /* 阻止背景页面滚动和拖动 */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: auto;
+  touch-action: none;
 }
 
 .settings-modal {
@@ -142,7 +146,7 @@
 
 .tooltip {
   position: absolute;
-  z-index: 10002;
+  z-index: var(--z-index-modal);
   background: linear-gradient(135deg, 
     rgba(30, 30, 35, 0.95) 0%, 
     rgba(20, 20, 25, 0.98) 100%);
@@ -357,7 +361,7 @@
 
 .dropdown-menu {
   position: fixed;
-  z-index: 10001;
+  z-index: var(--z-index-modal);
   width:100% ;
   background: linear-gradient(2deg, rgb(255 255 255) 0%, rgb(255 255 255 / 75%) 100%);
   backdrop-filter: var(--glass-blur);
@@ -1079,6 +1083,9 @@
 @media (max-width: 480px) {
   .settings-overlay {
     padding: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    /* backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px); */
   }
   
   .settings-modal {

@@ -601,7 +601,9 @@ const ChatInput = ({
                 window.dispatchEvent(new CustomEvent('inputHeightChange'));
                 
                 // 简化的移动端键盘处理
-                if (isMobile && document.activeElement === e.target && !className.includes('welcome-chat-input')) {
+                if (isMobile && document.activeElement === e.target && 
+                    !className.includes('welcome-chat-input') && 
+                    !e.target.closest('.sidebar')) {
                   // 简单的滚动到输入框，让CSS处理视口适配
                   setTimeout(() => {
                     e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

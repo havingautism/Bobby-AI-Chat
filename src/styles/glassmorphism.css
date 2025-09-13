@@ -422,7 +422,7 @@
     left: -100%;
     height: 100vh;
     width: 280px; /* 与Sidebar.css保持一致 */
-    z-index: 9999; /* 提高z-index，确保在最上层 */
+    z-index: var(--z-index-fixed); /* 移动端侧边栏z-index，确保在内容之上但在modal之下 */
     transform: none;
     /* 优化移动端动画性能，使用更简单的过渡 */
     transition: left 0.2s ease;
@@ -434,6 +434,7 @@
   .sidebar.open {
     border-top-right-radius:var(--border-radius-sm) ;
     border-bottom-right-radius:var(--border-radius-sm) ;
+    z-index: var(--z-index-modal-backdrop);
     left: 0;
     max-width: 70%;
   }

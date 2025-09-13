@@ -1,0 +1,102 @@
+/* === 统一响应式设计样式 === */
+
+/* 移动端优化 (768px及以下) */
+@media (max-width: 768px) {
+  /* 通用移动端样式 */
+  .hide-mobile {
+    display: none !important;
+  }
+  
+  .show-mobile {
+    display: block !important;
+  }
+  
+  /* 移动端布局优化 */
+  .mobile-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .mobile-padded {
+    padding: 16px !important;
+  }
+  
+  /* 移动端字体优化 */
+  .mobile-small-text {
+    font-size: 12px !important;
+  }
+  
+  .mobile-medium-text {
+    font-size: 14px !important;
+  }
+  
+  /* 移动端间距优化 */
+  .mobile-no-margin {
+    margin: 0 !important;
+  }
+  
+  .mobile-small-margin {
+    margin: 8px !important;
+  }
+  
+  .mobile-no-padding {
+    padding: 0 !important;
+  }
+  
+  .mobile-small-padding {
+    padding: 8px !important;
+  }
+}
+
+/* 超小屏幕优化 (480px及以下) */
+@media (max-width: 480px) {
+  .hide-small {
+    display: none !important;
+  }
+  
+  .show-small {
+    display: block !important;
+  }
+  
+  /* 超小屏幕字体 */
+  .small-text {
+    font-size: 11px !important;
+  }
+  
+  /* 超小屏幕按钮 */
+  .btn-small {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  /* 超小屏幕间距 */
+  .tiny-padding {
+    padding: 4px !important;
+  }
+  
+  .tiny-margin {
+    margin: 4px !important;
+  }
+}
+
+/* 平板设备优化 (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .hide-tablet {
+    display: none !important;
+  }
+  
+  .show-tablet {
+    display: block !important;
+  }
+}
+
+/* 大屏幕优化 (1024px以上) */
+@media (min-width: 1025px) {
+  .hide-desktop {
+    display: none !important;
+  }
+  
+  .show-desktop {
+    display: block !important;
+  }
+}

@@ -2,13 +2,26 @@
 * {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
+}
+
+/* 默认允许文字选择 */
+*:not(button):not(input):not(textarea):not([contenteditable]):not(.btn):not(.clickable):not(.prompt-card):not(.role-dropdown-trigger):not(.role-option):not(.menu-btn):not(.send-button):not(.stop-button):not(.quick-response-btn):not(.plus-button):not(.timeline-toggle):not(.settings-btn):not(.theme-toggle-btn) {
+  user-select: auto;
+}
+
+/* 按钮和交互元素禁用文字选择 */
+button, .btn, .clickable, .prompt-card, .role-dropdown-trigger, .role-option, .menu-btn, .send-button, .stop-button, .quick-response-btn, .plus-button, .timeline-toggle, .settings-btn, .theme-toggle-btn {
   -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   user-select: none;
 }
 
-/* 可选择文本的元素 */
+/* 输入元素允许文字选择 */
 input, textarea, [contenteditable] {
   -webkit-user-select: auto;
+  -moz-user-select: auto;
+  -ms-user-select: auto;
   user-select: auto;
 }
 
@@ -199,8 +212,6 @@ select,
 .role-filter-option {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
 /* button:focus,

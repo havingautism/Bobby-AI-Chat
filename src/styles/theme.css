@@ -176,6 +176,7 @@ button {
 /* 设置界面主题 */
 .settings-overlay {
   background: rgba(0, 0, 0, 0.5);
+  transform: translateZ(0);
 }
 
 .settings-modal {
@@ -183,6 +184,7 @@ button {
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-lg);
+  transform: translateZ(0);
 }
 
 /* 动画和过渡效果 */

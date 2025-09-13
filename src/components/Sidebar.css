@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 9998;
+  z-index: var(--z-index-fixed);
   display: none;
   /* backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px); */
@@ -34,7 +34,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  z-index: 1001;
+  z-index: var(--z-index-popover);
   transform: translateX(-100%);
   transition: transform 0.3s ease;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
@@ -78,6 +78,7 @@
 .sidebar.open {
   transform: translateX(0);
   height: 100dvh;
+  z-index: var(--z-index-sidebar);
 }
 
 .sidebar-header {
@@ -227,7 +228,7 @@
   border: 1px solid var(--glass-border-color);
   border-radius: 12px;
   box-shadow: var(--shadow-lg);
-  z-index: 1000;
+  z-index: var(--z-index-dropdown);
   margin-top: 4px;
   overflow: hidden;
   animation: dropdownSlide 0.2s ease-out;
@@ -693,7 +694,7 @@
   border: 1px solid var(--glass-border-color);
   border-radius: 8px;
   box-shadow: var(--shadow-lg);
-  z-index: 1000;
+  z-index: var(--z-index-dropdown);
   min-width: 160px;
   padding: 4px;
   margin-top: 4px;
@@ -806,7 +807,7 @@
 @media (max-width: 768px) {
   .sidebar-overlay {
     display: block;
-    z-index: 9998;
+    z-index: var(--z-index-fixed);
     position: fixed;
     top: 0;
     left: 0;
@@ -820,7 +821,7 @@
     left: -100%;
     height: 100dvh;
     width: 280px;
-    z-index: 9999;
+    z-index: var(--z-index-notification);
     transition: left 0.3s ease;
     background: var(--bg-secondary);
     border-right: 1px solid var(--border-color);
@@ -1134,7 +1135,7 @@
   border: 1px solid var(--glass-border-light);
   border-radius: var(--border-radius-md);
   box-shadow: var(--glass-shadow-dark);
-  z-index: 1000;
+  z-index: var(--z-index-dropdown);
   margin-top: 4px;
   overflow: hidden;
   animation: dropdownSlide 0.2s ease-out;
@@ -1403,12 +1404,12 @@
   border-radius: 8px;
 }
 
-/* PC端hover时显示完整标题 */
+/* PC端hover时保持省略号显示，不换行 */
 @media (min-width: 769px) {
   .conversation-item:hover .title-text {
-    overflow: visible;
-    white-space: normal;
-    word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     position: relative;
     z-index: 10;
   }
@@ -1612,7 +1613,7 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: var(--shadow-lg);
-  z-index: 1000;
+  z-index: var(--z-index-dropdown);
   min-width: 160px;
   padding: 4px;
   margin-top: 4px;
@@ -1819,7 +1820,7 @@
     height: 100dvh;
     width: 56px; /* 窄侧栏更省空间 */
     transform: none;
-    z-index: 1001;
+    z-index: var(--z-index-popover);
     border-top-right-radius: var(--border-radius-main);
     border-bottom-right-radius: var(--border-radius-main);
     overflow: hidden;

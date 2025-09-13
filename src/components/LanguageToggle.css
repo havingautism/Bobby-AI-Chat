@@ -1,6 +1,6 @@
 .language-toggle {
   position: relative;
-  z-index: 1000;
+  z-index: var(--z-index-dropdown);
 }
 
 .language-toggle-button {
