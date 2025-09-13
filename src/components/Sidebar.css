@@ -1404,12 +1404,12 @@
   border-radius: 8px;
 }
 
-/* PC端hover时显示完整标题 */
+/* PC端hover时保持省略号显示，不换行 */
 @media (min-width: 769px) {
   .conversation-item:hover .title-text {
-    overflow: visible;
-    white-space: normal;
-    word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     position: relative;
     z-index: 10;
   }
