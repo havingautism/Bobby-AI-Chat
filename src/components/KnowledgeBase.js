@@ -742,11 +742,10 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
     const files = event.target.files;
     if (!files.length) return;
 
-    // 显示上传开始通知
+    // 显示上传开始通知（自动关闭）
     showInfo(
       currentLanguage === "zh" ? "开始上传" : "Upload Started",
-      currentLanguage === "zh" ? `正在上传 ${files.length} 个文件...` : `Uploading ${files.length} files...`,
-      { persistent: true }
+      currentLanguage === "zh" ? `正在上传 ${files.length} 个文件...` : `Uploading ${files.length} files...`
     );
 
     // 设置详细的loading modal
@@ -801,8 +800,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         
         showInfo(
           currentLanguage === "zh" ? `处理文件 ${i + 1}/${files.length}` : `Processing file ${i + 1}/${files.length}`,
-          currentLanguage === "zh" ? `正在处理: ${file.name}` : `Processing: ${file.name}`,
-          { persistent: true }
+          currentLanguage === "zh" ? `正在处理: ${file.name}` : `Processing: ${file.name}`
         );
 
         try {
@@ -883,52 +881,84 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         setLoadingModal(prev => ({ ...prev, open: false }));
       }, 500);
 
-      // 显示优雅的成功完成模态框
-      setSuccessModal({
-        open: true,
-        title: currentLanguage === "zh" ? "上传完成 🎉" : "Upload Complete 🎉",
-        message: currentLanguage === "zh" 
-          ? `成功上传 ${uploadedFiles.length} 个文件到知识库`
-          : `Successfully uploaded ${uploadedFiles.length} files to knowledge base`,
-        details: [
-          { label: currentLanguage === "zh" ? "上传成功" : "Success", value: `${uploadedFiles.length} 个文件` },
-          { label: currentLanguage === "zh" ? "上传失败" : "Failed", value: failedFiles.length > 0 ? `${failedFiles.length} 个文件` : '0 个文件' },
-          { label: currentLanguage === "zh" ? "总大小" : "Total Size", value: formatFileSize(uploadedFiles.reduce((sum, file) => sum + file.size, 0)) },
-          { label: currentLanguage === "zh" ? "完成时间" : "Completed", value: new Date().toLocaleString() }
-        ],
-        actions: [
-          {
-            text: currentLanguage === "zh" ? "查看文档" : "View Documents",
-            primary: true,
-            icon: '📄',
-            onClick: () => {
-              setSuccessModal(prev => ({ ...prev, open: false }));
-              setActiveTab("documents");
+      // 根据上传结果显示不同的模态框
+      const hasFailures = failedFiles.length > 0;
+      
+      if (hasFailures) {
+        // 有失败文件时显示失败模态框
+        setSuccessModal({
+          open: true,
+          type: 'error',
+          title: currentLanguage === "zh" ? "上传失败" : "Upload Failed",
+          message: currentLanguage === "zh" 
+            ? `上传过程中发生错误，${uploadedFiles.length} 个文件成功，${failedFiles.length} 个文件失败`
+            : `Upload failed with errors, ${uploadedFiles.length} files succeeded, ${failedFiles.length} files failed`,
+          details: [
+            { label: currentLanguage === "zh" ? "上传成功" : "Success", value: `${uploadedFiles.length} 个文件` },
+            { label: currentLanguage === "zh" ? "上传失败" : "Failed", value: `${failedFiles.length} 个文件` },
+            { label: currentLanguage === "zh" ? "失败原因" : "Failure Reasons", value: failedFiles.map(f => `${f.file.name}: ${f.error.message || '未知错误'}`).join('; ') },
+            { label: currentLanguage === "zh" ? "完成时间" : "Completed", value: new Date().toLocaleString() }
+          ],
+          actions: [
+            {
+              text: currentLanguage === "zh" ? "重试上传" : "Retry Upload",
+              primary: true,
+              icon: '🔄',
+              onClick: () => {
+                setSuccessModal(prev => ({ ...prev, open: false }));
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = "";
+                  fileInputRef.current.click();
+                }
+              }
+            },
+            {
+              text: currentLanguage === "zh" ? "查看文档" : "View Documents",
+              icon: '📄',
+              onClick: () => {
+                setSuccessModal(prev => ({ ...prev, open: false }));
+                setActiveTab("documents");
+              }
             }
-          },
-          {
-            text: currentLanguage === "zh" ? "上传更多" : "Upload More",
-            icon: '📤',
-            onClick: () => {
-              setSuccessModal(prev => ({ ...prev, open: false }));
-              setActiveTab("upload");
+          ],
+          autoClose: false
+        });
+      } else {
+        // 全部成功时显示成功模态框
+        setSuccessModal({
+          open: true,
+          type: 'success',
+          title: currentLanguage === "zh" ? "上传成功" : "Upload Success",
+          message: currentLanguage === "zh" 
+            ? `成功上传 ${uploadedFiles.length} 个文件到知识库`
+            : `Successfully uploaded ${uploadedFiles.length} files to knowledge base`,
+          details: [
+            { label: currentLanguage === "zh" ? "上传成功" : "Success", value: `${uploadedFiles.length} 个文件` },
+            { label: currentLanguage === "zh" ? "总大小" : "Total Size", value: formatFileSize(uploadedFiles.reduce((sum, file) => sum + file.size, 0)) },
+            { label: currentLanguage === "zh" ? "完成时间" : "Completed", value: new Date().toLocaleString() }
+          ],
+          actions: [
+            {
+              text: currentLanguage === "zh" ? "查看文档" : "View Documents",
+              primary: true,
+              icon: '📄',
+              onClick: () => {
+                setSuccessModal(prev => ({ ...prev, open: false }));
+                setActiveTab("documents");
+              }
+            },
+            {
+              text: currentLanguage === "zh" ? "上传更多" : "Upload More",
+              icon: '📤',
+              onClick: () => {
+                setSuccessModal(prev => ({ ...prev, open: false }));
+                setActiveTab("upload");
+              }
             }
-          },
-          ...(failedFiles.length > 0 ? [{
-            text: currentLanguage === "zh" ? "查看错误" : "View Errors",
-            icon: '❌',
-            onClick: () => {
-              showInfo(
-                currentLanguage === "zh" ? "上传错误详情" : "Upload Error Details",
-                currentLanguage === "zh" 
-                  ? `以下文件上传失败:\n${failedFiles.map(f => `• ${f.file.name}: ${f.error.message}`).join('\n')}`
-                  : `The following files failed to upload:\n${failedFiles.map(f => `• ${f.file.name}: ${f.error.message}`).join('\n')}`
-              );
-            }
-          }] : [])
-        ],
-        autoClose: false
-      });
+          ],
+          autoClose: false
+        });
+      }
 
     } catch (error) {
       console.error("文件上传失败:", error);
@@ -936,10 +966,10 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       // 关闭loading modal
       setLoadingModal(s => ({ ...s, open: false }));
 
-      // 显示错误通知
+      // 显示简化的错误通知
       showError(
         currentLanguage === "zh" ? "上传失败" : "Upload Failed",
-        currentLanguage === "zh" ? `文件上传失败: ${error.message}` : `File upload failed: ${error.message}`,
+        currentLanguage === "zh" ? "文件上传失败，请检查文件格式和网络连接" : "File upload failed, please check file format and network connection",
         {
           actions: [
             {
@@ -950,13 +980,6 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                   fileInputRef.current.value = "";
                   fileInputRef.current.click();
                 }
-              }
-            },
-            {
-              text: currentLanguage === "zh" ? "查看详情" : "View Details",
-              primary: false,
-              onClick: () => {
-                console.error("详细错误信息:", error);
               }
             }
           ]
@@ -1044,8 +1067,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       currentLanguage === "zh" ? "删除文档" : "Deleting Document",
       currentLanguage === "zh" 
         ? `正在删除文档"${doc.title}"...`
-        : `Deleting "${doc.title}"...`,
-      { persistent: true }
+        : `Deleting "${doc.title}"...`
     );
 
     try {
@@ -1158,23 +1180,11 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
           ? `删除文档"${doc.title}"时发生错误: ${error.message}`
           : `Error deleting "${doc.title}": ${error.message}`,
         {
-          persistent: true,
           actions: [
             {
               text: currentLanguage === "zh" ? "重试" : "Retry",
               primary: true,
               onClick: () => performDocumentDelete(docId, doc)
-            },
-            {
-              text: currentLanguage === "zh" ? "查看错误" : "View Error",
-              onClick: () => {
-                showInfo(
-                  currentLanguage === "zh" ? "错误详情" : "Error Details",
-                  currentLanguage === "zh" 
-                    ? `• 错误类型: ${error.name || '未知错误'}\n• 错误信息: ${error.message}\n• 文档: ${doc.title}\n• 时间: ${new Date().toLocaleString()}`
-                    : `• Error Type: ${error.name || 'Unknown Error'}\n• Message: ${error.message}\n• Document: ${doc.title}\n• Time: ${new Date().toLocaleString()}`
-                );
-              }
             }
           ]
         }
@@ -1191,7 +1201,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         <div className="knowledge-base-header">
           <h2>{currentLanguage === "zh" ? "知识库管理" : "Knowledge Base"}</h2>
           <button className="close-button" onClick={onClose}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -1207,17 +1217,46 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
               </div>
             ) : (
               <>
-                <div className="stat-item">
-                  <span className="stat-label">{currentLanguage === "zh" ? "文档数量" : "Documents"}</span>
-                  <span className="stat-value">{statistics.documentCount}</span>
+                <div className="stat-card">
+                  <div className="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <span className="stat-value">{statistics.documentCount}</span>
+                    <span className="stat-label">{currentLanguage === "zh" ? "文档数量" : "Documents"}</span>
+                  </div>
                 </div>
-                <div className="stat-item">
-                  <span className="stat-label">{currentLanguage === "zh" ? "向量数量" : "Vectors"}</span>
-                  <span className="stat-value">{statistics.vectorCount}</span>
+                <div className="stat-card">
+                  <div className="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                      <path d="M2 17l10 5 10-5"/>
+                      <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <span className="stat-value">{statistics.vectorCount}</span>
+                    <span className="stat-label">{currentLanguage === "zh" ? "向量数量" : "Vectors"}</span>
+                  </div>
                 </div>
-                <div className="stat-item">
-                  <span className="stat-label">{currentLanguage === "zh" ? "总大小" : "Total Size"}</span>
-                  <span className="stat-value">{(statistics.totalSize / 1024 / 1024).toFixed(2)} MB</span>
+                <div className="stat-card">
+                  <div className="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                      <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <span className="stat-value">{(statistics.totalSize / 1024 / 1024).toFixed(2)} MB</span>
+                    <span className="stat-label">{currentLanguage === "zh" ? "总大小" : "Total Size"}</span>
+                  </div>
                 </div>
               </>
             )}
@@ -1276,18 +1315,34 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
               className={`tab-button ${activeTab === "documents" ? "active" : ""}`}
               onClick={() => setActiveTab("documents")}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
               {currentLanguage === "zh" ? "文档列表" : "Documents"}
             </button>
             <button
               className={`tab-button ${activeTab === "upload" ? "active" : ""}`}
               onClick={() => setActiveTab("upload")}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
               {currentLanguage === "zh" ? "上传" : "Upload"}
             </button>
             <button
               className={`tab-button ${activeTab === "test" ? "active" : ""}`}
               onClick={() => setActiveTab("test")}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+              </svg>
               {currentLanguage === "zh" ? "测试" : "Test"}
             </button>
           </div>
@@ -1759,6 +1814,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       actions={successModal.actions}
       autoClose={successModal.autoClose}
       autoCloseDelay={successModal.autoCloseDelay}
+      type={successModal.type || 'success'}
     />
     
     {/* 通知容器 */}

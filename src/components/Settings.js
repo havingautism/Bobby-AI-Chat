@@ -95,6 +95,7 @@ const ModelCategory = React.memo(({
 });
 
 const Settings = ({ isOpen, onClose, onModelChange }) => {
+  const [activeTab, setActiveTab] = useState('model-service'); // 默认显示模型服务标签页
   const [config, setConfig] = useState({
     baseURL: "",
     apiKey: "",
@@ -448,9 +449,50 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
           </button>
         </div>
 
+        {/* 标签页导航 */}
+        <div className="settings-tabs">
+          <button 
+            className={`tab-button ${activeTab === 'model-service' ? 'active' : ''}`}
+            onClick={() => setActiveTab('model-service')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+            模型服务
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'global-memory' ? 'active' : ''}`}
+            onClick={() => setActiveTab('global-memory')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 12l2 2 4-4"/>
+              <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"/>
+              <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
+              <path d="M12 3c0 1-1 3-3 3s-3-2-3-3 1-3 3-3 3 2 3 3"/>
+              <path d="M12 21c0-1 1-3 3-3s3 2 3 3-1 3-3 3-3-2-3-3"/>
+            </svg>
+            全局记忆
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'web-search' ? 'active' : ''}`}
+            onClick={() => setActiveTab('web-search')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            网络搜索
+          </button>
+        </div>
+
         <div className="settings-content">
-          {/* API服务商 */}
-          <div className="setting-group">
+          {/* 模型服务标签页 */}
+          {activeTab === 'model-service' && (
+            <div className="tab-content">
+              {/* API服务商 */}
+              <div className="setting-group">
             <label>API服务商</label>
             <div className="provider-card">
               <div className="provider-logo">
@@ -738,6 +780,133 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
               </div>
             </div>
           </details>
+            </div>
+          )}
+
+          {/* 全局记忆标签页 */}
+          {activeTab === 'global-memory' && (
+            <div className="tab-content">
+              <div className="setting-group">
+                <label>全局记忆功能</label>
+                <div className="feature-description">
+                  <p>全局记忆功能允许AI记住跨对话的重要信息，提供更个性化的体验。</p>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      onChange={() => {}}
+                    />
+                    <span className="checkmark"></span>
+                    启用全局记忆
+                  </label>
+                  <p className="setting-description">允许AI记住用户偏好和重要信息</p>
+                </div>
+
+                <div className="setting-item">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      onChange={() => {}}
+                    />
+                    <span className="checkmark"></span>
+                    自动记忆重要信息
+                  </label>
+                  <p className="setting-description">AI自动识别并记忆对话中的重要信息</p>
+                </div>
+
+                <div className="setting-item">
+                  <label>记忆保留时间</label>
+                  <select className="setting-input">
+                    <option value="7">7天</option>
+                    <option value="30">30天</option>
+                    <option value="90">90天</option>
+                    <option value="365">1年</option>
+                    <option value="permanent">永久</option>
+                  </select>
+                </div>
+
+                <div className="setting-item">
+                  <button className="danger-button">
+                    清除所有记忆
+                  </button>
+                  <p className="setting-description">删除所有已保存的全局记忆信息</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 网络搜索标签页 */}
+          {activeTab === 'web-search' && (
+            <div className="tab-content">
+              <div className="setting-group">
+                <label>网络搜索功能</label>
+                <div className="feature-description">
+                  <p>网络搜索功能允许AI获取实时信息，提供更准确和最新的回答。</p>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      onChange={() => {}}
+                    />
+                    <span className="checkmark"></span>
+                    启用网络搜索
+                  </label>
+                  <p className="setting-description">允许AI搜索网络获取实时信息</p>
+                </div>
+
+                <div className="setting-item">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      onChange={() => {}}
+                    />
+                    <span className="checkmark"></span>
+                    自动搜索最新信息
+                  </label>
+                  <p className="setting-description">当AI检测到需要最新信息时自动搜索</p>
+                </div>
+
+                <div className="setting-item">
+                  <label>搜索引擎</label>
+                  <select className="setting-input">
+                    <option value="google">Google</option>
+                    <option value="bing">Bing</option>
+                    <option value="duckduckgo">DuckDuckGo</option>
+                  </select>
+                </div>
+
+                <div className="setting-item">
+                  <label>搜索API密钥</label>
+                  <input
+                    type="password"
+                    placeholder="请输入搜索引擎API密钥"
+                    className="setting-input"
+                  />
+                  <p className="setting-description">用于访问搜索引擎API的密钥</p>
+                </div>
+
+                <div className="setting-item">
+                  <label>搜索结果数量</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    defaultValue="3"
+                    className="setting-input"
+                  />
+                  <p className="setting-description">每次搜索返回的结果数量</p>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* 保存消息 */}
           {saveMessage && (

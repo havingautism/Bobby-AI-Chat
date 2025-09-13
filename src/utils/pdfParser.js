@@ -51,13 +51,13 @@ class PDFParser {
         return;
       }
 
-      // 创建script标签加载PDF.js
+      // 创建script标签加载PDF.js - 使用本地文件
       const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      script.src = '/pdf.min.js';
       script.onload = () => {
         try {
-          // 设置worker路径
-          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          // 设置worker路径 - 统一使用本地worker文件
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
           
           this.pdfjsLib = window.pdfjsLib;
           resolve();
@@ -66,7 +66,7 @@ class PDFParser {
         }
       };
       script.onerror = () => {
-        reject(new Error('无法从CDN加载PDF.js'));
+        reject(new Error('无法加载本地PDF.js文件'));
       };
       
       document.head.appendChild(script);

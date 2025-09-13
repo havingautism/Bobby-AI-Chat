@@ -13,7 +13,6 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
     createNewConversation,
     updateConversation,
     currentConversationId,
-    defaultModel,
     lastResponseMode,
     setLastResponseMode
   } = useSession();
@@ -81,15 +80,14 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
 
   const handleSubmit = async (message, uploadedFile, options = {}) => {
     if (message.trim() || uploadedFile) {
-      const selectedRoleData = roles.find((role) => role.id === selectedRole);
       
-      // 创建新对话
-      createNewConversation();
+      // 创建新对话并获取对话ID
+      const newConversationId = createNewConversation();
       
       // 使用更长的延迟确保状态更新完成
       setTimeout(async () => {
-        // 重新获取最新的currentConversationId
-        const latestConversationId = currentConversationId;
+        // 使用新创建的对话ID，如果获取不到则使用currentConversationId
+        const latestConversationId = newConversationId || currentConversationId;
         
         if (latestConversationId) {
           // 创建用户消息
@@ -127,8 +125,51 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
             const systemPrompt = roleInfo.systemPrompt;
             const roleTemperature = roleInfo.temperature;
 
+            // 处理图片数据
+            let processedMessage = userMessage;
+            if (uploadedFile && uploadedFile.type === 'image' && uploadedFile.file) {
+              // 检查当前模型是否支持多模态
+              const multimodalModels = [
+                "deepseek-ai/deepseek-vl2",
+                "deepseek-ai/deepseek-vl", 
+                "qwen/Qwen-VL-Chat",
+                "qwen/Qwen-VL-Plus",
+                "qwen/Qwen-VL-Max"
+              ];
+              
+              if (!multimodalModels.includes(apiConfig.model)) {
+                // 当前模型不支持图片，显示错误提示
+                const errorMessage = {
+                  id: (Date.now() + 1).toString(),
+                  role: "assistant",
+                  content: `抱歉，当前模型 ${apiConfig.model} 不支持图片识别功能。\n\n请切换到支持多模态的模型，如：\n• deepseek-ai/deepseek-vl2\n• qwen/Qwen-VL-Chat\n• qwen/Qwen-VL-Plus\n\n您可以在设置中更改模型。`,
+                  timestamp: new Date().toISOString(),
+                };
+                
+                updateConversation(latestConversationId, {
+                  messages: [userMessage, errorMessage]
+                });
+                return; // 不发送API请求
+              }
+              
+              // 将图片转换为base64并添加到消息内容中
+              const reader = new FileReader();
+              const imageData = await new Promise((resolve) => {
+                reader.onload = (e) => {
+                  resolve(e.target.result);
+                };
+                reader.readAsDataURL(uploadedFile.file);
+              });
+              
+              // 更新消息内容，包含图片数据
+              processedMessage = {
+                ...userMessage,
+                content: userMessage.content + (userMessage.content ? '\n' : '') + imageData
+              };
+            }
+
             const response = await sendMessage(
-              [userMessage],
+              [processedMessage],
               { 
                 ...options, 
                 model: apiConfig.model, 
@@ -154,6 +195,18 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
             }
           } catch (error) {
             console.error('发送消息失败:', error);
+            
+            // 显示错误消息给用户
+            const errorMessage = {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: `发送消息时出现错误：${error.message}\n\n请检查：\n• 网络连接是否正常\n• API配置是否正确\n• 模型是否可用`,
+              timestamp: new Date().toISOString(),
+            };
+
+            updateConversation(latestConversationId, {
+              messages: [userMessage, errorMessage]
+            });
           }
         } else {
           console.error('无法获取对话ID');
@@ -176,15 +229,14 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
   };
 
   const handleQuickPrompt = async (prompt) => {
-    const selectedRoleData = roles.find((role) => role.id === selectedRole);
     
-    // 创建新对话
-    createNewConversation();
+    // 创建新对话并获取对话ID
+    const newConversationId = createNewConversation();
     
     // 使用更长的延迟确保状态更新完成
     setTimeout(async () => {
-      // 重新获取最新的currentConversationId
-      const latestConversationId = currentConversationId;
+      // 使用新创建的对话ID，如果获取不到则使用currentConversationId
+      const latestConversationId = newConversationId || currentConversationId;
       
       if (latestConversationId) {
         // 创建用户消息
@@ -240,9 +292,21 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
               messages: [userMessage, assistantMessage]
             });
           }
-        } catch (error) {
-          console.error('发送消息失败:', error);
-        }
+           } catch (error) {
+             console.error('发送消息失败:', error);
+             
+             // 显示错误消息给用户
+             const errorMessage = {
+               id: (Date.now() + 1).toString(),
+               role: "assistant",
+               content: `发送消息时出现错误：${error.message}\n\n请检查：\n• 网络连接是否正常\n• API配置是否正确\n• 模型是否可用`,
+               timestamp: new Date().toISOString(),
+             };
+
+             updateConversation(latestConversationId, {
+               messages: [userMessage, errorMessage]
+             });
+           }
       } else {
         console.error('无法获取对话ID');
       }

@@ -5,6 +5,7 @@ import ChatInterface from "./components/ChatInterface";
 import WelcomeContent from "./components/WelcomeContent";
 import Sidebar from "./components/Sidebar";
 import Settings from "./components/Settings";
+import AboutModal from "./components/AboutModal";
 import KnowledgeBase from "./components/KnowledgeBase";
 import TauriInitializer from "./components/TauriInitializer";
 import { initTheme } from "./utils/theme";
@@ -33,6 +34,7 @@ const MainContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [knowledgeBaseOpen, setKnowledgeBaseOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -119,6 +121,7 @@ const MainContent = () => {
             }
           }}
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenAbout={() => setAboutOpen(true)}
           onOpenKnowledgeBase={isTauriEnvironment() ? () => setKnowledgeBaseOpen(true) : undefined}
         />
         
@@ -183,6 +186,11 @@ const MainContent = () => {
               }
             }
           }}
+        />
+
+        <AboutModal 
+          isOpen={aboutOpen} 
+          onClose={() => setAboutOpen(false)}
         />
 
         {isTauriEnvironment() && (
