@@ -1201,7 +1201,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         <div className="knowledge-base-header">
           <h2>{currentLanguage === "zh" ? "知识库管理" : "Knowledge Base"}</h2>
           <button className="close-button" onClick={onClose}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -1217,17 +1217,46 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
               </div>
             ) : (
               <>
-                <div className="stat-item">
-                  <span className="stat-label">{currentLanguage === "zh" ? "文档数量" : "Documents"}</span>
-                  <span className="stat-value">{statistics.documentCount}</span>
+                <div className="stat-card">
+                  <div className="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <span className="stat-value">{statistics.documentCount}</span>
+                    <span className="stat-label">{currentLanguage === "zh" ? "文档数量" : "Documents"}</span>
+                  </div>
                 </div>
-                <div className="stat-item">
-                  <span className="stat-label">{currentLanguage === "zh" ? "向量数量" : "Vectors"}</span>
-                  <span className="stat-value">{statistics.vectorCount}</span>
+                <div className="stat-card">
+                  <div className="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                      <path d="M2 17l10 5 10-5"/>
+                      <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <span className="stat-value">{statistics.vectorCount}</span>
+                    <span className="stat-label">{currentLanguage === "zh" ? "向量数量" : "Vectors"}</span>
+                  </div>
                 </div>
-                <div className="stat-item">
-                  <span className="stat-label">{currentLanguage === "zh" ? "总大小" : "Total Size"}</span>
-                  <span className="stat-value">{(statistics.totalSize / 1024 / 1024).toFixed(2)} MB</span>
+                <div className="stat-card">
+                  <div className="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                      <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <span className="stat-value">{(statistics.totalSize / 1024 / 1024).toFixed(2)} MB</span>
+                    <span className="stat-label">{currentLanguage === "zh" ? "总大小" : "Total Size"}</span>
+                  </div>
                 </div>
               </>
             )}
@@ -1286,18 +1315,34 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
               className={`tab-button ${activeTab === "documents" ? "active" : ""}`}
               onClick={() => setActiveTab("documents")}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
               {currentLanguage === "zh" ? "文档列表" : "Documents"}
             </button>
             <button
               className={`tab-button ${activeTab === "upload" ? "active" : ""}`}
               onClick={() => setActiveTab("upload")}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
               {currentLanguage === "zh" ? "上传" : "Upload"}
             </button>
             <button
               className={`tab-button ${activeTab === "test" ? "active" : ""}`}
               onClick={() => setActiveTab("test")}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+              </svg>
               {currentLanguage === "zh" ? "测试" : "Test"}
             </button>
           </div>
