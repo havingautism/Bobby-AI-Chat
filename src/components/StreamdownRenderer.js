@@ -136,12 +136,25 @@ const StreamdownRenderer = ({ children, className, isStreaming = false, conversa
             
             // 如果是 mermaid 语言，显示代码块和查看流程图按钮
             if (language === 'mermaid' && !inline) {
+              // 检查Mermaid代码是否看起来完整（包含图表类型和基本结构）
+              const isMermaidComplete = content.trim() && (
+                content.includes('graph') || 
+                content.includes('flowchart') || 
+                content.includes('sequenceDiagram') || 
+                content.includes('classDiagram') || 
+                content.includes('stateDiagram') ||
+                content.includes('gantt') ||
+                content.includes('pie') ||
+                content.includes('gitgraph') ||
+                content.includes('journey')
+              );
+              
               return (
                 <div className="mermaid-code-block">
                   <CodeBlock language="mermaid">
                     {content}
                   </CodeBlock>
-                  {!isStreaming && (
+                  {(!isStreaming || isMermaidComplete) && (
                     <button 
                       className="view-mermaid-btn"
                       onClick={() => handleViewMermaidCharts([{ id: `chart_${Date.now()}`, code: content }])}

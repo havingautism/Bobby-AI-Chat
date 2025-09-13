@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../contexts/SessionContext';
-import { AI_ROLES, saveSelectedRole, loadSelectedRole } from "../utils/roles";
+import { AI_ROLES, saveSelectedRole, loadSelectedRole, getRoleById } from "../utils/roles";
 import { getCurrentLanguage } from "../utils/language";
-import { getApiConfig } from "../utils/api";
+import { getApiConfig, sendMessage } from "../utils/api";
 import ChatInput from "./ChatInput";
 import "./WelcomeScreen.css";
 
@@ -11,6 +11,8 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
   const navigate = useNavigate();
   const { 
     createNewConversation,
+    updateConversation,
+    currentConversationId,
     defaultModel,
     lastResponseMode,
     setLastResponseMode
@@ -77,18 +79,86 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
     "🎯 Create a learning plan",
   ];
 
-  const handleSubmit = (message, uploadedFile, options = {}) => {
+  const handleSubmit = async (message, uploadedFile, options = {}) => {
     if (message.trim() || uploadedFile) {
       const selectedRoleData = roles.find((role) => role.id === selectedRole);
       
-      // 创建新对话并导航到聊天页面
+      // 创建新对话
       createNewConversation();
       
-      // 延迟导航以确保状态更新，URL会自动同步
-      setTimeout(() => {
-        // URL会通过SessionContext自动更新，这里只需要导航到聊天页面
-        navigate('/chat');
-      }, 100);
+      // 使用更长的延迟确保状态更新完成
+      setTimeout(async () => {
+        // 重新获取最新的currentConversationId
+        const latestConversationId = currentConversationId;
+        
+        if (latestConversationId) {
+          // 创建用户消息
+          const userMessage = {
+            id: Date.now().toString(),
+            role: "user",
+            content: message.trim(),
+            timestamp: new Date().toISOString(),
+            options: { ...options, responseMode },
+            uploadedFile: uploadedFile
+              ? {
+                  name: uploadedFile.name || '未知文件',
+                  type: uploadedFile.type || '未知类型',
+                  size: uploadedFile.size || 0,
+                }
+              : null,
+          };
+
+          // 更新对话，添加用户消息和角色信息
+          const updates = {
+            messages: [userMessage],
+            role: selectedRole,
+            responseMode: responseMode,
+          };
+          
+          updateConversation(latestConversationId, updates);
+
+          // 导航到聊天页面
+          navigate('/chat');
+
+          // 发送消息到API
+          try {
+            const apiConfig = getApiConfig();
+            const roleInfo = getRoleById(selectedRole);
+            const systemPrompt = roleInfo.systemPrompt;
+            const roleTemperature = roleInfo.temperature;
+
+            const response = await sendMessage(
+              [userMessage],
+              { 
+                ...options, 
+                model: apiConfig.model, 
+                systemPrompt, 
+                temperature: roleTemperature,
+                responseMode: responseMode
+              },
+              latestConversationId
+            );
+
+            // 添加AI回复到对话中
+            if (response && response.content) {
+              const assistantMessage = {
+                id: (Date.now() + 1).toString(),
+                role: "assistant",
+                content: response.content,
+                timestamp: new Date().toISOString(),
+              };
+
+              updateConversation(latestConversationId, {
+                messages: [userMessage, assistantMessage]
+              });
+            }
+          } catch (error) {
+            console.error('发送消息失败:', error);
+          }
+        } else {
+          console.error('无法获取对话ID');
+        }
+      }, 300); // 增加延迟时间
     }
   };
 
@@ -105,17 +175,78 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
     window.dispatchEvent(new CustomEvent("roleChanged"));
   };
 
-  const handleQuickPrompt = (prompt) => {
+  const handleQuickPrompt = async (prompt) => {
     const selectedRoleData = roles.find((role) => role.id === selectedRole);
     
-    // 创建新对话并导航到聊天页面
+    // 创建新对话
     createNewConversation();
     
-    // 延迟导航以确保状态更新，URL会自动同步
-    setTimeout(() => {
-      // URL会通过SessionContext自动更新，这里只需要导航到聊天页面
-      navigate('/chat');
-    }, 100);
+    // 使用更长的延迟确保状态更新完成
+    setTimeout(async () => {
+      // 重新获取最新的currentConversationId
+      const latestConversationId = currentConversationId;
+      
+      if (latestConversationId) {
+        // 创建用户消息
+        const userMessage = {
+          id: Date.now().toString(),
+          role: "user",
+          content: prompt,
+          timestamp: new Date().toISOString(),
+          options: { responseMode },
+          uploadedFile: null,
+        };
+
+        // 更新对话，添加用户消息和角色信息
+        const updates = {
+          messages: [userMessage],
+          role: selectedRole,
+          responseMode: responseMode,
+        };
+        
+        updateConversation(latestConversationId, updates);
+
+        // 导航到聊天页面
+        navigate('/chat');
+
+        // 发送消息到API
+        try {
+          const apiConfig = getApiConfig();
+          const roleInfo = getRoleById(selectedRole);
+          const systemPrompt = roleInfo.systemPrompt;
+          const roleTemperature = roleInfo.temperature;
+
+          const response = await sendMessage(
+            [userMessage],
+            { 
+              model: apiConfig.model, 
+              systemPrompt, 
+              temperature: roleTemperature,
+              responseMode: responseMode
+            },
+            latestConversationId
+          );
+
+          // 添加AI回复到对话中
+          if (response && response.content) {
+            const assistantMessage = {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: response.content,
+              timestamp: new Date().toISOString(),
+            };
+
+            updateConversation(latestConversationId, {
+              messages: [userMessage, assistantMessage]
+            });
+          }
+        } catch (error) {
+          console.error('发送消息失败:', error);
+        }
+      } else {
+        console.error('无法获取对话ID');
+      }
+    }, 300); // 增加延迟时间
   };
 
   return (
