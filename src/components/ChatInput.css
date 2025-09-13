@@ -45,8 +45,113 @@
   border-radius: var(--border-radius-lg);
   transition: var(--transition-smooth);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
-  overflow: visible;
+  overflow: hidden;
   position: relative;
+}
+
+/* 等待流式回复时的呼吸动效 */
+.input-wrapper-clean.streaming {
+  animation: breathing 2s ease-in-out infinite;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05),
+    0 0 20px rgba(139, 92, 246, 0.3);
+  will-change: box-shadow;
+  transform: translateZ(0); /* 强制GPU加速 */
+}
+
+/* 思考状态的动效 - 更慢更深的呼吸 */
+.input-wrapper-clean.streaming-thinking {
+  animation: thinking-breathing 3s ease-in-out infinite;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05),
+    0 0 25px rgba(139, 92, 246, 0.4);
+  will-change: box-shadow;
+  transform: translateZ(0); /* 强制GPU加速 */
+}
+
+/* 回答状态的动效 - 更快的脉冲 */
+.input-wrapper-clean.streaming-content {
+  animation: content-pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05),
+    0 0 20px rgba(59, 130, 246, 0.3);
+  will-change: box-shadow;
+  transform: translateZ(0); /* 强制GPU加速 */
+}
+
+@keyframes breathing {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05),
+      0 0 20px rgba(139, 92, 246, 0.3);
+  }
+  25% {
+    box-shadow: 0 5px 22px rgba(0, 0, 0, 0.12), 0 2px 10px rgba(0, 0, 0, 0.06),
+      0 0 25px rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15), 0 3px 12px rgba(0, 0, 0, 0.08),
+      0 0 30px rgba(139, 92, 246, 0.5);
+  }
+  75% {
+    box-shadow: 0 5px 22px rgba(0, 0, 0, 0.12), 0 2px 10px rgba(0, 0, 0, 0.06),
+      0 0 25px rgba(139, 92, 246, 0.4);
+  }
+}
+
+@keyframes thinking-breathing {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05),
+      0 0 25px rgba(139, 92, 246, 0.4);
+  }
+  25% {
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15), 0 3px 12px rgba(0, 0, 0, 0.08),
+      0 0 30px rgba(139, 92, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2), 0 4px 15px rgba(0, 0, 0, 0.1),
+      0 0 35px rgba(139, 92, 246, 0.6);
+  }
+  75% {
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15), 0 3px 12px rgba(0, 0, 0, 0.08),
+      0 0 30px rgba(139, 92, 246, 0.5);
+  }
+}
+
+@keyframes content-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05),
+      0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  25% {
+    box-shadow: 0 4px 21px rgba(0, 0, 0, 0.11), 0 2px 9px rgba(0, 0, 0, 0.055),
+      0 0 22px rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 5px 22px rgba(0, 0, 0, 0.12), 0 2px 10px rgba(0, 0, 0, 0.06),
+      0 0 25px rgba(59, 130, 246, 0.5);
+  }
+  75% {
+    box-shadow: 0 4px 21px rgba(0, 0, 0, 0.11), 0 2px 9px rgba(0, 0, 0, 0.055),
+      0 0 22px rgba(59, 130, 246, 0.4);
+  }
+}
+
+/* 移动端禁用所有输入框动效，避免闪烁 */
+@media (max-width: 768px) {
+  .input-wrapper-clean.streaming,
+  .input-wrapper-clean.streaming-thinking,
+  .input-wrapper-clean.streaming-content {
+    animation: none !important;
+  }
+  
+  .send-button.streaming,
+  .send-button.streaming-thinking,
+  .send-button.streaming-content {
+    animation: none !important;
+  }
+  
+  .message-textarea-clean.streaming::placeholder,
+  .message-textarea-clean.streaming-thinking::placeholder,
+  .message-textarea-clean.streaming-content::placeholder {
+    animation: none !important;
+  }
 }
 
 .input-main-area {
@@ -56,10 +161,7 @@
   gap: 12px;
 }
 
-.input-wrapper-clean:focus-within {
-  /* 保持原有样式，不添加背景变化或位移 */
-  /* box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05) !important; */
-}
+/* 保持原有样式，不添加背景变化或位移 */
 
 .message-textarea-clean {
   flex: 1;
@@ -88,6 +190,76 @@
   box-shadow: none !important;
   -webkit-box-shadow: none !important;
   -moz-box-shadow: none !important;
+}
+
+/* 等待流式回复时的占位符动效 */
+.message-textarea-clean.streaming::placeholder {
+  animation: typing 2s ease-in-out infinite;
+  background: linear-gradient(90deg, 
+    var(--text-secondary) 0%, 
+    var(--text-primary) 50%, 
+    var(--text-secondary) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 思考状态的占位符动效 - 慢速流动 */
+.message-textarea-clean.streaming-thinking::placeholder {
+  animation: thinking-flow 3s ease-in-out infinite;
+  background: linear-gradient(90deg, 
+    #8b5cf6 0%, 
+    #a855f7 25%, 
+    #c084fc 50%, 
+    #a855f7 75%, 
+    #8b5cf6 100%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 回答状态的占位符动效 - 快速流动 */
+.message-textarea-clean.streaming-content::placeholder {
+  animation: content-flow 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, 
+    #3b82f6 0%, 
+    #2563eb 25%, 
+    #1d4ed8 50%, 
+    #2563eb 75%, 
+    #3b82f6 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes typing {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes thinking-flow {
+  0% {
+    background-position: 300% 0;
+  }
+  100% {
+    background-position: -300% 0;
+  }
+}
+
+@keyframes content-flow {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Remove all blue outlines */
@@ -546,6 +718,64 @@
   transform: scale(0.96);
 }
 
+/* 等待流式回复时的发送按钮脉冲动效 */
+.send-button.streaming {
+  animation: pulse 1.5s ease-in-out infinite;
+  color: var(--primary-color, #8b5cf6);
+}
+
+/* 思考状态的发送按钮动效 - 慢速旋转 */
+.send-button.streaming-thinking {
+  animation: thinking-rotate 2s linear infinite;
+  color: #8b5cf6;
+}
+
+/* 回答状态的发送按钮动效 - 快速脉冲 */
+.send-button.streaming-content {
+  animation: content-pulse-button 1s ease-in-out infinite;
+  color: #3b82f6;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.8;
+    filter: brightness(1.1);
+  }
+}
+
+@keyframes thinking-rotate {
+  0% {
+    transform: rotate(0deg);
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    transform: rotate(180deg);
+    opacity: 0.9;
+    filter: brightness(1.05);
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+@keyframes content-pulse-button {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.7;
+    filter: brightness(1.15);
+  }
+}
+
 
 /* 停止按钮样式 */
 .stop-button {
@@ -702,27 +932,23 @@
 
 @keyframes expandUpward {
   from {
-    transform: scaleY(0.8);
-    transform-origin: bottom center;
     opacity: 0.8;
+    filter: brightness(0.9);
   }
   to {
-    transform: scaleY(1);
-    transform-origin: bottom center;
     opacity: 1;
+    filter: brightness(1);
   }
 }
 
 @keyframes expandDownward {
   from {
-    transform: scaleY(0.8);
-    transform-origin: top center;
     opacity: 0.8;
+    filter: brightness(0.9);
   }
   to {
-    transform: scaleY(1);
-    transform-origin: top center;
     opacity: 1;
+    filter: brightness(1);
   }
 }
 

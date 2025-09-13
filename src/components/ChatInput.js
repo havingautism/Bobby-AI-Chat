@@ -17,6 +17,7 @@ const ChatInput = ({
   onSendMessage, 
   disabled, 
   isStreaming = false,
+  streamingState = "content", // "thinking" | "content" | "unknown"
   onStopStreaming = () => {},
   showBottomToolbar = true,
   showFileUpload = true,
@@ -266,12 +267,6 @@ const ChatInput = ({
     }
   };
 
-  // 触发文件选择
-  const triggerFileUpload = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
 
   // 触发文档上传
   const triggerDocumentUpload = () => {
@@ -508,7 +503,7 @@ const ChatInput = ({
   return (
     <div className={`chat-input-container ${className}`}>
       <form onSubmit={handleSubmit} className="chat-input-form">
-        <div className="input-wrapper-clean">
+        <div className={`input-wrapper-clean ${isStreaming && streamingState !== 'unknown' ? `streaming streaming-${streamingState}` : ''}`}>
           {/* 文件预览区域 */}
           {showFileUpload && uploadedFile && (
             <div className="file-preview-container">
@@ -558,11 +553,11 @@ const ChatInput = ({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={placeholder || (uploadedFile ? t("typeMessageWithFile", currentLanguage) : t("typeMessage", currentLanguage))}
+              placeholder={isStreaming ? (streamingState === "thinking" ? "AI正在深度思考中..." : streamingState === "content" ? "AI正在生成回复..." : "AI正在处理中...") : (placeholder || (uploadedFile ? t("typeMessageWithFile", currentLanguage) : t("typeMessage", currentLanguage)))}
               disabled={disabled}
               rows={1}
               ref={textareaRef}
-              className="message-textarea-clean"
+              className={`message-textarea-clean ${isStreaming && streamingState !== 'unknown' ? `streaming streaming-${streamingState}` : ''}`}
               style={{
                 height: "auto",
                 minHeight: "24px",
@@ -660,7 +655,7 @@ const ChatInput = ({
               <button
                 type="submit"
                 disabled={(!message.trim() && !uploadedFile) || disabled}
-                className={`send-button ${(message.trim() || uploadedFile) ? 'has-content' : ''}`}
+                className={`send-button ${(message.trim() || uploadedFile) ? 'has-content' : ''} ${isStreaming && streamingState !== 'unknown' ? `streaming streaming-${streamingState}` : ''}`}
                 title={t("send", currentLanguage)}
               >
                 {(message.trim() || uploadedFile) ? (

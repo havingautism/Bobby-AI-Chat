@@ -120,6 +120,7 @@ const ChatInterface = ({
   const [currentRole, setCurrentRole] = useState(() => loadSelectedRole());
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingState, setStreamingState] = useState("content"); // "thinking" | "content"
   const [streamingConversationId, setStreamingConversationId] = useState(null);
   const [abortController, setAbortController] = useState(null);
   const [isTitleGenerating, setIsTitleGenerating] = useState(false);
@@ -133,6 +134,7 @@ const ChatInterface = ({
     if (abortController) {
       abortController.abort();
       setIsStreaming(false);
+      setStreamingState("unknown");
       setStreamingConversationId(null);
       setAbortController(null);
     }
@@ -388,6 +390,7 @@ const ChatInterface = ({
   // 流式消息发送
   const sendMessageWithStream = async (messages, options, conversationId, customMessageId = null, messagesAfterAssistant = []) => {
     setIsStreaming(true);
+    setStreamingState("unknown"); // 初始状态设为unknown，不显示动效
     setStreamingConversationId(conversationId);
 
     const controller = new AbortController();
@@ -423,9 +426,11 @@ const ChatInterface = ({
         (chunk) => {
           if (chunk.type === "content") {
             fullContent = chunk.fullContent;
+            setStreamingState("content");
           } else if (chunk.type === "reasoning") {
             fullReasoning = chunk.fullReasoning;
             hasReasoning = true;
+            setStreamingState("thinking");
           }
 
           const updatedMessage = {
@@ -807,6 +812,7 @@ const ChatInterface = ({
         onSendMessage={handleSendMessage}
         disabled={isStreaming && streamingConversationId === conversation.id}
         isStreaming={isStreaming && streamingConversationId === conversation.id}
+        streamingState={streamingState}
         onStopStreaming={stopStreaming}
         showBottomToolbar={true}
         showFileUpload={true}

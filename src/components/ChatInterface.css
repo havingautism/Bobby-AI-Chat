@@ -209,6 +209,8 @@
 .bobby-logo {
   font-size: 20px;
   animation: pawPrint 2s ease-in-out infinite;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .conversation-title {
@@ -250,11 +252,13 @@
 .bobby-status {
   font-size: 16px;
   animation: catBlink 3s ease-in-out infinite;
+  will-change: opacity;
+  transform: translateZ(0);
 }
 
 @keyframes pawPrint {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  50% { transform: scale(1.1) rotate(5deg); }
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(5deg); }
 }
 
 @keyframes catBlink {
@@ -353,6 +357,8 @@
   background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
   animation: catTyping 1.4s infinite ease-in-out;
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+  will-change: opacity, filter;
+  transform: translateZ(0);
 }
 
 .typing-indicator span:nth-child(1) {
@@ -365,17 +371,30 @@
 
 @keyframes catTyping {
   0%, 80%, 100% {
-    transform: scale(0.8);
     opacity: 0.5;
+    filter: brightness(0.8);
   }
   40% {
-    transform: scale(1.2);
     opacity: 1;
+    filter: brightness(1.2);
   }
 }
 
 /* 移动端优化 */
 @media (max-width: 768px) {
+  /* 移动端减少动画频率，避免闪烁 */
+  .bobby-logo {
+    animation-duration: 3s; /* 更慢的动画 */
+  }
+  
+  .bobby-status {
+    animation-duration: 4s; /* 更慢的眨眼动画 */
+  }
+  
+  .typing-indicator span {
+    animation-duration: 2s; /* 更慢的打字动画 */
+  }
+  
   .chat-interface {
     height: 100vh;
     height: 100dvh; /* 动态视口高度，适配移动端键盘弹出 */

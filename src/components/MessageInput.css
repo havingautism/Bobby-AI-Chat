@@ -342,27 +342,23 @@
 
 @keyframes expandUpward {
   from {
-    transform: scaleY(0.8);
-    transform-origin: bottom center;
     opacity: 0.8;
+    filter: brightness(0.9);
   }
   to {
-    transform: scaleY(1);
-    transform-origin: bottom center;
     opacity: 1;
+    filter: brightness(1);
   }
 }
 
 @keyframes expandDownward {
   from {
-    transform: scaleY(0.8);
-    transform-origin: top center;
     opacity: 0.8;
+    filter: brightness(0.9);
   }
   to {
-    transform: scaleY(1);
-    transform-origin: top center;
     opacity: 1;
+    filter: brightness(1);
   }
 }
 
