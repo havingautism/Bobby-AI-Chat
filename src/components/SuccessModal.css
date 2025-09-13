@@ -45,8 +45,19 @@
 }
 
 .success-icon svg {
-  color: #10b981;
   animation: scaleIn 0.6s ease-out;
+}
+
+.success-icon.success svg {
+  color: #10b981;
+}
+
+.success-icon.error svg {
+  color: #ef4444;
+}
+
+.success-icon.warning svg {
+  color: #f59e0b;
 }
 
 

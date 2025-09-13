@@ -10,8 +10,8 @@ import "./ChatInput.css";
 const pdfjsLib = require('pdfjs-dist');
 const mammoth = require('mammoth');
 
-// 配置PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// 配置PDF.js worker - 统一使用本地worker文件
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 const ChatInput = ({ 
   onSendMessage, 

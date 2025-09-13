@@ -742,11 +742,10 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
     const files = event.target.files;
     if (!files.length) return;
 
-    // 显示上传开始通知
+    // 显示上传开始通知（自动关闭）
     showInfo(
       currentLanguage === "zh" ? "开始上传" : "Upload Started",
-      currentLanguage === "zh" ? `正在上传 ${files.length} 个文件...` : `Uploading ${files.length} files...`,
-      { persistent: true }
+      currentLanguage === "zh" ? `正在上传 ${files.length} 个文件...` : `Uploading ${files.length} files...`
     );
 
     // 设置详细的loading modal
@@ -801,8 +800,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         
         showInfo(
           currentLanguage === "zh" ? `处理文件 ${i + 1}/${files.length}` : `Processing file ${i + 1}/${files.length}`,
-          currentLanguage === "zh" ? `正在处理: ${file.name}` : `Processing: ${file.name}`,
-          { persistent: true }
+          currentLanguage === "zh" ? `正在处理: ${file.name}` : `Processing: ${file.name}`
         );
 
         try {
@@ -883,52 +881,84 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         setLoadingModal(prev => ({ ...prev, open: false }));
       }, 500);
 
-      // 显示优雅的成功完成模态框
-      setSuccessModal({
-        open: true,
-        title: currentLanguage === "zh" ? "上传完成 🎉" : "Upload Complete 🎉",
-        message: currentLanguage === "zh" 
-          ? `成功上传 ${uploadedFiles.length} 个文件到知识库`
-          : `Successfully uploaded ${uploadedFiles.length} files to knowledge base`,
-        details: [
-          { label: currentLanguage === "zh" ? "上传成功" : "Success", value: `${uploadedFiles.length} 个文件` },
-          { label: currentLanguage === "zh" ? "上传失败" : "Failed", value: failedFiles.length > 0 ? `${failedFiles.length} 个文件` : '0 个文件' },
-          { label: currentLanguage === "zh" ? "总大小" : "Total Size", value: formatFileSize(uploadedFiles.reduce((sum, file) => sum + file.size, 0)) },
-          { label: currentLanguage === "zh" ? "完成时间" : "Completed", value: new Date().toLocaleString() }
-        ],
-        actions: [
-          {
-            text: currentLanguage === "zh" ? "查看文档" : "View Documents",
-            primary: true,
-            icon: '📄',
-            onClick: () => {
-              setSuccessModal(prev => ({ ...prev, open: false }));
-              setActiveTab("documents");
+      // 根据上传结果显示不同的模态框
+      const hasFailures = failedFiles.length > 0;
+      
+      if (hasFailures) {
+        // 有失败文件时显示失败模态框
+        setSuccessModal({
+          open: true,
+          type: 'error',
+          title: currentLanguage === "zh" ? "上传失败" : "Upload Failed",
+          message: currentLanguage === "zh" 
+            ? `上传过程中发生错误，${uploadedFiles.length} 个文件成功，${failedFiles.length} 个文件失败`
+            : `Upload failed with errors, ${uploadedFiles.length} files succeeded, ${failedFiles.length} files failed`,
+          details: [
+            { label: currentLanguage === "zh" ? "上传成功" : "Success", value: `${uploadedFiles.length} 个文件` },
+            { label: currentLanguage === "zh" ? "上传失败" : "Failed", value: `${failedFiles.length} 个文件` },
+            { label: currentLanguage === "zh" ? "失败原因" : "Failure Reasons", value: failedFiles.map(f => `${f.file.name}: ${f.error.message || '未知错误'}`).join('; ') },
+            { label: currentLanguage === "zh" ? "完成时间" : "Completed", value: new Date().toLocaleString() }
+          ],
+          actions: [
+            {
+              text: currentLanguage === "zh" ? "重试上传" : "Retry Upload",
+              primary: true,
+              icon: '🔄',
+              onClick: () => {
+                setSuccessModal(prev => ({ ...prev, open: false }));
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = "";
+                  fileInputRef.current.click();
+                }
+              }
+            },
+            {
+              text: currentLanguage === "zh" ? "查看文档" : "View Documents",
+              icon: '📄',
+              onClick: () => {
+                setSuccessModal(prev => ({ ...prev, open: false }));
+                setActiveTab("documents");
+              }
             }
-          },
-          {
-            text: currentLanguage === "zh" ? "上传更多" : "Upload More",
-            icon: '📤',
-            onClick: () => {
-              setSuccessModal(prev => ({ ...prev, open: false }));
-              setActiveTab("upload");
+          ],
+          autoClose: false
+        });
+      } else {
+        // 全部成功时显示成功模态框
+        setSuccessModal({
+          open: true,
+          type: 'success',
+          title: currentLanguage === "zh" ? "上传成功" : "Upload Success",
+          message: currentLanguage === "zh" 
+            ? `成功上传 ${uploadedFiles.length} 个文件到知识库`
+            : `Successfully uploaded ${uploadedFiles.length} files to knowledge base`,
+          details: [
+            { label: currentLanguage === "zh" ? "上传成功" : "Success", value: `${uploadedFiles.length} 个文件` },
+            { label: currentLanguage === "zh" ? "总大小" : "Total Size", value: formatFileSize(uploadedFiles.reduce((sum, file) => sum + file.size, 0)) },
+            { label: currentLanguage === "zh" ? "完成时间" : "Completed", value: new Date().toLocaleString() }
+          ],
+          actions: [
+            {
+              text: currentLanguage === "zh" ? "查看文档" : "View Documents",
+              primary: true,
+              icon: '📄',
+              onClick: () => {
+                setSuccessModal(prev => ({ ...prev, open: false }));
+                setActiveTab("documents");
+              }
+            },
+            {
+              text: currentLanguage === "zh" ? "上传更多" : "Upload More",
+              icon: '📤',
+              onClick: () => {
+                setSuccessModal(prev => ({ ...prev, open: false }));
+                setActiveTab("upload");
+              }
             }
-          },
-          ...(failedFiles.length > 0 ? [{
-            text: currentLanguage === "zh" ? "查看错误" : "View Errors",
-            icon: '❌',
-            onClick: () => {
-              showInfo(
-                currentLanguage === "zh" ? "上传错误详情" : "Upload Error Details",
-                currentLanguage === "zh" 
-                  ? `以下文件上传失败:\n${failedFiles.map(f => `• ${f.file.name}: ${f.error.message}`).join('\n')}`
-                  : `The following files failed to upload:\n${failedFiles.map(f => `• ${f.file.name}: ${f.error.message}`).join('\n')}`
-              );
-            }
-          }] : [])
-        ],
-        autoClose: false
-      });
+          ],
+          autoClose: false
+        });
+      }
 
     } catch (error) {
       console.error("文件上传失败:", error);
@@ -936,10 +966,10 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       // 关闭loading modal
       setLoadingModal(s => ({ ...s, open: false }));
 
-      // 显示错误通知
+      // 显示简化的错误通知
       showError(
         currentLanguage === "zh" ? "上传失败" : "Upload Failed",
-        currentLanguage === "zh" ? `文件上传失败: ${error.message}` : `File upload failed: ${error.message}`,
+        currentLanguage === "zh" ? "文件上传失败，请检查文件格式和网络连接" : "File upload failed, please check file format and network connection",
         {
           actions: [
             {
@@ -950,13 +980,6 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
                   fileInputRef.current.value = "";
                   fileInputRef.current.click();
                 }
-              }
-            },
-            {
-              text: currentLanguage === "zh" ? "查看详情" : "View Details",
-              primary: false,
-              onClick: () => {
-                console.error("详细错误信息:", error);
               }
             }
           ]
@@ -1044,8 +1067,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       currentLanguage === "zh" ? "删除文档" : "Deleting Document",
       currentLanguage === "zh" 
         ? `正在删除文档"${doc.title}"...`
-        : `Deleting "${doc.title}"...`,
-      { persistent: true }
+        : `Deleting "${doc.title}"...`
     );
 
     try {
@@ -1158,23 +1180,11 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
           ? `删除文档"${doc.title}"时发生错误: ${error.message}`
           : `Error deleting "${doc.title}": ${error.message}`,
         {
-          persistent: true,
           actions: [
             {
               text: currentLanguage === "zh" ? "重试" : "Retry",
               primary: true,
               onClick: () => performDocumentDelete(docId, doc)
-            },
-            {
-              text: currentLanguage === "zh" ? "查看错误" : "View Error",
-              onClick: () => {
-                showInfo(
-                  currentLanguage === "zh" ? "错误详情" : "Error Details",
-                  currentLanguage === "zh" 
-                    ? `• 错误类型: ${error.name || '未知错误'}\n• 错误信息: ${error.message}\n• 文档: ${doc.title}\n• 时间: ${new Date().toLocaleString()}`
-                    : `• Error Type: ${error.name || 'Unknown Error'}\n• Message: ${error.message}\n• Document: ${doc.title}\n• Time: ${new Date().toLocaleString()}`
-                );
-              }
             }
           ]
         }
@@ -1759,6 +1769,7 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       actions={successModal.actions}
       autoClose={successModal.autoClose}
       autoCloseDelay={successModal.autoCloseDelay}
+      type={successModal.type || 'success'}
     />
     
     {/* 通知容器 */}
