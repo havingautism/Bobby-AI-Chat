@@ -92,6 +92,7 @@ export const SessionProvider = ({ children }) => {
     
     if (emptyConversation) {
       setCurrentConversationId(emptyConversation.id);
+      return emptyConversation.id;
     } else {
       const conversationsWithMessages = conversations.filter(conv => conv.messages.length > 0);
       const newConversation = {
@@ -105,6 +106,7 @@ export const SessionProvider = ({ children }) => {
       };
       setConversations([newConversation, ...conversationsWithMessages]);
       setCurrentConversationId(newConversation.id);
+      return newConversation.id;
     }
   };
 
