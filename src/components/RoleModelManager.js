@@ -107,9 +107,13 @@ const RoleModelManager = ({ isOpen, onClose }) => {
 
   const currentLanguage = getCurrentLanguage();
 
-  // 拖拽传感器配置
+  // 拖拽传感器配置 - 优化移动端触摸支持
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 需要移动8px才开始拖拽，避免误触
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -149,6 +153,9 @@ const RoleModelManager = ({ isOpen, onClose }) => {
   // 拖拽结束处理
   const handleDragEnd = (event) => {
     const { active, over } = event;
+
+    // 恢复页面滚动
+    document.body.style.overflow = '';
 
     if (active.id !== over.id) {
       setRoles((items) => {
@@ -384,6 +391,14 @@ const RoleModelManager = ({ isOpen, onClose }) => {
                   sensors={sensors}
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
+                  onDragStart={() => {
+                    // 拖拽开始时禁用页面滚动
+                    document.body.style.overflow = 'hidden';
+                  }}
+                  onDragCancel={() => {
+                    // 拖拽取消时恢复页面滚动
+                    document.body.style.overflow = '';
+                  }}
                 >
                   <SortableContext items={roles.map(role => role.id)} strategy={verticalListSortingStrategy}>
                 <div className="roles-grid">
@@ -467,10 +482,11 @@ const RoleModelManager = ({ isOpen, onClose }) => {
 
         {/* 角色编辑模态框 */}
         {editingRole && (
-          <div className="edit-modal" style={{ zIndex: 9999 }}>
-            <div className="modal-content" style={{ zIndex: 10000 }}>
+          <div className="edit-modal">
+            <div className="modal-content">
               <h3>{isAddingRole ? (currentLanguage === 'zh' ? '添加角色' : 'Add Role') : (currentLanguage === 'zh' ? '编辑角色' : 'Edit Role')}</h3>
-              <div className="form-group">
+              <div className="form-container">
+                <div className="form-group">
                 <label>{currentLanguage === 'zh' ? '角色名称' : 'Role Name'}</label>
                 <input 
                   type="text" 
@@ -519,6 +535,7 @@ const RoleModelManager = ({ isOpen, onClose }) => {
                   value={editingRole.color}
                   onChange={(e) => setEditingRole({...editingRole, color: e.target.value})}
                 />
+                </div>
               </div>
               <div className="modal-actions">
                 <button className="cancel-button" onClick={() => setEditingRole(null)}>

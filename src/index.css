@@ -23,7 +23,8 @@
   /* 模态框相关 */
   --z-index-modal-backdrop: 1040;
   --z-index-modal: 1050;
-  --z-index-tooltip: 1060;
+  --z-index-modal-overlay: 1060;
+  --z-index-tooltip: 1070;
   
   /* 通知和重要元素 */
   --z-index-notification: 9999;
