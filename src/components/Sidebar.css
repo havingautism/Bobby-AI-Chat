@@ -2382,6 +2382,100 @@
   color: #a5b4fc;
 }
 
+/* 角色模型管理按钮样式 */
+.role-model-section {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.role-model-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, 
+    rgba(16, 185, 129, 0.08) 0%, 
+    rgba(16, 185, 129, 0.04) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 12px;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.role-model-button:hover {
+  background: linear-gradient(135deg, 
+    rgba(16, 185, 129, 0.15) 0%, 
+    rgba(16, 185, 129, 0.08) 100%);
+  border-color: rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.role-model-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.role-model-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.role-model-text {
+  flex: 1;
+  text-align: left;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* 暗色模式角色模型按钮 */
+[data-theme="dark"] .role-model-button {
+  background: linear-gradient(135deg, 
+    rgba(16, 185, 129, 0.12) 0%, 
+    rgba(16, 185, 129, 0.06) 100%);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .role-model-button:hover {
+  background: linear-gradient(135deg, 
+    rgba(16, 185, 129, 0.18) 0%, 
+    rgba(16, 185, 129, 0.12) 100%);
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .role-model-icon {
+  color: #6ee7b7;
+}
+
+/* 移动端角色模型按钮适配 */
+@media (max-width: 768px) {
+  .role-model-section {
+    padding: 6px 8px;
+    margin-bottom: 6px;
+  }
+  
+  .role-model-button {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .role-model-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
 /* 移动端知识库按钮适配 */
 @media (max-width: 768px) {
   .knowledge-base-section {

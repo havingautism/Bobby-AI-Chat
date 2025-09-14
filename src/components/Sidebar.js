@@ -6,6 +6,7 @@ import { isTauriEnvironment } from "../utils/tauriDetector";
 import { apiSessionManager } from "../utils/apiSessionManager";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import LanguageToggle from "./LanguageToggle";
+import RoleModelManager from "./RoleModelManager";
 import "./Sidebar.css";
 
 const Sidebar = ({
@@ -22,6 +23,7 @@ const Sidebar = ({
   onOpenSettings,
   onOpenAbout,
   onOpenKnowledgeBase,
+  onOpenRoleModelManager,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
@@ -30,6 +32,7 @@ const Sidebar = ({
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState(null);
+  const [roleModelManagerOpen, setRoleModelManagerOpen] = useState(false);
   const roleFilterRef = useRef(null);
 
   // 点击外部关闭角色筛选下拉菜单
@@ -337,6 +340,27 @@ const Sidebar = ({
           )}
         </div>
 
+        {/* 角色模型管理按钮 */}
+        {!isCollapsed && (
+          <div className="role-model-section">
+            <button
+              className="role-model-button"
+              onClick={() => setRoleModelManagerOpen(true)}
+              title={currentLanguage === "zh" ? "角色与模型管理" : "Role & Model Management"}
+            >
+              <div className="role-model-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                  <path d="M12 8v4m0 4h.01"/>
+                </svg>
+              </div>
+              <span className="role-model-text">
+                {currentLanguage === "zh" ? "角色模型" : "Roles & Models"}
+              </span>
+            </button>
+          </div>
+        )}
+
         {/* 知识库按钮 - 仅在Tauri环境显示 */}
         {!isCollapsed && isTauriEnvironment() && (
           <div className="knowledge-base-section">
@@ -602,6 +626,12 @@ const Sidebar = ({
         onCancel={cancelDelete}
         title={conversationToDelete?.title}
         currentLanguage={currentLanguage}
+      />
+
+      {/* 角色模型管理Modal */}
+      <RoleModelManager
+        isOpen={roleModelManagerOpen}
+        onClose={() => setRoleModelManagerOpen(false)}
       />
       
           </>
