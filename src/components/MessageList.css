@@ -853,10 +853,12 @@
 .message.streaming {
   background-color: rgba(99, 102, 241, 0.05);
   border-radius: 25px;
+  max-width: 850px;
 }
 
 [data-theme="dark"] .message.streaming {
   background-color: rgba(129, 140, 248, 0.1);
+  max-width: 850px;
 }
 
 /* 流式指示器 */
