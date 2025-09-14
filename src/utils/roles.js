@@ -1,5 +1,5 @@
-// AI角色配置和管理
-export const AI_ROLES = [
+// 默认AI角色配置
+const DEFAULT_AI_ROLES = [
   {
     id: "bobby",
     name: "Bobby",
@@ -55,7 +55,6 @@ export const AI_ROLES = [
       "你是一个耐心的导师，请用清晰、易懂的方式解释概念，循序渐进地帮助用户学习。如果可以，请在回答最后添加markdown流程图来清晰地展示知识结构、学习路径或概念之间的关系。使用mermaid语法创建流程图，例如：\n\n```mermaid\ngraph TD\n    A[基础概念] --> B[进阶概念]\n    B --> C[应用实例]\n    C --> D[深入理解]\n    A --> E[相关概念]\n    E --> D\n```",
     color: "#10b981",
   },
-
   {
     id: "writer",
     name: "写作助手",
@@ -69,10 +68,56 @@ export const AI_ROLES = [
   },
 ];
 
+// 当前使用的角色列表（可以从localStorage更新）
+let currentRoles = [...DEFAULT_AI_ROLES];
+
+// 导出的AI_ROLES变量，实际上是currentRoles的引用
+export let AI_ROLES = currentRoles;
+
 // 获取角色信息
 export const getRoleById = (roleId) => {
   return AI_ROLES.find((role) => role.id === roleId) || AI_ROLES[0];
 };
+
+// 更新角色列表
+export const updateRolesList = (newRoles) => {
+  currentRoles = [...newRoles];
+  AI_ROLES = currentRoles;
+};
+
+// 重置为默认角色
+export const resetRolesToDefault = () => {
+  currentRoles = [...DEFAULT_AI_ROLES];
+  AI_ROLES = currentRoles;
+};
+
+// 监听角色更新事件
+if (typeof window !== 'undefined') {
+  window.addEventListener('rolesUpdated', (event) => {
+    updateRolesList(event.detail);
+  });
+
+  window.addEventListener('rolesReset', () => {
+    resetRolesToDefault();
+  });
+
+  // 页面加载时检查是否有自定义角色
+  try {
+    const savedRoles = localStorage.getItem('ai-roles-updated');
+    if (savedRoles) {
+      const parsedRoles = JSON.parse(savedRoles);
+      updateRolesList(parsedRoles);
+    }
+
+    const customRoles = localStorage.getItem('custom-roles');
+    if (customRoles) {
+      const parsedRoles = JSON.parse(customRoles);
+      updateRolesList(parsedRoles);
+    }
+  } catch (error) {
+    console.error('加载自定义角色失败:', error);
+  }
+}
 
 // 保存选中的角色到localStorage
 export const saveSelectedRole = (roleId) => {

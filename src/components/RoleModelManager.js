@@ -1,8 +1,94 @@
 import React, { useState, useEffect } from 'react';
-import { AI_ROLES, getRoleById } from '../utils/roles';
-import { API_PROVIDERS } from '../utils/api-manager';
-import { getCurrentLanguage, t } from '../utils/language';
+import { AI_ROLES } from '../utils/roles';
+import { getCurrentLanguage } from '../utils/language';
+import { dbManager, getAllRoles } from '../utils/database';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import './RoleModelManager.css';
+
+const SortableRoleCard = ({ role, loading, onEdit, onDelete }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: role.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="role-card">
+      <div className="role-info">
+        <div className="drag-handle" {...attributes} {...listeners}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 12h18M3 6h18M3 18h18"/>
+          </svg>
+        </div>
+        <div className="role-avatar" style={{ backgroundColor: role.color }}>
+          {role.avatar}
+        </div>
+        <div className="role-details">
+          <h4>{role.name}</h4>
+          <p>{role.description}</p>
+          <div className="role-params">
+            <span>Temperature: {role.temperature}</span>
+          </div>
+        </div>
+      </div>
+      <div className="role-actions">
+        <button
+          className="edit-button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onEdit(role);
+          }}
+          disabled={loading}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+        <button
+          className="delete-button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onDelete(role.id);
+          }}
+          disabled={loading}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const RoleModelManager = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('roles'); // 'roles' or 'models'
@@ -17,31 +103,87 @@ const RoleModelManager = ({ isOpen, onClose }) => {
   ]);
   const [editingModel, setEditingModel] = useState(null);
   const [isAddingModel, setIsAddingModel] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const currentLanguage = getCurrentLanguage();
 
+  // 拖拽传感器配置
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   // 角色编辑相关函数
   const handleEditRole = (role) => {
-    setEditingRole({ ...role });
+      setEditingRole({ ...role });
   };
 
-  const handleSaveRole = () => {
+  const handleSaveRole = async () => {
     if (editingRole) {
-      const updatedRoles = roles.map(role => 
-        role.id === editingRole.id ? editingRole : role
-      );
-      setRoles(updatedRoles);
-      setEditingRole(null);
-      // 这里可以添加保存到localStorage的逻辑
-      localStorage.setItem('custom-roles', JSON.stringify(updatedRoles));
+      try {
+        setLoading(true);
+
+        // 更新状态
+        const updatedRoles = roles.map(role =>
+          role.id === editingRole.id ? editingRole : role
+        );
+        setRoles(updatedRoles);
+        setEditingRole(null);
+        setIsAddingRole(false);
+
+        // 保存到localStorage (简化版本)
+        localStorage.setItem('custom-roles', JSON.stringify(updatedRoles));
+        updateGlobalRoles(updatedRoles);
+
+        setLoading(false);
+
+      } catch (error) {
+        console.error('保存角色失败:', error);
+        setLoading(false);
+      }
+    }
+  };
+
+  // 拖拽结束处理
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (active.id !== over.id) {
+      setRoles((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        localStorage.setItem('custom-roles', JSON.stringify(newItems));
+        return newItems;
+      });
+    }
+  };
+
+  // 更新全局角色列表
+  const updateGlobalRoles = (updatedRoles) => {
+    // 这里需要更新utils/roles.js中的AI_ROLES数组
+    // 由于ES6模块的限制，我们需要通过修改全局对象来实现
+    try {
+      // 将更新后的角色信息保存到localStorage，供其他组件使用
+      localStorage.setItem('ai-roles-updated', JSON.stringify(updatedRoles));
+      // 触发自定义事件通知其他组件角色已更新
+      window.dispatchEvent(new CustomEvent('rolesUpdated', { detail: updatedRoles }));
+    } catch (error) {
+      console.error('更新全局角色列表失败:', error);
     }
   };
 
   const handleDeleteRole = (roleId) => {
+    console.log('删除角色被点击:', roleId); // 调试日志
     if (window.confirm(currentLanguage === 'zh' ? '确定要删除这个角色吗？' : 'Are you sure you want to delete this role?')) {
       const updatedRoles = roles.filter(role => role.id !== roleId);
       setRoles(updatedRoles);
       localStorage.setItem('custom-roles', JSON.stringify(updatedRoles));
+      updateGlobalRoles(updatedRoles);
+      console.log('角色删除成功'); // 调试日志
     }
   };
 
@@ -66,6 +208,9 @@ const RoleModelManager = ({ isOpen, onClose }) => {
       setRoles([...AI_ROLES]);
       // 清除localStorage中的自定义角色
       localStorage.removeItem('custom-roles');
+      localStorage.removeItem('ai-roles-updated');
+      // 触发重置事件
+      window.dispatchEvent(new CustomEvent('rolesReset'));
     }
   };
 
@@ -128,28 +273,55 @@ const RoleModelManager = ({ isOpen, onClose }) => {
     }
   };
 
-  // 从localStorage加载自定义设置
+  // 从数据库加载数据
   useEffect(() => {
-    const savedRoles = localStorage.getItem('custom-roles');
-    if (savedRoles) {
+    const loadData = async () => {
       try {
-        const parsedRoles = JSON.parse(savedRoles);
-        setRoles(parsedRoles);
-      } catch (error) {
-        console.error('加载自定义角色失败:', error);
-      }
-    }
+        setLoading(true);
 
-    const savedModels = localStorage.getItem('model-settings');
-    if (savedModels) {
-      try {
-        const parsedModels = JSON.parse(savedModels);
-        setModels(parsedModels);
+        // 初始化数据库
+        await dbManager.init();
+
+        // 加载角色数据
+        const savedRoles = await getAllRoles();
+        if (savedRoles && savedRoles.length > 0) {
+          setRoles(savedRoles);
+        }
+
+        // 加载模型设置（仍然使用localStorage作为备选）
+        const savedModels = localStorage.getItem('model-settings');
+        if (savedModels) {
+          try {
+            const parsedModels = JSON.parse(savedModels);
+            setModels(parsedModels);
+          } catch (error) {
+            console.error('加载模型设置失败:', error);
+          }
+        }
+
+        setLoading(false);
       } catch (error) {
-        console.error('加载模型设置失败:', error);
+        console.error('加载数据失败:', error);
+        setLoading(false);
+
+        // 降级到localStorage
+        const savedRoles = localStorage.getItem('custom-roles');
+        if (savedRoles) {
+          try {
+            const parsedRoles = JSON.parse(savedRoles);
+            setRoles(parsedRoles);
+          } catch (error) {
+            console.error('加载自定义角色失败:', error);
+          }
+        }
       }
+    };
+
+    if (isOpen) {
+      loadData();
     }
-  }, []);
+  }, [isOpen]);
+
 
   if (!isOpen) return null;
 
@@ -202,37 +374,32 @@ const RoleModelManager = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              <div className="roles-grid">
-                {roles.map((role) => (
-                  <div key={role.id} className="role-card">
-                    <div className="role-info">
-                      <div className="role-avatar" style={{ backgroundColor: role.color }}>
-                        {role.avatar}
-                      </div>
-                      <div className="role-details">
-                        <h4>{role.name}</h4>
-                        <p>{role.description}</p>
-                        <div className="role-params">
-                          <span>Temperature: {role.temperature}</span>
-                        </div>
-                      </div>
+              {loading ? (
+                <div className="loading-container">
+                  <div className="loading-spinner"></div>
+                  <p>{currentLanguage === 'zh' ? '加载中...' : 'Loading...'}</p>
+                </div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext items={roles.map(role => role.id)} strategy={verticalListSortingStrategy}>
+                <div className="roles-grid">
+                      {roles.map((role, index) => (
+                        <SortableRoleCard
+                          key={role.id}
+                          role={role}
+                          loading={loading}
+                          onEdit={handleEditRole}
+                          onDelete={handleDeleteRole}
+                        />
+                      ))}
                     </div>
-                    <div className="role-actions">
-                      <button className="edit-button" onClick={() => handleEditRole(role)}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </button>
-                      <button className="delete-button" onClick={() => handleDeleteRole(role.id)}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  </SortableContext>
+                </DndContext>
+              )}
             </div>
           )}
 
@@ -300,8 +467,8 @@ const RoleModelManager = ({ isOpen, onClose }) => {
 
         {/* 角色编辑模态框 */}
         {editingRole && (
-          <div className="edit-modal">
-            <div className="modal-content">
+          <div className="edit-modal" style={{ zIndex: 9999 }}>
+            <div className="modal-content" style={{ zIndex: 10000 }}>
               <h3>{isAddingRole ? (currentLanguage === 'zh' ? '添加角色' : 'Add Role') : (currentLanguage === 'zh' ? '编辑角色' : 'Edit Role')}</h3>
               <div className="form-group">
                 <label>{currentLanguage === 'zh' ? '角色名称' : 'Role Name'}</label>
@@ -357,7 +524,10 @@ const RoleModelManager = ({ isOpen, onClose }) => {
                 <button className="cancel-button" onClick={() => setEditingRole(null)}>
                   {currentLanguage === 'zh' ? '取消' : 'Cancel'}
                 </button>
-                <button className="save-button" onClick={handleSaveRole}>
+                <button className="save-button" onClick={() => {
+                  console.log('保存按钮被点击'); // 调试日志
+                  handleSaveRole();
+                }}>
                   {currentLanguage === 'zh' ? '保存' : 'Save'}
                 </button>
               </div>
