@@ -24,7 +24,8 @@
   --z-index-modal-backdrop: 1040;
   --z-index-modal: 1050;
   --z-index-modal-overlay: 1060;
-  --z-index-tooltip: 1070;
+  --z-index-modal-nested: 1070;
+  --z-index-tooltip: 1080;
   
   /* 通知和重要元素 */
   --z-index-notification: 9999;

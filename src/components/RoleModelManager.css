@@ -135,7 +135,7 @@
   flex: 1;
   overflow-y: auto;
   padding: 24px 28px;
-  background: rgba(255, 255, 255, 0.01);
+  background: var(--bg-secondary);
 }
 
 .section-header {
@@ -185,29 +185,42 @@
   letter-spacing: -0.01em;
 }
 
+
 .add-button {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 16px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
+  padding: 8px 12px; /* 与重置按钮一致 */
+  background: transparent;
+  color: #6b7280; /* 与重置按钮一致 */
+  border: 1px solid #e5e7eb; /* 与重置按钮一致 */
+  border-radius: 6px; /* 与重置按钮一致 */
   cursor: pointer;
   font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  font-weight: 500; /* 与重置按钮一致 */
+  transition: all 0.2s ease; /* 与重置按钮一致 */
 }
 
 .add-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  background: #fef3c7;
+  color: #d97706;
+  border-color: #fbbf24;
+  transform: translateY(-1px);
 }
 
 .add-button:active {
   transform: translateY(0);
+}
+
+/* 可访问性：键盘聚焦态 */
+.add-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35);
+}
+
+/* 深色模式下略强的聚焦光晕 */
+[data-theme="dark"] .add-button:focus-visible {
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35);
 }
 
 /* 角色管理样式 */
@@ -550,25 +563,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-index-modal-overlay);
+  z-index: var(--z-index-modal-nested);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   animation: modalFadeIn 0.2s ease-out;
 }
 
 .edit-modal .modal-content {
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
   border-radius: 16px;
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
   border: 1px solid var(--border-color);
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
     0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   position: relative;
-  z-index: var(--z-index-modal-overlay);
+  z-index: var(--z-index-modal-nested);
   animation: modalSlideIn 0.3s ease-out;
   transform-origin: center center;
   display: flex;
@@ -598,7 +611,7 @@
 
 .edit-modal .modal-content h3 {
   margin: 0;
-  padding: 24px 24px 20px;
+  padding: 16px 20px 12px;
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--text-primary);
@@ -610,17 +623,35 @@
   flex: 1;
   overflow-y: auto;
   padding: 0;
+  margin-top: 12px;
 }
 
 /* 表单样式优化 */
 .edit-modal .form-group {
-  margin-bottom: 20px;
-  padding: 0 24px;
+  margin-bottom: 12px;
+  padding: 0 20px;
+}
+
+/* 两列表单布局 */
+.edit-modal .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 0 20px;
+}
+
+.edit-modal .form-row-double {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 0px;
 }
 
 .edit-modal .form-group label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-primary);
@@ -631,9 +662,9 @@
 .edit-modal .form-group select,
 .edit-modal .form-group textarea {
   width: 100%;
-  padding: 14px 16px;
-  border: 2px solid var(--border-color);
-  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--text-secondary);
+  border-radius: 10px;
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 0.9rem;
@@ -653,42 +684,42 @@
 
 .edit-modal .form-group textarea {
   resize: vertical;
-  min-height: 100px;
-  max-height: 200px;
-  line-height: 1.5;
+  min-height: 72px;
+  max-height: 140px;
+  line-height: 1.4;
   overflow-y: auto;
 }
 
 .edit-modal .form-group textarea.system-prompt {
-  min-height: 80px;
-  max-height: 150px;
+  min-height: 70px;
+  max-height: 120px;
 }
 
 .form-group input[type="color"] {
-  height: 40px;
-  padding: 4px;
+  height: 36px;
+  padding: 2px;
 }
 
 /* 模态框按钮样式优化 */
 .edit-modal .modal-actions {
   display: flex;
-  gap: 16px;
+  gap: 10px;
   justify-content: flex-end;
-  padding: 24px;
+  padding: 16px 20px;
   border-top: 1px solid var(--border-color);
   background: var(--bg-secondary);
   border-radius: 0 0 16px 16px;
 }
 
 .edit-modal .modal-actions button {
-  padding: 12px 24px;
-  border-radius: 12px;
+  padding: 8px 16px;
+  border-radius: 10px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   border: none;
-  min-width: 80px;
+  min-width: 72px;
   letter-spacing: 0.025em;
 }
 
@@ -707,7 +738,7 @@
 }
 
 .edit-modal .save-button {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  /* background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%); */
   color: white;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
@@ -730,13 +761,26 @@
     width: 95%;
     max-height: 95vh;
     border-radius: 20px 20px 0 0;
-    margin-top: auto;
+    /* margin-top: auto; */
   }
   
   .edit-modal .form-group {
     padding: 0 20px;
   }
+
+  /* 移动端两列变单列 */
+  .edit-modal .form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0 20px;
+  }
   
+  /* .edit-modal .form-row-double {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0 20px;
+  } */
+
   .edit-modal .form-group textarea {
     min-height: 80px;
     max-height: 120px;
@@ -748,23 +792,23 @@
   }
   
   .edit-modal .modal-actions {
-    padding: 20px;
-    gap: 12px;
+    padding: 16px 20px;
+    gap: 10px;
   }
   
   .edit-modal .modal-actions button {
     flex: 1;
-    padding: 14px 20px;
+    padding: 12px 16px;
   }
 
   .manager-header,
   .manager-content {
-    padding: 16px 20px;
+    padding: 12px 16px;
   }
 
   /* 移动端角色卡片 - 长条水平布局 */
   .role-card {
-    padding: 16px;
+    padding: 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -777,6 +821,7 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 0;
+    min-width: 0; /* 允许文本区域收缩，避免把按钮挤出 */
   }
 
   .role-avatar {
@@ -789,17 +834,24 @@
   .role-details {
     flex: 1;
     text-align: left;
+    min-width: 0; /* 配合省略号生效 */
   }
 
   .role-details h4 {
     font-size: 0.9rem;
     margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .role-details p {
     font-size: 0.75rem;
-    margin-bottom: 4px;
+    margin-bottom: 0;
     line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .role-params {
@@ -851,8 +903,8 @@
 
 [data-theme="dark"] .manager-header,
 [data-theme="dark"] .manager-tabs {
-  background: rgba(255, 255, 255, 0.02);
-  border-color: rgba(255, 255, 255, 0.05);
+  background: var(--bg-secondary);
+  border-color: none;
 }
 
 [data-theme="dark"] .modal-actions {
@@ -877,7 +929,7 @@
 }
 
 [data-theme="dark"] .edit-modal .modal-content {
-  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  /* background: linear-gradient(135deg, #1f2937 0%, #111827 100%); */
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: 
     0 25px 50px -12px rgba(0, 0, 0, 0.6),
@@ -911,7 +963,19 @@
   border-color: rgba(255, 255, 255, 0.1);
 }
 
+[data-theme="dark"] .add-button {
+  background: transparent;
+  color: #9ca3af;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
 [data-theme="dark"] .reset-button:hover {
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.2);
+}
+
+[data-theme="dark"] .add-button:hover {
   background: rgba(251, 191, 36, 0.1);
   color: #fbbf24;
   border-color: rgba(251, 191, 36, 0.2);
@@ -949,4 +1013,176 @@
 
 [data-theme="dark"] .manager-content::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+
+/* Emoji选择器样式 */
+.emoji-selector {
+  position: relative;
+  width: 100%;
+}
+
+.emoji-selector-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 44px;
+}
+
+.emoji-selector-trigger:hover {
+  border-color: var(--primary-color);
+  background: var(--bg-hover);
+}
+
+.emoji-display {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.emoji-arrow {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  transition: transform 0.3s ease;
+}
+
+.emoji-selector-trigger:hover .emoji-arrow {
+  color: var(--text-primary);
+}
+
+.emoji-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  margin-top: 4px;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.emoji-search {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.emoji-search input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.emoji-search input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.emoji-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  gap: 4px;
+}
+
+.emoji-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.emoji-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-color);
+  transform: scale(1.1);
+}
+
+.emoji-item:active {
+  transform: scale(0.95);
+}
+
+/* 移动端emoji选择器优化 */
+@media (max-width: 768px) {
+  .emoji-dropdown {
+    max-height: 250px;
+  }
+
+  .emoji-grid {
+    grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+    gap: 2px;
+    padding: 6px;
+  }
+
+  .emoji-item {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  .emoji-search {
+    padding: 10px;
+  }
+
+  .emoji-search input {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .emoji-selector-trigger {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .emoji-selector-trigger:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .emoji-dropdown {
+  background: rgba(31, 41, 55, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .emoji-search {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .emoji-search input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .emoji-item:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--primary-color);
 }

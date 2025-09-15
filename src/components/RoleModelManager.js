@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AI_ROLES } from '../utils/roles';
 import { getCurrentLanguage } from '../utils/language';
 import { dbManager, getAllRoles } from '../utils/database';
@@ -90,6 +90,113 @@ const SortableRoleCard = ({ role, loading, onEdit, onDelete }) => {
   );
 };
 
+// 常用emoji选项
+const EMOJI_OPTIONS = [
+  '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇',
+  '🙂', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋',
+  '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳',
+  '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖',
+  '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯',
+  '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔',
+  '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦',
+  '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴',
+  '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿',
+  '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖',
+  '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾',
+  '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯',
+  '🦁', '🐮', '🐷', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔',
+  '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺',
+  '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟',
+  '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑',
+  '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈',
+  '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🐘', '🦛', '🦏', '🐪',
+  '🐫', '🦒', '🦘', '🦬', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏',
+  '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐈', '🐓', '🦃', '🦚',
+  '🦜', '🦢', '🦩', '🕊️', '🐇', '🦝', '🦨', '🦡', '🦦', '🦥',
+  '🐁', '🐀', '🐿️', '🦔', '🐾', '🐉', '🐲', '🌵', '🎄', '🌲',
+  '🌳', '🌴', '🌱', '🌿', '☘️', '🍀', '🎍', '🎋', '🍃', '🍂',
+  '🍁', '🍄', '🐚', '🌾', '💐', '🌷', '🌹', '🥀', '🌺', '🌸',
+  '🌼', '🌻', '🌞', '🌝', '🌛', '🌜', '🌚', '🌕', '🌖', '🌗',
+  '🌘', '🌑', '🌒', '🌓', '🌔', '⭐', '🌟', '💫', '✨', '☄️',
+  '☀️', '🌤️', '⛅', '🌥️', '☁️', '🌦️', '🌧️', '⛈️', '🌩️', '❄️',
+  '☃️', '⛄', '🌬️', '💨', '🌪️', '🌫️', '🌊', '💧', '💦', '☔',
+  '👨‍💼', '👩‍💼', '👨‍🔬', '👩‍🔬', '👨‍🎨', '👩‍🎨', '👨‍🏭', '👩‍🏭', '👨‍💻', '👩‍💻',
+  '👨‍🎤', '👩‍🎤', '👨‍🎧', '👩‍🎧', '👨‍🎭', '👩‍🎭', '👨‍🏫', '👩‍🏫', '👨‍🏢', '👩‍🏢',
+  '👨‍🌾', '👩‍🌾', '👨‍🍳', '👩‍🍳', '👨‍🔧', '👩‍🔧', '👨‍🔨', '👩‍🔨', '👨‍⚖️', '👩‍⚖️',
+  '👨‍✈️', '👩‍✈️', '👨‍🚀', '👩‍🚀', '👨‍⚕️', '👩‍⚕️', '👨‍🌾', '👩‍🌾', '👨‍🎯', '👩‍🎯',
+  '🧑', '👨', '👩', '🧔', '👱', '👨‍🦰', '👩‍🦰', '👨‍🦱', '👩‍🦱', '👨‍🦲',
+  '👩‍🦲', '👨‍🦳', '👩‍🦳', '🦱', '🦲', '🦳', '👨‍🦼', '👩‍🦼', '👨‍🦽', '👩‍🦽',
+  '🦵', '🦿', '🦶', '👣', '👂', '🦻', '👃', '🧠', '🦷', '🦴',
+  '👀', '👁️', '👅', '👄', '💋', '🩸', '💌', '👤', '👥', '🫂'
+];
+
+// Emoji选择器组件
+const EmojiSelector = ({ value, onChange, currentLanguage }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const selectorRef = useRef(null);
+
+  // 过滤emoji选项
+  const filteredEmojis = EMOJI_OPTIONS.filter(emoji =>
+    emoji.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // 点击外部关闭下拉框
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (selectorRef.current && !selectorRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setSearchTerm('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="emoji-selector" ref={selectorRef}>
+      <div
+        className="emoji-selector-trigger"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="emoji-display">{value || '😀'}</span>
+        <span className="emoji-arrow">▼</span>
+      </div>
+
+      {isOpen && (
+        <div className="emoji-dropdown">
+          <div className="emoji-search">
+            <input
+              type="text"
+              placeholder={currentLanguage === 'zh' ? '搜索emoji...' : 'Search emoji...'}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="emoji-grid">
+            {filteredEmojis.map((emoji, index) => (
+              <div
+                key={index}
+                className="emoji-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange(emoji);
+                  setIsOpen(false);
+                  setSearchTerm('');
+                }}
+              >
+                {emoji}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const RoleModelManager = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('roles'); // 'roles' or 'models'
   const [roles, setRoles] = useState([...AI_ROLES]);
@@ -126,6 +233,16 @@ const RoleModelManager = ({ isOpen, onClose }) => {
 
   const handleSaveRole = async () => {
     if (editingRole) {
+      // 验证输入参数
+      const validationErrors = validateRoleInput(editingRole);
+      if (validationErrors.length > 0) {
+        alert(currentLanguage === 'zh' ?
+          `输入验证失败:\n${validationErrors.join('\n')}` :
+          `Input validation failed:\n${validationErrors.join('\n')}`
+        );
+        return;
+      }
+
       try {
         setLoading(true);
 
@@ -137,9 +254,12 @@ const RoleModelManager = ({ isOpen, onClose }) => {
         setEditingRole(null);
         setIsAddingRole(false);
 
-        // 保存到localStorage (简化版本)
+        // 保存到localStorage
         localStorage.setItem('custom-roles', JSON.stringify(updatedRoles));
         updateGlobalRoles(updatedRoles);
+
+        // 保存到数据库
+        await saveRolesToDatabase(updatedRoles);
 
         setLoading(false);
 
@@ -148,6 +268,42 @@ const RoleModelManager = ({ isOpen, onClose }) => {
         setLoading(false);
       }
     }
+  };
+
+  // 验证角色输入参数
+  const validateRoleInput = (role) => {
+    const errors = [];
+
+    // 验证角色名称
+    if (!role.name || role.name.trim().length === 0) {
+      errors.push(currentLanguage === 'zh' ? '角色名称不能为空' : 'Role name cannot be empty');
+    }
+
+    // 验证Temperature
+    if (typeof role.temperature !== 'number' || isNaN(role.temperature)) {
+      errors.push(currentLanguage === 'zh' ? 'Temperature必须是数字' : 'Temperature must be a number');
+    } else if (role.temperature < 0 || role.temperature > 2) {
+      errors.push(currentLanguage === 'zh' ? 'Temperature必须在0到2之间' : 'Temperature must be between 0 and 2');
+    }
+
+    // 验证Top P
+    if (typeof role.topP !== 'number' || isNaN(role.topP)) {
+      errors.push(currentLanguage === 'zh' ? 'Top P必须是数字' : 'Top P must be a number');
+    } else if (role.topP < 0 || role.topP > 1) {
+      errors.push(currentLanguage === 'zh' ? 'Top P必须在0到1之间' : 'Top P must be between 0 and 1');
+    }
+
+    // 验证头像
+    if (!role.avatar || role.avatar.trim().length === 0) {
+      errors.push(currentLanguage === 'zh' ? '头像不能为空' : 'Avatar cannot be empty');
+    }
+
+    // 验证系统提示词
+    if (!role.systemPrompt || role.systemPrompt.trim().length === 0) {
+      errors.push(currentLanguage === 'zh' ? '系统提示词不能为空' : 'System prompt cannot be empty');
+    }
+
+    return errors;
   };
 
   // 拖拽结束处理
@@ -163,9 +319,29 @@ const RoleModelManager = ({ isOpen, onClose }) => {
         const newIndex = items.findIndex((item) => item.id === over.id);
 
         const newItems = arrayMove(items, oldIndex, newIndex);
+
+        // 立即保存到localStorage和数据库
         localStorage.setItem('custom-roles', JSON.stringify(newItems));
+        updateGlobalRoles(newItems);
+
+        // 异步保存到数据库
+        saveRolesToDatabase(newItems);
+
         return newItems;
       });
+    }
+  };
+
+  // 保存角色到数据库
+  const saveRolesToDatabase = async (rolesToSave) => {
+    try {
+      // 清空现有角色并重新插入
+      await dbManager.clearRoles();
+      for (const role of rolesToSave) {
+        await dbManager.saveRole(role);
+      }
+    } catch (error) {
+      console.error('保存角色到数据库失败:', error);
     }
   };
 
@@ -202,6 +378,7 @@ const RoleModelManager = ({ isOpen, onClose }) => {
       avatar: '🤖',
       description: currentLanguage === 'zh' ? '自定义角色' : 'Custom role',
       temperature: 0.7,
+      topP: 1.0,
       systemPrompt: currentLanguage === 'zh' ? '你是一个有帮助的AI助手。' : 'You are a helpful AI assistant.',
       color: '#6366f1',
     };
@@ -487,56 +664,80 @@ const RoleModelManager = ({ isOpen, onClose }) => {
               <h3>{isAddingRole ? (currentLanguage === 'zh' ? '添加角色' : 'Add Role') : (currentLanguage === 'zh' ? '编辑角色' : 'Edit Role')}</h3>
               <div className="form-container">
                 <div className="form-group">
-                <label>{currentLanguage === 'zh' ? '角色名称' : 'Role Name'}</label>
-                <input 
-                  type="text" 
-                  value={editingRole.name}
-                  onChange={(e) => setEditingRole({...editingRole, name: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>{currentLanguage === 'zh' ? '头像' : 'Avatar'}</label>
-                <input 
-                  type="text" 
-                  value={editingRole.avatar}
-                  onChange={(e) => setEditingRole({...editingRole, avatar: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>{currentLanguage === 'zh' ? '描述' : 'Description'}</label>
-                <textarea 
-                  value={editingRole.description}
-                  onChange={(e) => setEditingRole({...editingRole, description: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>{currentLanguage === 'zh' ? 'Temperature' : 'Temperature'}</label>
-                <input 
-                  type="number" 
-                  step="0.1"
-                  min="0"
-                  max="2"
-                  value={editingRole.temperature}
-                  onChange={(e) => setEditingRole({...editingRole, temperature: parseFloat(e.target.value)})}
-                />
-              </div>
-              <div className="form-group">
-                <label>{currentLanguage === 'zh' ? '系统提示词' : 'System Prompt'}</label>
-                <textarea 
-                  className="system-prompt"
-                  value={editingRole.systemPrompt}
-                  onChange={(e) => setEditingRole({...editingRole, systemPrompt: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>{currentLanguage === 'zh' ? '颜色' : 'Color'}</label>
-                <input 
-                  type="color" 
-                  value={editingRole.color}
-                  onChange={(e) => setEditingRole({...editingRole, color: e.target.value})}
-                />
+                  <label>{currentLanguage === 'zh' ? '角色名称' : 'Role Name'}</label>
+                  <input
+                    type="text"
+                    value={editingRole.name}
+                    onChange={(e) => setEditingRole({...editingRole, name: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-row-double">
+                  <div className="form-group">
+                    <label>{currentLanguage === 'zh' ? '头像' : 'Avatar'}</label>
+                    <EmojiSelector
+                      value={editingRole.avatar}
+                      onChange={(avatar) => setEditingRole({...editingRole, avatar})}
+                      currentLanguage={currentLanguage}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>{currentLanguage === 'zh' ? '颜色' : 'Color'}</label>
+                    <input
+                      type="color"
+                      value={editingRole.color}
+                      onChange={(e) => setEditingRole({...editingRole, color: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row-double">
+                  <div className="form-group">
+                    <label>{currentLanguage === 'zh' ? 'Temperature' : 'Temperature'}</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="2"
+                      value={editingRole.temperature}
+                      onChange={(e) => setEditingRole({...editingRole, temperature: parseFloat(e.target.value)})}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>{currentLanguage === 'zh' ? 'Top P' : 'Top P'}</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="1"
+                      value={editingRole.topP || 1.0}
+                      onChange={(e) => setEditingRole({...editingRole, topP: parseFloat(e.target.value)})}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>{currentLanguage === 'zh' ? '描述' : 'Description'}</label>
+                  <textarea
+                    value={editingRole.description}
+                    style={{minHeight: '40px', maxHeight: '140px'}}
+                    onChange={(e) => setEditingRole({...editingRole, description: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{currentLanguage === 'zh' ? '系统提示词' : 'System Prompt'}</label>
+                  <textarea
+                    className="system-prompt"
+                    style={{minHeight: '120px', maxHeight: '140px'}}
+                    value={editingRole.systemPrompt}
+                    onChange={(e) => setEditingRole({...editingRole, systemPrompt: e.target.value})}
+                  />
                 </div>
               </div>
+
               <div className="modal-actions">
                 <button className="cancel-button" onClick={() => setEditingRole(null)}>
                   {currentLanguage === 'zh' ? '取消' : 'Cancel'}
