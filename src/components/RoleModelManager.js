@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { AI_ROLES } from '../utils/roles';
+import { AI_ROLES, updateGlobalRoles } from '../utils/roles';
 import { getCurrentLanguage } from '../utils/language';
-import { dbManager, getAllRoles } from '../utils/database';
+import { dbManager, getAllRoles, getAllModelGroups, getAllModels, saveModelGroup, saveModel, deleteModelGroup, deleteModel } from '../utils/database';
+import { resetModelsToDefault, LEGACY_DEFAULT_MODELS } from '../utils/defaultModels';
 import {
   DndContext,
   closestCenter,
@@ -207,14 +208,12 @@ const RoleModelManager = ({ isOpen, onClose }) => {
   const [roles, setRoles] = useState([...AI_ROLES]);
   const [editingRole, setEditingRole] = useState(null);
   const [isAddingRole, setIsAddingRole] = useState(false);
-  const [models, setModels] = useState([
-    { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'siliconflow', enabled: true },
-    { id: 'deepseek-r1', name: 'DeepSeek R1', provider: 'siliconflow', enabled: true },
-    { id: 'gpt-4', name: 'GPT-4', provider: 'openai', enabled: false },
-    { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'openai', enabled: false },
-  ]);
+  const [modelGroups, setModelGroups] = useState([]);
+  const [models, setModels] = useState([]);
   const [editingModel, setEditingModel] = useState(null);
   const [isAddingModel, setIsAddingModel] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [isAddingGroup, setIsAddingGroup] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const currentLanguage = getCurrentLanguage();
@@ -383,9 +382,13 @@ const RoleModelManager = ({ isOpen, onClose }) => {
   // 保存角色到数据库
   const saveRolesToDatabase = async (rolesToSave) => {
     try {
-      // 逐个保存角色到数据库（支持IndexedDB和SQLite）
-      for (const role of rolesToSave) {
-        await dbManager.save('roles', role);
+      // 逐个保存角色到数据库（支持IndexedDB和SQLite），添加sortOrder字段
+      for (let i = 0; i < rolesToSave.length; i++) {
+        const roleWithSort = {
+          ...rolesToSave[i],
+          sortOrder: i
+        };
+        await dbManager.save('roles', roleWithSort);
       }
     } catch (error) {
       console.error('保存角色到数据库失败:', error);
@@ -452,6 +455,7 @@ const RoleModelManager = ({ isOpen, onClose }) => {
       topP: 1.0,
       systemPrompt: currentLanguage === 'zh' ? '你是一个有帮助的AI助手。' : 'You are a helpful AI assistant.',
       color: '#6366f1',
+      sortOrder: roles.length, // 新角色添加到最后
     };
     setEditingRole(newRole);
     setIsAddingRole(true);
@@ -508,62 +512,186 @@ const RoleModelManager = ({ isOpen, onClose }) => {
     }
   };
 
+  // 模型分组管理相关函数
+  const handleAddGroup = () => {
+    const newGroup = {
+      id: `group-${Date.now()}`,
+      name: currentLanguage === 'zh' ? '新分组' : 'New Group',
+      provider: 'siliconflow',
+      description: '',
+      sortOrder: modelGroups.length,
+    };
+    setEditingGroup(newGroup);
+    setIsAddingGroup(true);
+  };
+
+  const handleEditGroup = (group) => {
+    setEditingGroup({ ...group });
+  };
+
+  const handleSaveGroup = async () => {
+    if (editingGroup) {
+      try {
+        setLoading(true);
+
+        const groupToSave = {
+          ...editingGroup,
+          createdAt: editingGroup.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        await saveModelGroup(groupToSave);
+
+        // 重新加载分组数据
+        const updatedGroups = await getAllModelGroups();
+        setModelGroups(updatedGroups);
+
+        setEditingGroup(null);
+        setIsAddingGroup(false);
+        setLoading(false);
+      } catch (error) {
+        console.error('保存分组失败:', error);
+        setLoading(false);
+        alert(currentLanguage === 'zh' ? '保存分组失败' : 'Failed to save group');
+      }
+    }
+  };
+
+  const handleDeleteGroup = async (groupId) => {
+    if (window.confirm(currentLanguage === 'zh' ? '确定要删除这个分组吗？这将同时删除分组下的所有模型。' : 'Are you sure you want to delete this group? This will also delete all models in this group.')) {
+      try {
+        setLoading(true);
+        await deleteModelGroup(groupId);
+
+        // 重新加载分组和模型数据
+        const updatedGroups = await getAllModelGroups();
+        const updatedModels = await getAllModels();
+        setModelGroups(updatedGroups);
+        setModels(updatedModels);
+
+        setLoading(false);
+      } catch (error) {
+        console.error('删除分组失败:', error);
+        setLoading(false);
+        alert(currentLanguage === 'zh' ? '删除分组失败' : 'Failed to delete group');
+      }
+    }
+  };
+
   // 模型管理相关函数
-  const handleToggleModel = (modelId) => {
-    const updatedModels = models.map(model => 
-      model.id === modelId ? { ...model, enabled: !model.enabled } : model
-    );
-    setModels(updatedModels);
-    localStorage.setItem('model-settings', JSON.stringify(updatedModels));
+  const handleToggleModel = async (modelId) => {
+    try {
+      const updatedModels = models.map(model =>
+        model.id === modelId ? { ...model, enabled: !model.enabled } : model
+      );
+      setModels(updatedModels);
+
+      // 保存到数据库
+      const modelToUpdate = updatedModels.find(m => m.id === modelId);
+      if (modelToUpdate) {
+        await saveModel(modelToUpdate);
+      }
+    } catch (error) {
+      console.error('更新模型状态失败:', error);
+      alert(currentLanguage === 'zh' ? '更新模型状态失败' : 'Failed to update model status');
+    }
   };
 
   const handleEditModel = (model) => {
     setEditingModel({ ...model });
   };
 
-  const handleSaveModel = () => {
+  const handleSaveModel = async () => {
     if (editingModel) {
-      const updatedModels = models.map(model => 
-        model.id === editingModel.id ? editingModel : model
-      );
-      setModels(updatedModels);
-      setEditingModel(null);
-      setIsAddingModel(false);
-      localStorage.setItem('model-settings', JSON.stringify(updatedModels));
+      try {
+        setLoading(true);
+
+        const modelToSave = {
+          ...editingModel,
+          createdAt: editingModel.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        await saveModel(modelToSave);
+
+        // 重新加载模型数据
+        const updatedModels = await getAllModels();
+        setModels(updatedModels);
+
+        setEditingModel(null);
+        setIsAddingModel(false);
+        setLoading(false);
+      } catch (error) {
+        console.error('保存模型失败:', error);
+        setLoading(false);
+        alert(currentLanguage === 'zh' ? '保存模型失败' : 'Failed to save model');
+      }
     }
   };
 
-  const handleDeleteModel = (modelId) => {
+  const handleDeleteModel = async (modelId) => {
     if (window.confirm(currentLanguage === 'zh' ? '确定要删除这个模型吗？' : 'Are you sure you want to delete this model?')) {
-      const updatedModels = models.filter(model => model.id !== modelId);
-      setModels(updatedModels);
-      localStorage.setItem('model-settings', JSON.stringify(updatedModels));
+      try {
+        setLoading(true);
+        await deleteModel(modelId);
+
+        // 重新加载模型数据
+        const updatedModels = await getAllModels();
+        setModels(updatedModels);
+
+        setLoading(false);
+      } catch (error) {
+        console.error('删除模型失败:', error);
+        setLoading(false);
+        alert(currentLanguage === 'zh' ? '删除模型失败' : 'Failed to delete model');
+      }
     }
   };
 
   const handleAddModel = () => {
+    // 如果没有硅基流动分组，先创建一个
+    const siliconflowGroup = modelGroups.find(g => g.provider === 'siliconflow');
+    const groupId = siliconflowGroup ? siliconflowGroup.id : modelGroups[0]?.id;
+
+    if (!groupId) {
+      alert(currentLanguage === 'zh' ? '请先创建一个模型分组' : 'Please create a model group first');
+      return;
+    }
+
     const newModel = {
-      id: `custom-${Date.now()}`,
+      id: `model-${Date.now()}`,
+      groupId: groupId,
       name: currentLanguage === 'zh' ? '新模型' : 'New Model',
-      provider: 'siliconflow',
+      modelId: 'custom-model',
       enabled: true,
+      description: '',
+      apiParams: {},
+      sortOrder: models.filter(m => m.groupId === groupId).length,
     };
     setEditingModel(newModel);
     setIsAddingModel(true);
   };
 
-  const handleResetModels = () => {
-    if (window.confirm(currentLanguage === 'zh' ? '确定要重置所有模型为默认设置吗？这将删除所有自定义模型。' : 'Are you sure you want to reset all models to default settings? This will delete all custom models.')) {
-      // 重置为默认模型
-      const defaultModels = [
-        { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'siliconflow', enabled: true },
-        { id: 'deepseek-r1', name: 'DeepSeek R1', provider: 'siliconflow', enabled: true },
-        { id: 'gpt-4', name: 'GPT-4', provider: 'openai', enabled: false },
-        { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'openai', enabled: false },
-      ];
-      setModels(defaultModels);
-      // 清除localStorage中的模型设置
-      localStorage.removeItem('model-settings');
+  const handleResetModels = async () => {
+    if (window.confirm(currentLanguage === 'zh' ? '确定要重置所有模型为默认设置吗？这将删除所有自定义模型和分组。' : 'Are you sure you want to reset all models to default settings? This will delete all custom models and groups.')) {
+      try {
+        setLoading(true);
+        const success = await resetModelsToDefault();
+
+        if (success) {
+          // 重新加载分组和模型数据
+          const updatedGroups = await getAllModelGroups();
+          const updatedModels = await getAllModels();
+          setModelGroups(updatedGroups);
+          setModels(updatedModels);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error('重置模型失败:', error);
+        setLoading(false);
+        alert(currentLanguage === 'zh' ? '重置模型失败' : 'Failed to reset models');
+      }
     }
   };
 
@@ -592,14 +720,43 @@ const RoleModelManager = ({ isOpen, onClose }) => {
           setRoles(defaultRoles);
         }
 
-        // 加载模型设置（仍然使用localStorage作为备选）
-        const savedModels = localStorage.getItem('model-settings');
-        if (savedModels) {
-          try {
-            const parsedModels = JSON.parse(savedModels);
-            setModels(parsedModels);
-          } catch (error) {
-            console.error('加载模型设置失败:', error);
+        // 加载模型分组和模型数据
+        try {
+          const groups = await getAllModelGroups();
+          const allModels = await getAllModels();
+
+          console.log('从数据库加载的模型分组:', groups);
+          console.log('从数据库加载的模型:', allModels);
+
+          setModelGroups(groups || []);
+          setModels(allModels || []);
+
+          // 如果没有模型数据，初始化默认数据
+          if ((groups || []).length === 0 && (allModels || []).length === 0) {
+            console.log('初始化默认模型数据...');
+            const { initializeDefaultModels } = await import('../utils/defaultModels');
+            await initializeDefaultModels();
+
+            // 重新加载数据
+            const initializedGroups = await getAllModelGroups();
+            const initializedModels = await getAllModels();
+            setModelGroups(initializedGroups || []);
+            setModels(initializedModels || []);
+          }
+        } catch (error) {
+          console.error('加载模型数据失败:', error);
+          // 降级到localStorage的旧格式
+          const savedModels = localStorage.getItem('model-settings');
+          if (savedModels) {
+            try {
+              const parsedModels = JSON.parse(savedModels);
+              setModels(parsedModels);
+            } catch (parseError) {
+              console.error('解析模型设置失败:', parseError);
+              setModels(LEGACY_DEFAULT_MODELS);
+            }
+          } else {
+            setModels(LEGACY_DEFAULT_MODELS);
           }
         }
 
@@ -719,7 +876,7 @@ const RoleModelManager = ({ isOpen, onClose }) => {
           {activeTab === 'models' && (
             <div className="models-section">
               <div className="section-header">
-                <h3>{currentLanguage === 'zh' ? '模型列表' : 'Models List'}</h3>
+                <h3>{currentLanguage === 'zh' ? '模型分组管理' : 'Model Group Management'}</h3>
                 <div className="section-actions">
                   <button className="reset-button" onClick={handleResetModels}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -728,48 +885,97 @@ const RoleModelManager = ({ isOpen, onClose }) => {
                     </svg>
                     {currentLanguage === 'zh' ? '重置' : 'Reset'}
                   </button>
-                  <button className="add-button" onClick={handleAddModel}>
+                  <button className="add-button" onClick={handleAddGroup}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 5v14M5 12h14"/>
                     </svg>
-                    {currentLanguage === 'zh' ? '添加模型' : 'Add Model'}
+                    {currentLanguage === 'zh' ? '添加分组' : 'Add Group'}
                   </button>
                 </div>
               </div>
 
               <div className="models-list">
-                {models.map((model) => (
-                  <div key={model.id} className="model-item">
-                    <div className="model-info">
-                      <div className="model-status">
-                        <div className={`status-indicator ${model.enabled ? 'enabled' : 'disabled'}`}></div>
+                {modelGroups.map((group) => (
+                  <div key={group.id} className="model-group">
+                    <div className="group-header">
+                      <div className="group-info">
+                        <div className="group-name">
+                          <h4>{group.name}</h4>
+                          <span className="provider-badge">{group.provider}</span>
+                        </div>
+                        <p className="group-description">{group.description}</p>
                       </div>
-                      <div className="model-details">
-                        <h4>{model.name}</h4>
-                        <p>Provider: {model.provider}</p>
+                      <div className="group-actions">
+                        <button className="add-button" onClick={() => {
+                          const newModel = {
+                            id: `model-${Date.now()}`,
+                            groupId: group.id,
+                            name: currentLanguage === 'zh' ? '新模型' : 'New Model',
+                            modelId: 'custom-model',
+                            enabled: true,
+                            description: '',
+                            apiParams: {},
+                            sortOrder: models.filter(m => m.groupId === group.id).length,
+                          };
+                          setEditingModel(newModel);
+                          setIsAddingModel(true);
+                        }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 5v14M5 12h14"/>
+                          </svg>
+                          {currentLanguage === 'zh' ? '添加模型' : 'Add Model'}
+                        </button>
+                        <button className="edit-button" onClick={() => handleEditGroup(group)}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                        <button className="delete-button" onClick={() => handleDeleteGroup(group.id)}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/>
+                          </svg>
+                        </button>
                       </div>
                     </div>
-                    <div className="model-actions">
-                      <button 
-                        className={`toggle-button ${model.enabled ? 'enabled' : 'disabled'}`}
-                        onClick={() => handleToggleModel(model.id)}
-                      >
-                        {model.enabled ? 
-                          (currentLanguage === 'zh' ? '启用' : 'Enabled') : 
-                          (currentLanguage === 'zh' ? '禁用' : 'Disabled')
-                        }
-                      </button>
-                      <button className="edit-button" onClick={() => handleEditModel(model)}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </button>
-                      <button className="delete-button" onClick={() => handleDeleteModel(model.id)}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/>
-                        </svg>
-                      </button>
+
+                    <div className="group-models">
+                      {models.filter(model => model.groupId === group.id).map((model) => (
+                        <div key={model.id} className="model-item">
+                          <div className="model-info">
+                            <div className="model-status">
+                              <div className={`status-indicator ${model.enabled ? 'enabled' : 'disabled'}`}></div>
+                            </div>
+                            <div className="model-details">
+                              <h4>{model.name}</h4>
+                              <p>ID: {model.modelId}</p>
+                              {model.description && <p className="model-desc">{model.description}</p>}
+                            </div>
+                          </div>
+                          <div className="model-actions">
+                            <button
+                              className={`toggle-button ${model.enabled ? 'enabled' : 'disabled'}`}
+                              onClick={() => handleToggleModel(model.id)}
+                            >
+                              {model.enabled ?
+                                (currentLanguage === 'zh' ? '启用' : 'Enabled') :
+                                (currentLanguage === 'zh' ? '禁用' : 'Disabled')
+                              }
+                            </button>
+                            <button className="edit-button" onClick={() => handleEditModel(model)}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                            </button>
+                            <button className="delete-button" onClick={() => handleDeleteModel(model.id)}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
@@ -874,29 +1080,116 @@ const RoleModelManager = ({ isOpen, onClose }) => {
           </div>
         )}
 
+        {/* 模型分组编辑模态框 */}
+        {editingGroup && (
+          <div className="edit-modal">
+            <div className="modal-content">
+              <h3>{isAddingGroup ? (currentLanguage === 'zh' ? '添加分组' : 'Add Group') : (currentLanguage === 'zh' ? '编辑分组' : 'Edit Group')}</h3>
+              <div className="form-container">
+                <div className="form-group">
+                  <label>{currentLanguage === 'zh' ? '分组名称' : 'Group Name'}</label>
+                  <input
+                    type="text"
+                    value={editingGroup.name}
+                    onChange={(e) => setEditingGroup({...editingGroup, name: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{currentLanguage === 'zh' ? '提供者' : 'Provider'}</label>
+                  <select
+                    value={editingGroup.provider}
+                    onChange={(e) => setEditingGroup({...editingGroup, provider: e.target.value})}
+                  >
+                    <option value="siliconflow">SiliconFlow</option>
+                    <option value="openai">OpenAI</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>{currentLanguage === 'zh' ? '描述' : 'Description'}</label>
+                  <textarea
+                    value={editingGroup.description}
+                    style={{minHeight: '80px', maxHeight: '140px'}}
+                    onChange={(e) => setEditingGroup({...editingGroup, description: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button className="cancel-button" onClick={() => {
+                  setEditingGroup(null);
+                  setIsAddingGroup(false);
+                }}>
+                  {currentLanguage === 'zh' ? '取消' : 'Cancel'}
+                </button>
+                <button className="save-button" onClick={handleSaveGroup}>
+                  {currentLanguage === 'zh' ? '保存' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 模型编辑模态框 */}
         {editingModel && (
           <div className="edit-modal">
             <div className="modal-content">
               <h3>{isAddingModel ? (currentLanguage === 'zh' ? '添加模型' : 'Add Model') : (currentLanguage === 'zh' ? '编辑模型' : 'Edit Model')}</h3>
-              <div className="form-group">
-                <label>{currentLanguage === 'zh' ? '模型名称' : 'Model Name'}</label>
-                <input 
-                  type="text" 
-                  value={editingModel.name}
-                  onChange={(e) => setEditingModel({...editingModel, name: e.target.value})}
-                />
+              <div className="form-container">
+                <div className="form-group">
+                  <label>{currentLanguage === 'zh' ? '模型名称' : 'Model Name'}</label>
+                  <input
+                    type="text"
+                    value={editingModel.name}
+                    onChange={(e) => setEditingModel({...editingModel, name: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{currentLanguage === 'zh' ? '模型ID' : 'Model ID'}</label>
+                  <input
+                    type="text"
+                    value={editingModel.modelId}
+                    onChange={(e) => setEditingModel({...editingModel, modelId: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{currentLanguage === 'zh' ? '所属分组' : 'Group'}</label>
+                  <select
+                    value={editingModel.groupId}
+                    onChange={(e) => setEditingModel({...editingModel, groupId: e.target.value})}
+                  >
+                    {modelGroups.map(group => (
+                      <option key={group.id} value={group.id}>
+                        {group.name} ({group.provider})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>{currentLanguage === 'zh' ? '描述' : 'Description'}</label>
+                  <textarea
+                    value={editingModel.description}
+                    style={{minHeight: '80px', maxHeight: '140px'}}
+                    onChange={(e) => setEditingModel({...editingModel, description: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={editingModel.enabled}
+                      onChange={(e) => setEditingModel({...editingModel, enabled: e.target.checked})}
+                    />
+                    {currentLanguage === 'zh' ? '启用模型' : 'Enable Model'}
+                  </label>
+                </div>
               </div>
-              <div className="form-group">
-                <label>{currentLanguage === 'zh' ? '提供者' : 'Provider'}</label>
-                <select 
-                  value={editingModel.provider}
-                  onChange={(e) => setEditingModel({...editingModel, provider: e.target.value})}
-                >
-                  <option value="siliconflow">SiliconFlow</option>
-                  <option value="openai">OpenAI</option>
-                </select>
-              </div>
+
               <div className="modal-actions">
                 <button className="cancel-button" onClick={() => {
                   setEditingModel(null);

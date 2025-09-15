@@ -2,7 +2,7 @@
 class DatabaseManager {
   constructor() {
     this.dbName = 'BobbyAIChatDB';
-    this.dbVersion = 1;
+    this.dbVersion = 3; // 增加版本号以触发onupgradeneeded，添加sortOrder字段
     this.db = null;
     this.isTauri = window.__TAURI__;
   }
@@ -37,10 +37,25 @@ class DatabaseManager {
         if (!db.objectStoreNames.contains('roles')) {
           const roleStore = db.createObjectStore('roles', { keyPath: 'id' });
           roleStore.createIndex('name', 'name', { unique: false });
+          roleStore.createIndex('sortOrder', 'sortOrder', { unique: false });
           roleStore.createIndex('createdAt', 'createdAt', { unique: false });
         }
 
-        // 创建模型设置存储
+        // 创建模型分组存储
+        if (!db.objectStoreNames.contains('modelGroups')) {
+          const groupStore = db.createObjectStore('modelGroups', { keyPath: 'id' });
+          groupStore.createIndex('provider', 'provider', { unique: false });
+          groupStore.createIndex('sortOrder', 'sortOrder', { unique: false });
+        }
+
+        // 创建模型存储
+        if (!db.objectStoreNames.contains('models')) {
+          const modelStore = db.createObjectStore('models', { keyPath: 'id' });
+          modelStore.createIndex('groupId', 'groupId', { unique: false });
+          modelStore.createIndex('sortOrder', 'sortOrder', { unique: false });
+        }
+
+        // 创建模型设置存储（保持向后兼容）
         if (!db.objectStoreNames.contains('modelSettings')) {
           const modelStore = db.createObjectStore('modelSettings', { keyPath: 'id' });
           modelStore.createIndex('provider', 'provider', { unique: false });
@@ -87,8 +102,31 @@ class DatabaseManager {
         temperature REAL,
         systemPrompt TEXT,
         color TEXT,
+        sort_order INTEGER DEFAULT 0,
         createdAt TEXT,
         updatedAt TEXT
+      )`,
+      `CREATE TABLE IF NOT EXISTS model_groups (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        description TEXT,
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT,
+        updated_at TEXT
+      )`,
+      `CREATE TABLE IF NOT EXISTS models (
+        id TEXT PRIMARY KEY,
+        group_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        model_id TEXT NOT NULL,
+        enabled BOOLEAN DEFAULT TRUE,
+        description TEXT,
+        api_params TEXT,
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT,
+        updated_at TEXT,
+        FOREIGN KEY (group_id) REFERENCES model_groups (id)
       )`,
       `CREATE TABLE IF NOT EXISTS model_settings (
         id TEXT PRIMARY KEY,
@@ -212,12 +250,20 @@ class DatabaseManager {
 
       request.onsuccess = () => {
         let results = request.result;
-        // Apply consistent sorting by createdAt
-        results.sort((a, b) => {
-          const dateA = new Date(a.createdAt || 0);
-          const dateB = new Date(b.createdAt || 0);
-          return dateA - dateB;
-        });
+        // For roles, sort by sortOrder; for others, sort by createdAt
+        if (storeName === 'roles') {
+          results.sort((a, b) => {
+            const sortA = a.sortOrder || 0;
+            const sortB = b.sortOrder || 0;
+            return sortA - sortB;
+          });
+        } else {
+          results.sort((a, b) => {
+            const dateA = new Date(a.createdAt || 0);
+            const dateB = new Date(b.createdAt || 0);
+            return dateA - dateB;
+          });
+        }
         resolve(results);
       };
       request.onerror = () => reject(request.error);
@@ -267,11 +313,14 @@ class DatabaseManager {
 
   async getAllFromSQLite(storeName) {
     const tableName = this.getTableName(storeName);
-    const results = await this.sqlite.getAll(tableName, 'created_at ASC');
+    // For roles, sort by sort_order; for others, sort by created_at
+    const orderBy = storeName === 'roles' ? 'sort_order ASC' : 'created_at ASC';
+    const results = await this.sqlite.getAll(tableName, orderBy);
 
     // 标准化字段名
     return results.map(result => ({
       ...result,
+      sortOrder: result.sort_order,
       createdAt: result.created_at,
       updatedAt: result.updated_at
     }));
@@ -320,12 +369,20 @@ class DatabaseManager {
       }
     }
 
-    // Apply consistent sorting by createdAt
-    results.sort((a, b) => {
-      const dateA = new Date(a.createdAt || 0);
-      const dateB = new Date(b.createdAt || 0);
-      return dateA - dateB;
-    });
+    // Apply consistent sorting - for roles by sortOrder, others by createdAt
+    if (storeName === 'roles') {
+      results.sort((a, b) => {
+        const sortA = a.sortOrder || 0;
+        const sortB = b.sortOrder || 0;
+        return sortA - sortB;
+      });
+    } else {
+      results.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        return dateA - dateB;
+      });
+    }
 
     return results;
   }
@@ -345,6 +402,8 @@ class DatabaseManager {
   getTableName(storeName) {
     const mapping = {
       'roles': 'roles',
+      'modelGroups': 'model_groups',
+      'models': 'models',
       'modelSettings': 'model_settings',
       'conversations': 'conversations',
       'settings': 'settings'
@@ -354,7 +413,9 @@ class DatabaseManager {
 
   getTableColumns(tableName) {
     const columns = {
-      'roles': ['id', 'name', 'icon', 'avatar', 'description', 'temperature', 'systemPrompt', 'color', 'createdAt', 'updatedAt'],
+      'roles': ['id', 'name', 'icon', 'avatar', 'description', 'temperature', 'systemPrompt', 'color', 'sort_order', 'createdAt', 'updatedAt'],
+      'model_groups': ['id', 'name', 'provider', 'description', 'sort_order', 'created_at', 'updated_at'],
+      'models': ['id', 'group_id', 'name', 'model_id', 'enabled', 'description', 'api_params', 'sort_order', 'created_at', 'updated_at'],
       'model_settings': ['id', 'name', 'provider', 'enabled', 'createdAt', 'updatedAt'],
       'conversations': ['id', 'title', 'role_id', 'response_mode', 'messages', 'settings', 'created_at', 'updated_at'],
       'settings': ['key', 'value', 'updated_at']
@@ -401,6 +462,74 @@ export const saveModelSettings = async (settings) => {
 
 export const getModelSettings = async () => {
   return await dbManager.getAll('modelSettings');
+};
+
+// 模型分组管理
+export const saveModelGroup = async (group) => {
+  return await dbManager.save('modelGroups', group);
+};
+
+export const getModelGroup = async (id) => {
+  return await dbManager.get('modelGroups', id);
+};
+
+export const getAllModelGroups = async () => {
+  try {
+    // 确保数据库已初始化
+    await dbManager.init();
+    const groups = await dbManager.getAll('modelGroups');
+    console.log('getAllModelGroups返回的分组:', groups);
+    return groups;
+  } catch (error) {
+    console.error('getAllModelGroups出错:', error);
+    return [];
+  }
+};
+
+export const deleteModelGroup = async (id) => {
+  // 删除分组时同时删除分组下的所有模型
+  const models = await getModelsByGroup(id);
+  for (const model of models) {
+    await deleteModel(model.id);
+  }
+  return await dbManager.delete('modelGroups', id);
+};
+
+// 模型管理
+export const saveModel = async (model) => {
+  return await dbManager.save('models', model);
+};
+
+export const getModel = async (id) => {
+  return await dbManager.get('models', id);
+};
+
+export const getAllModels = async () => {
+  try {
+    // 确保数据库已初始化
+    await dbManager.init();
+    const models = await dbManager.getAll('models');
+    console.log('getAllModels返回的模型:', models);
+    return models;
+  } catch (error) {
+    console.error('getAllModels出错:', error);
+    return [];
+  }
+};
+
+export const getModelsByGroup = async (groupId) => {
+  try {
+    await dbManager.init();
+    const models = await dbManager.getAll('models');
+    return models.filter(model => model.groupId === groupId);
+  } catch (error) {
+    console.error('getModelsByGroup出错:', error);
+    return [];
+  }
+};
+
+export const deleteModel = async (id) => {
+  return await dbManager.delete('models', id);
 };
 
 export const saveSetting = async (key, value) => {

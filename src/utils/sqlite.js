@@ -43,10 +43,35 @@ class SQLiteAdapter {
         temperature REAL DEFAULT 0.7,
         systemPrompt TEXT,
         color TEXT,
+        sort_order INTEGER DEFAULT 0,
         created_at TEXT,
         updated_at TEXT
       )`,
-      // 模型设置表
+      // 模型分组表
+      `CREATE TABLE IF NOT EXISTS model_groups (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        description TEXT,
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT,
+        updated_at TEXT
+      )`,
+      // 模型表
+      `CREATE TABLE IF NOT EXISTS models (
+        id TEXT PRIMARY KEY,
+        group_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        model_id TEXT NOT NULL,
+        enabled BOOLEAN DEFAULT TRUE,
+        description TEXT,
+        api_params TEXT,
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT,
+        updated_at TEXT,
+        FOREIGN KEY (group_id) REFERENCES model_groups (id)
+      )`,
+      // 模型设置表（保持向后兼容）
       `CREATE TABLE IF NOT EXISTS model_settings (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -76,7 +101,11 @@ class SQLiteAdapter {
       // 创建索引
       `CREATE INDEX IF NOT EXISTS idx_roles_created_at ON roles(created_at)`,
       `CREATE INDEX IF NOT EXISTS idx_conversations_created_at ON conversations(created_at)`,
-      `CREATE INDEX IF NOT EXISTS idx_conversations_role_id ON conversations(role_id)`
+      `CREATE INDEX IF NOT EXISTS idx_conversations_role_id ON conversations(role_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_model_groups_provider ON model_groups(provider)`,
+      `CREATE INDEX IF NOT EXISTS idx_model_groups_sort_order ON model_groups(sort_order)`,
+      `CREATE INDEX IF NOT EXISTS idx_models_group_id ON models(group_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_models_sort_order ON models(sort_order)`
     ];
 
     for (const query of queries) {
