@@ -239,7 +239,7 @@
 }
 
 .role-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-primary);
   border-radius: 16px;
   padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -261,6 +261,7 @@
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
+  z-index: 0;
 }
 
 .role-card:hover {
@@ -278,6 +279,9 @@
   gap: 12px;
   margin-bottom: 12px;
   align-items: center;
+  position: relative;
+  z-index: 1;
+  min-width: 0;
 }
 
 .drag-handle {
@@ -382,6 +386,9 @@
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .role-details p {
@@ -389,6 +396,9 @@
   font-size: 0.8rem;
   color: var(--text-secondary);
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .role-params {
@@ -409,7 +419,8 @@
   gap: 8px;
   justify-content: flex-end;
   position: relative;
-  z-index: 10;
+  z-index: 1;
+  flex-shrink: 0;
 }
 
 .role-actions button {
@@ -571,7 +582,7 @@
 
 .edit-modal .modal-content {
   background: var(--bg-secondary);
-  border-radius: 16px;
+  border-radius: 20px;
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
@@ -708,12 +719,12 @@
   padding: 16px 20px;
   border-top: 1px solid var(--border-color);
   background: var(--bg-secondary);
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 20px 20px;
 }
 
 .edit-modal .modal-actions button {
   padding: 8px 16px;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -753,14 +764,14 @@
 @media (max-width: 768px) {
   .role-model-manager {
     width: 95%;
-    max-height: 90vh;
+    min-height: 80vh;
   }
   
   /* 移动端编辑模态框优化 */
   .edit-modal .modal-content {
     width: 95%;
     max-height: 95vh;
-    border-radius: 20px 20px 0 0;
+    border-radius: 24px 24px 0 0;
     /* margin-top: auto; */
   }
   
@@ -794,6 +805,7 @@
   .edit-modal .modal-actions {
     padding: 16px 20px;
     gap: 10px;
+    border-radius: 0 0 20px 20px;
   }
   
   .edit-modal .modal-actions button {
@@ -910,6 +922,7 @@
 [data-theme="dark"] .modal-actions {
   background: rgba(255, 255, 255, 0.02);
   border-color: rgba(255, 255, 255, 0.05);
+  border-radius: 0 0 20px 20px;
 }
 
 [data-theme="dark"] .role-card,

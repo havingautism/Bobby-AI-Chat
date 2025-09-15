@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AI_ROLES } from '../utils/roles';
 import { getCurrentLanguage } from '../utils/language';
 import { dbManager, getAllRoles } from '../utils/database';
@@ -232,10 +233,24 @@ const RoleModelManager = ({ isOpen, onClose }) => {
   };
 
   const handleSaveRole = async () => {
+    console.log('=== 开始保存角色 ===');
+    console.log('当前editingRole:', editingRole);
+    console.log('当前roles列表:', roles);
+    console.log('isAddingRole:', isAddingRole);
+
     if (editingRole) {
+      // 确保有topP字段
+      const roleToSave = {
+        ...editingRole,
+        topP: typeof editingRole.topP === 'number' ? editingRole.topP : 1.0
+      };
+
+      console.log('准备保存的角色:', roleToSave);
+
       // 验证输入参数
-      const validationErrors = validateRoleInput(editingRole);
+      const validationErrors = validateRoleInput(roleToSave);
       if (validationErrors.length > 0) {
+        console.log('验证失败:', validationErrors);
         alert(currentLanguage === 'zh' ?
           `输入验证失败:\n${validationErrors.join('\n')}` :
           `Input validation failed:\n${validationErrors.join('\n')}`
@@ -245,23 +260,49 @@ const RoleModelManager = ({ isOpen, onClose }) => {
 
       try {
         setLoading(true);
+        console.log('开始保存流程...');
 
-        // 更新状态
-        const updatedRoles = roles.map(role =>
-          role.id === editingRole.id ? editingRole : role
-        );
+        // 判断是新增还是编辑
+        let updatedRoles;
+        if (isAddingRole) {
+          console.log('新增角色模式');
+          updatedRoles = [...roles, roleToSave];
+        } else {
+          console.log('编辑角色模式');
+          updatedRoles = roles.map(role =>
+            role.id === roleToSave.id ? roleToSave : role
+          );
+        }
+
+        console.log('更新后的角色列表:', updatedRoles);
+
+        // 保存到localStorage
+        localStorage.setItem('custom-roles', JSON.stringify(updatedRoles));
+        console.log('已保存到localStorage');
+
+        // 更新全局角色列表
+        updateGlobalRoles(updatedRoles);
+        console.log('已更新全局角色列表');
+
+        // 保存到数据库
+        await saveRolesToDatabase(updatedRoles);
+        console.log('已保存到数据库');
+
+        // 更新状态（在所有保存操作完成后）
+        console.log('正在更新状态...');
         setRoles(updatedRoles);
         setEditingRole(null);
         setIsAddingRole(false);
 
-        // 保存到localStorage
-        localStorage.setItem('custom-roles', JSON.stringify(updatedRoles));
-        updateGlobalRoles(updatedRoles);
+        // 验证状态是否正确更新
+        setTimeout(() => {
+          console.log('状态更新后的roles:', roles);
+        }, 100);
 
-        // 保存到数据库
-        await saveRolesToDatabase(updatedRoles);
+        console.log('状态已更新');
 
         setLoading(false);
+        console.log('=== 保存流程完成 ===');
 
       } catch (error) {
         console.error('保存角色失败:', error);
@@ -286,10 +327,11 @@ const RoleModelManager = ({ isOpen, onClose }) => {
       errors.push(currentLanguage === 'zh' ? 'Temperature必须在0到2之间' : 'Temperature must be between 0 and 2');
     }
 
-    // 验证Top P
-    if (typeof role.topP !== 'number' || isNaN(role.topP)) {
+    // 验证Top P (兼容旧数据)
+    const topP = typeof role.topP === 'number' ? role.topP : 1.0;
+    if (isNaN(topP)) {
       errors.push(currentLanguage === 'zh' ? 'Top P必须是数字' : 'Top P must be a number');
-    } else if (role.topP < 0 || role.topP > 1) {
+    } else if (topP < 0 || topP > 1) {
       errors.push(currentLanguage === 'zh' ? 'Top P必须在0到1之间' : 'Top P must be between 0 and 1');
     }
 
@@ -335,10 +377,9 @@ const RoleModelManager = ({ isOpen, onClose }) => {
   // 保存角色到数据库
   const saveRolesToDatabase = async (rolesToSave) => {
     try {
-      // 清空现有角色并重新插入
-      await dbManager.clearRoles();
+      // 逐个保存角色到数据库（支持IndexedDB和SQLite）
       for (const role of rolesToSave) {
-        await dbManager.saveRole(role);
+        await dbManager.save('roles', role);
       }
     } catch (error) {
       console.error('保存角色到数据库失败:', error);
@@ -509,7 +550,7 @@ const RoleModelManager = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  return (
+  const content = (
     <div className="role-model-manager-overlay">
       <div className="role-model-manager">
         <div className="manager-header">
@@ -793,6 +834,9 @@ const RoleModelManager = ({ isOpen, onClose }) => {
       </div>
     </div>
   );
+
+  // 通过 Portal 挂载到 body，避免被上层模态的层叠上下文影响
+  return createPortal(content, document.body);
 };
 
 export default RoleModelManager;
