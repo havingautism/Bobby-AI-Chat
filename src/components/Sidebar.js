@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { AI_ROLES, getRoleById } from "../utils/roles";
+import { getRoleById } from "../utils/roles";
 import { getCurrentTheme, toggleTheme } from "../utils/theme";
 import { getCurrentLanguage, t } from "../utils/language";
 import { isTauriEnvironment } from "../utils/tauriDetector";
@@ -33,6 +33,7 @@ const Sidebar = ({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState(null);
   const [roleModelManagerOpen, setRoleModelManagerOpen] = useState(false);
+  const [roles, setRoles] = useState([]);
   const roleFilterRef = useRef(null);
 
   // 点击外部关闭角色筛选下拉菜单
@@ -73,6 +74,77 @@ const Sidebar = ({
     window.addEventListener("languageChanged", handleLanguageChange);
     return () => {
       window.removeEventListener("languageChanged", handleLanguageChange);
+    };
+  }, []);
+
+  // 加载角色列表
+  useEffect(() => {
+    const loadRoles = async () => {
+      try {
+        // 尝试从数据库加载角色
+        const { dbManager, getAllRoles } = await import('../utils/database');
+        await dbManager.init();
+
+        const rolesFromDB = await getAllRoles();
+        console.log('Sidebar从数据库加载的角色:', rolesFromDB);
+
+        if (rolesFromDB && rolesFromDB.length > 0) {
+          setRoles(rolesFromDB);
+        } else {
+          // 如果数据库中没有角色，使用默认角色
+          const { AI_ROLES } = require('../utils/roles');
+          setRoles(AI_ROLES);
+        }
+      } catch (error) {
+        console.error("从数据库加载角色失败，降级到localStorage:", error);
+
+        // 降级到localStorage
+        try {
+          const savedRoles = localStorage.getItem('ai-roles-updated');
+          const customRoles = localStorage.getItem('custom-roles');
+
+          let rolesToUse = [];
+
+          if (savedRoles) {
+            rolesToUse = JSON.parse(savedRoles);
+          } else if (customRoles) {
+            rolesToUse = JSON.parse(customRoles);
+          } else {
+            // 如果没有保存的角色，使用默认角色
+            const { AI_ROLES } = require('../utils/roles');
+            rolesToUse = AI_ROLES;
+          }
+
+          setRoles(rolesToUse);
+        } catch (fallbackError) {
+          console.error("从localStorage加载角色也失败:", fallbackError);
+          // 最终降级到默认角色
+          const { AI_ROLES } = require('../utils/roles');
+          setRoles(AI_ROLES);
+        }
+      }
+    };
+
+    loadRoles();
+
+    // 监听角色更新事件
+    const handleRolesUpdated = (event) => {
+      console.log('Sidebar接收到rolesUpdated事件:', event.detail);
+      setRoles(event.detail);
+    };
+
+    const handleRolesReset = () => {
+      console.log('Sidebar接收到rolesReset事件');
+      const { AI_ROLES } = require('../utils/roles');
+      setRoles(AI_ROLES);
+    };
+
+    window.addEventListener('rolesUpdated', handleRolesUpdated);
+    window.addEventListener('rolesReset', handleRolesReset);
+
+    return () => {
+      window.removeEventListener('rolesUpdated', handleRolesUpdated);
+      window.removeEventListener('rolesReset', handleRolesReset);
     };
   }, []);
 
@@ -300,7 +372,7 @@ const Sidebar = ({
                         </svg>
                       )}
                     </button>
-                    {AI_ROLES.map((role) => (
+                    {roles.map((role) => (
                       <button
                         key={role.id}
                         className={`role-filter-option ${
@@ -349,13 +421,13 @@ const Sidebar = ({
               title={currentLanguage === "zh" ? "角色与模型管理" : "Role & Model Management"}
             >
               <div className="role-model-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                  <path d="M12 8v4m0 4h.01"/>
-                </svg>
+             
+
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" >{/* Icon from Iconoir by Luca Burgio - https://github.com/iconoir-icons/iconoir/blob/main/LICENSE */}<g fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 16V8a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 14.5s-1.5 2-4.5 2s-4.5-2-4.5-2" /><path fill="currentColor" strokeLinecap="round" strokeLinejoin="round" d="M8.5 10a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1m7 0a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1" /></g></svg>
+ 
               </div>
               <span className="role-model-text">
-                {currentLanguage === "zh" ? "角色模型" : "Roles & Models"}
+                {currentLanguage === "zh" ? "角色 / 模型管理" : "Roles & Models"}
               </span>
             </button>
           </div>

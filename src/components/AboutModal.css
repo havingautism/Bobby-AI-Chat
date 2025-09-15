@@ -29,6 +29,8 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  max-width: 90%;
+  max-height: 80vh !important;
 }
 
 .about-header {

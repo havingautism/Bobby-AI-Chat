@@ -872,8 +872,13 @@
 }
 
 .conversations-list::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: transparent;
   border-radius: 2px;
+  transition: background-color 0.3s ease;
+}
+
+.conversations-list:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .conversations-list::-webkit-scrollbar-thumb:hover {
@@ -1338,6 +1343,7 @@
 .conversations-list {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 12px 12px 12px;
 }
 
@@ -1883,8 +1889,13 @@
 }
 
 .conversations-list::-webkit-scrollbar-thumb {
-  background-color: var(--border-hover);
+  background-color: transparent;
   border-radius: 2px;
+  transition: background-color 0.3s ease;
+}
+
+.conversations-list:hover::-webkit-scrollbar-thumb {
+  background-color: var(--border-hover);
 }
 
 .conversations-list::-webkit-scrollbar-thumb:hover {

@@ -23,7 +23,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import './RoleModelManager.css';
 
-const SortableRoleCard = ({ role, loading, onEdit, onDelete }) => {
+const SortableRoleCard = ({ role, loading, onEdit, onDelete, index }) => {
   const {
     attributes,
     listeners,
@@ -42,6 +42,10 @@ const SortableRoleCard = ({ role, loading, onEdit, onDelete }) => {
   return (
     <div ref={setNodeRef} style={style} className="role-card">
       <div className="role-info">
+        {/* PC端排序号，移动端隐藏 */}
+        <div className="sort-order-number">
+          {index + 1}
+        </div>
         <div className="drag-handle" {...attributes} {...listeners}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 12h18M3 6h18M3 18h18"/>
@@ -68,10 +72,10 @@ const SortableRoleCard = ({ role, loading, onEdit, onDelete }) => {
           }}
           disabled={loading}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
+         
+
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{/* Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE */}<path d="M12 22q-4.025-3.425-6.012-6.362T4 10.2q0-3.75 2.413-5.975T12 2q.675 0 1.338.113t1.287.312L13 4.075q-.25-.05-.488-.062T12 4Q9.475 4 7.738 5.738T6 10.2q0 1.775 1.475 4.063T12 19.35q3.05-2.8 4.525-5.087T18 10.2q0-.3-.025-.6t-.075-.575l1.65-1.65q.225.65.338 1.35T20 10.2q0 2.5-1.987 5.438T12 22m6.35-18.15L17.2 2.7L11 8.9V11h2.1l6.2-6.2zM20 4.1l.7-.7q.275-.275.275-.7T20.7 2l-.7-.7q-.275-.275-.7-.275t-.7.275l-.7.7z" /></svg>
+ 
         </button>
         <button
           className="delete-button"
@@ -262,42 +266,22 @@ const RoleModelManager = ({ isOpen, onClose }) => {
         setLoading(true);
         console.log('开始保存流程...');
 
-        // 判断是新增还是编辑
-        let updatedRoles;
-        if (isAddingRole) {
-          console.log('新增角色模式');
-          updatedRoles = [...roles, roleToSave];
-        } else {
-          console.log('编辑角色模式');
-          updatedRoles = roles.map(role =>
-            role.id === roleToSave.id ? roleToSave : role
-          );
-        }
+        // 首先保存单个角色到数据库
+        await dbManager.save('roles', roleToSave);
+        console.log('已保存角色到数据库');
 
-        console.log('更新后的角色列表:', updatedRoles);
-
-        // 保存到localStorage
-        localStorage.setItem('custom-roles', JSON.stringify(updatedRoles));
-        console.log('已保存到localStorage');
+        // 重新从数据库获取完整的角色列表
+        const allRoles = await getAllRoles();
+        console.log('从数据库获取的角色列表:', allRoles);
 
         // 更新全局角色列表
-        updateGlobalRoles(updatedRoles);
+        updateGlobalRoles(allRoles);
         console.log('已更新全局角色列表');
 
-        // 保存到数据库
-        await saveRolesToDatabase(updatedRoles);
-        console.log('已保存到数据库');
-
-        // 更新状态（在所有保存操作完成后）
-        console.log('正在更新状态...');
-        setRoles(updatedRoles);
+        // 更新本地状态
+        setRoles(allRoles);
         setEditingRole(null);
         setIsAddingRole(false);
-
-        // 验证状态是否正确更新
-        setTimeout(() => {
-          console.log('状态更新后的roles:', roles);
-        }, 100);
 
         console.log('状态已更新');
 
@@ -306,6 +290,25 @@ const RoleModelManager = ({ isOpen, onClose }) => {
 
       } catch (error) {
         console.error('保存角色失败:', error);
+        // 降级到localStorage
+        try {
+          let updatedRoles;
+          if (isAddingRole) {
+            updatedRoles = [...roles, roleToSave];
+          } else {
+            updatedRoles = roles.map(role =>
+              role.id === roleToSave.id ? roleToSave : role
+            );
+          }
+
+          localStorage.setItem('custom-roles', JSON.stringify(updatedRoles));
+          updateGlobalRoles(updatedRoles);
+          setRoles(updatedRoles);
+          setEditingRole(null);
+          setIsAddingRole(false);
+        } catch (fallbackError) {
+          console.error('降级保存也失败:', fallbackError);
+        }
         setLoading(false);
       }
     }
@@ -349,7 +352,7 @@ const RoleModelManager = ({ isOpen, onClose }) => {
   };
 
   // 拖拽结束处理
-  const handleDragEnd = (event) => {
+  const handleDragEnd = async (event) => {
     const { active, over } = event;
 
     // 恢复页面滚动
@@ -362,12 +365,15 @@ const RoleModelManager = ({ isOpen, onClose }) => {
 
         const newItems = arrayMove(items, oldIndex, newIndex);
 
-        // 立即保存到localStorage和数据库
-        localStorage.setItem('custom-roles', JSON.stringify(newItems));
+        // 立即更新全局状态
         updateGlobalRoles(newItems);
 
         // 异步保存到数据库
-        saveRolesToDatabase(newItems);
+        saveRolesToDatabase(newItems).catch(error => {
+          console.error('拖拽排序保存到数据库失败:', error);
+          // 降级到localStorage
+          localStorage.setItem('custom-roles', JSON.stringify(newItems));
+        });
 
         return newItems;
       });
@@ -391,23 +397,47 @@ const RoleModelManager = ({ isOpen, onClose }) => {
     // 这里需要更新utils/roles.js中的AI_ROLES数组
     // 由于ES6模块的限制，我们需要通过修改全局对象来实现
     try {
+      console.log('updateGlobalRoles被调用，角色数量:', updatedRoles.length);
       // 将更新后的角色信息保存到localStorage，供其他组件使用
       localStorage.setItem('ai-roles-updated', JSON.stringify(updatedRoles));
       // 触发自定义事件通知其他组件角色已更新
+      console.log('触发rolesUpdated事件，详情:', updatedRoles);
       window.dispatchEvent(new CustomEvent('rolesUpdated', { detail: updatedRoles }));
     } catch (error) {
       console.error('更新全局角色列表失败:', error);
     }
   };
 
-  const handleDeleteRole = (roleId) => {
+  const handleDeleteRole = async (roleId) => {
     console.log('删除角色被点击:', roleId); // 调试日志
     if (window.confirm(currentLanguage === 'zh' ? '确定要删除这个角色吗？' : 'Are you sure you want to delete this role?')) {
-      const updatedRoles = roles.filter(role => role.id !== roleId);
-      setRoles(updatedRoles);
-      localStorage.setItem('custom-roles', JSON.stringify(updatedRoles));
-      updateGlobalRoles(updatedRoles);
-      console.log('角色删除成功'); // 调试日志
+      try {
+        // 从数据库删除
+        await dbManager.delete('roles', roleId);
+        console.log('已从数据库删除角色');
+
+        // 重新从数据库获取角色列表
+        const allRoles = await getAllRoles();
+        console.log('从数据库获取的角色列表:', allRoles);
+
+        // 更新状态
+        setRoles(allRoles);
+        updateGlobalRoles(allRoles);
+        console.log('角色删除成功'); // 调试日志
+
+      } catch (error) {
+        console.error('删除角色失败:', error);
+        // 降级到localStorage
+        try {
+          const updatedRoles = roles.filter(role => role.id !== roleId);
+          setRoles(updatedRoles);
+          localStorage.setItem('custom-roles', JSON.stringify(updatedRoles));
+          updateGlobalRoles(updatedRoles);
+          console.log('角色删除成功（降级模式）'); // 调试日志
+        } catch (fallbackError) {
+          console.error('降级删除也失败:', fallbackError);
+        }
+      }
     }
   };
 
@@ -427,15 +457,54 @@ const RoleModelManager = ({ isOpen, onClose }) => {
     setIsAddingRole(true);
   };
 
-  const handleResetRoles = () => {
+  const handleResetRoles = async () => {
     if (window.confirm(currentLanguage === 'zh' ? '确定要重置所有角色为默认设置吗？这将删除所有自定义角色。' : 'Are you sure you want to reset all roles to default settings? This will delete all custom roles.')) {
-      // 重置为默认角色
-      setRoles([...AI_ROLES]);
-      // 清除localStorage中的自定义角色
-      localStorage.removeItem('custom-roles');
-      localStorage.removeItem('ai-roles-updated');
-      // 触发重置事件
-      window.dispatchEvent(new CustomEvent('rolesReset'));
+      try {
+        // 清除数据库中的所有自定义角色（除了默认角色）
+        const defaultRoleIds = ['bobby', 'developer', 'creative', 'analyst', 'teacher', 'writer'];
+        const allRoles = await getAllRoles();
+
+        // 删除非默认角色
+        for (const role of allRoles) {
+          if (!defaultRoleIds.includes(role.id)) {
+            await dbManager.delete('roles', role.id);
+          }
+        }
+
+        // 重新获取角色列表（应该只有默认角色了）
+        const remainingRoles = await getAllRoles();
+
+        // 如果默认角色不存在，添加它们
+        const defaultRoles = [...AI_ROLES];
+        for (const defaultRole of defaultRoles) {
+          if (!remainingRoles.find(role => role.id === defaultRole.id)) {
+            await dbManager.save('roles', defaultRole);
+          }
+        }
+
+        // 获取最终的角色列表
+        const finalRoles = await getAllRoles();
+
+        // 更新状态
+        setRoles(finalRoles);
+        updateGlobalRoles(finalRoles);
+
+        // 清除localStorage中的缓存
+        localStorage.removeItem('custom-roles');
+        localStorage.removeItem('ai-roles-updated');
+
+        // 触发重置事件
+        window.dispatchEvent(new CustomEvent('rolesReset'));
+
+        console.log('角色重置完成');
+      } catch (error) {
+        console.error('重置角色失败:', error);
+        // 降级处理
+        setRoles([...AI_ROLES]);
+        localStorage.removeItem('custom-roles');
+        localStorage.removeItem('ai-roles-updated');
+        window.dispatchEvent(new CustomEvent('rolesReset'));
+      }
     }
   };
 
@@ -509,8 +578,18 @@ const RoleModelManager = ({ isOpen, onClose }) => {
 
         // 加载角色数据
         const savedRoles = await getAllRoles();
+        console.log('从数据库加载的角色:', savedRoles);
+
         if (savedRoles && savedRoles.length > 0) {
           setRoles(savedRoles);
+        } else {
+          // 如果数据库中没有角色，初始化默认角色
+          console.log('数据库中没有角色，初始化默认角色');
+          const defaultRoles = [...AI_ROLES];
+          for (const role of defaultRoles) {
+            await dbManager.save('roles', role);
+          }
+          setRoles(defaultRoles);
         }
 
         // 加载模型设置（仍然使用localStorage作为备选）
@@ -627,6 +706,7 @@ const RoleModelManager = ({ isOpen, onClose }) => {
                           loading={loading}
                           onEdit={handleEditRole}
                           onDelete={handleDeleteRole}
+                          index={index}
                         />
                       ))}
                     </div>

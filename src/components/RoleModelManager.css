@@ -145,6 +145,12 @@
   margin-bottom: 24px;
 }
 
+@media (max-width: 768px) {
+.section-header {
+  margin-bottom: 12px;}
+}
+
+
 .section-actions {
   display: flex;
   gap: 8px;
@@ -303,6 +309,29 @@
 
 .drag-handle:active {
   cursor: grabbing;
+}
+
+/* 排序号样式 - 仅PC端显示 */
+.sort-order-number {
+  display: none;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-primary) 100%);
+  color: white;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+/* PC端显示排序号 */
+@media (min-width: 769px) {
+  .sort-order-number {
+    display: flex;
+  }
 }
 
 /* 拖拽时的样式 */
@@ -924,7 +953,11 @@
   border-color: rgba(255, 255, 255, 0.05);
   border-radius: 0 0 20px 20px;
 }
-
+.edit-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+}
 [data-theme="dark"] .role-card,
 [data-theme="dark"] .model-item {
   background: rgba(255, 255, 255, 0.02);
@@ -1005,10 +1038,15 @@
 }
 
 .manager-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   border-radius: 4px;
   border: 2px solid transparent;
   background-clip: padding-box;
+  transition: background 0.3s ease;
+}
+
+.manager-content:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .manager-content::-webkit-scrollbar-thumb:hover {
@@ -1021,6 +1059,10 @@
 }
 
 [data-theme="dark"] .manager-content::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+[data-theme="dark"] .manager-content:hover::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.08);
 }
 

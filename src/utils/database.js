@@ -210,7 +210,16 @@ class DatabaseManager {
       const store = transaction.objectStore(storeName);
       const request = store.getAll();
 
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        let results = request.result;
+        // Apply consistent sorting by createdAt
+        results.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0);
+          const dateB = new Date(b.createdAt || 0);
+          return dateA - dateB;
+        });
+        resolve(results);
+      };
       request.onerror = () => reject(request.error);
     });
   }
@@ -311,6 +320,13 @@ class DatabaseManager {
       }
     }
 
+    // Apply consistent sorting by createdAt
+    results.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0);
+      const dateB = new Date(b.createdAt || 0);
+      return dateA - dateB;
+    });
+
     return results;
   }
 
@@ -363,7 +379,16 @@ export const getRole = async (id) => {
 };
 
 export const getAllRoles = async () => {
-  return await dbManager.getAll('roles');
+  try {
+    // 确保数据库已初始化
+    await dbManager.init();
+    const roles = await dbManager.getAll('roles');
+    console.log('getAllRoles返回的角色:', roles);
+    return roles;
+  } catch (error) {
+    console.error('getAllRoles出错:', error);
+    return [];
+  }
 };
 
 export const deleteRole = async (id) => {
