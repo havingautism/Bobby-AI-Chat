@@ -335,9 +335,9 @@ class EmbeddingService {
     try {
       // 使用优化的分块参数：减小块大小，减少总块数
       const chunks = await invoke('chunk_document_text', {
-        content: content,
+        text: content,
         chunk_size: chunkSize,
-        overlap: overlap
+        chunk_overlap: overlap
       });
       
       console.log(`📄 文档分块完成: ${chunks.length} 个块`);
@@ -1579,6 +1579,37 @@ class EmbeddingService {
     } catch (error) {
       result.error = error?.message || String(error);
       return result;
+    }
+  }
+
+  /**
+   * 生成查询嵌入向量
+   * @param {string} query - 查询文本
+   * @param {string} model - 模型名称
+   * @returns {Promise<Array<number>>} 嵌入向量
+   */
+  async generateQueryEmbedding(query, model = 'BAAI/bge-m3') {
+    try {
+      console.log(`🔍 生成查询嵌入向量: "${query.substring(0, 50)}..."`);
+
+      // 获取API配置
+      const apiConfig = getApiConfig();
+      if (!apiConfig.apiKey) {
+        throw new Error('API密钥未配置，请在设置中配置SiliconFlow API密钥');
+      }
+
+      // 使用Tauri后端API生成嵌入向量
+      const embedding = await invoke('generate_siliconflow_embedding_cmd', {
+        apiKey: apiConfig.apiKey,
+        text: query,
+        model: model
+      });
+
+      console.log(`✅ 查询嵌入向量生成完成: ${embedding.length} 维`);
+      return embedding;
+    } catch (error) {
+      console.error('❌ 查询嵌入向量生成失败:', error);
+      throw error;
     }
   }
 }

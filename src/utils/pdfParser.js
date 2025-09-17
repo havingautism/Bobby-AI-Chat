@@ -1,7 +1,7 @@
 /**
  * PDF解析工具
  * 用于解析PDF文件并提取文本内容
- * 使用CDN方式加载PDF.js，避免webpack chunk问题
+ * 使用npm包中的PDF.js，确保稳定性
  */
 
 class PDFParser {
@@ -19,18 +19,15 @@ class PDFParser {
       if (typeof window === 'undefined') {
         throw new Error('PDF解析器需要在浏览器环境中运行');
       }
-      
-      // 检查是否已经加载了PDF.js
-      if (window.pdfjsLib) {
-        this.pdfjsLib = window.pdfjsLib;
-        this.isInitialized = true;
-        console.log('✅ PDF解析器已存在，直接使用');
-        return;
-      }
-      
-      // 从CDN加载PDF.js
-      await this.loadPDFJSFromCDN();
-      
+
+      // 动态导入PDF.js
+      const pdfjsLib = await import('pdfjs-dist');
+      const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.entry');
+
+      // 配置PDF.js worker
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+      this.pdfjsLib = pdfjsLib;
+
       this.isInitialized = true;
       console.log('✅ PDF解析器初始化成功');
     } catch (error) {
@@ -39,40 +36,7 @@ class PDFParser {
     }
   }
 
-  /**
-   * 从CDN加载PDF.js
-   */
-  async loadPDFJSFromCDN() {
-    return new Promise((resolve, reject) => {
-      // 检查是否已经加载
-      if (window.pdfjsLib) {
-        this.pdfjsLib = window.pdfjsLib;
-        resolve();
-        return;
-      }
-
-      // 创建script标签加载PDF.js - 使用本地文件
-      const script = document.createElement('script');
-      script.src = '/pdf.min.js';
-      script.onload = () => {
-        try {
-          // 设置worker路径 - 统一使用本地worker文件
-          window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-          
-          this.pdfjsLib = window.pdfjsLib;
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      };
-      script.onerror = () => {
-        reject(new Error('无法加载本地PDF.js文件'));
-      };
-      
-      document.head.appendChild(script);
-    });
-  }
-
+  
   /**
    * 解析PDF文件
    * @param {File} file - PDF文件对象
@@ -85,7 +49,12 @@ class PDFParser {
 
     try {
       console.log(`开始解析PDF文件: ${file.name}`);
-      
+
+      // 验证PDF.js是否正确初始化
+      if (!this.pdfjsLib || !this.pdfjsLib.getDocument) {
+        throw new Error('PDF.js库未正确初始化，请刷新页面重试');
+      }
+
       // 验证文件类型
       if (file.type !== 'application/pdf') {
         throw new Error('文件类型必须是PDF');
@@ -99,9 +68,19 @@ class PDFParser {
 
       // 读取文件内容
       const arrayBuffer = await this.readFileAsArrayBuffer(file);
-      
-      // 使用pdfjs-dist解析PDF
-      const pdf = await this.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      // 配置PDF.js选项以避免worker问题
+      const loadingTask = this.pdfjsLib.getDocument({
+        data: arrayBuffer,
+        disableRange: true,
+        disableStream: true,
+        disableAutoFetch: true,
+        nativeImageDecoderSupport: 'none',
+        verbosity: 0, // 减少日志输出
+        isEvalSupported: false // 禁用eval以避免安全问题
+      });
+
+      const pdf = await loadingTask.promise;
       const numPages = pdf.numPages;
       
       let fullText = '';

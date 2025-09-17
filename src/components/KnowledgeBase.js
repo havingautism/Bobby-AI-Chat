@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { knowledgeBaseManager } from "../utils/knowledgeBaseQdrant";
+import { knowledgeBaseManager } from "../utils/knowledgeBaseManager";
 import { getCurrentLanguage } from "../utils/language";
 import pdfParser from "../utils/pdfParser";
 import docxParser from "../utils/docxParser";
@@ -296,6 +296,91 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
         cancelText: null,
         onConfirm: () => setStatusModal(prev => ({ ...prev, open: false }))
       });
+    }
+  };
+
+  // 测试文档添加功能
+  const testDocumentAdd = async () => {
+    try {
+      console.log('🧪 开始测试文档添加功能...');
+
+      const testDocument = {
+        title: '测试文档 - 中文',
+        content: '这是一个测试文档，用于验证中文文档的添加功能。文档包含中文内容，应该被正确识别并存储到对应的中文知识库中。',
+        fileName: 'test-chinese.txt',
+        fileSize: 1024,
+        mimeType: 'text/plain'
+      };
+
+      console.log('📝 添加测试文档...');
+      const documentId = await knowledgeBaseManager.addDocument(testDocument);
+
+      console.log(`✅ 文档添加成功，ID: ${documentId}`);
+
+      // 等待一下让数据库操作完成
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // 获取最新的统计信息
+      await loadStatistics();
+
+      alert(`测试文档添加成功！\n文档ID: ${documentId}\n当前统计: ${statistics.documentCount} 个文档, ${statistics.vectorCount} 个向量`);
+
+    } catch (error) {
+      console.error('❌ 测试文档添加失败:', error);
+      alert(`测试失败: ${error.message}`);
+    }
+  };
+
+  // 调试数据库信息
+  const debugDatabase = async () => {
+    try {
+      console.log('🔍 开始调试数据库...');
+
+      // 调用知识库的调试功能
+      const debugInfo = await knowledgeBaseManager.knowledgeBase.debugDatabaseInfo();
+
+      if (debugInfo) {
+        console.log('📊 数据库调试信息:', debugInfo);
+
+        // 详细输出每个集合的信息
+        console.log('🔍 集合详细信息:');
+        debugInfo.collections.forEach((collection, index) => {
+          console.log(`[${index + 1}] 集合: ${collection.name} (${collection.id})`);
+          console.log(`    嵌入模型: ${collection.embedding_model}`);
+          console.log(`    向量维度: ${collection.vector_dimensions}`);
+          console.log(`    文档数: ${collection.document_count}`);
+          console.log(`    向量数: ${collection.vector_count}`);
+          console.log(`    描述: ${collection.description || '无'}`);
+          console.log('---');
+        });
+
+        // 显示调试信息
+        const message = `
+数据库统计信息:
+- 总集合数: ${debugInfo.total_collections}
+- 总文档数: ${debugInfo.total_documents}
+- 总向量数: ${debugInfo.total_vectors}
+- 数据库路径: ${debugInfo.database_path}
+
+问题: 有12个集合但0个文档，说明集合存在但文档添加失败！
+
+集合详情:
+${debugInfo.collections.map(c => `
+  集合: ${c.name}
+  - 嵌入模型: ${c.embedding_model}
+  - 向量维度: ${c.vector_dimensions}
+  - 文档数: ${c.document_count}
+  - 向量数: ${c.vector_count}
+`).join('')}
+        `;
+
+        alert(message);
+      } else {
+        alert('获取调试信息失败');
+      }
+    } catch (error) {
+      console.error('❌ 调试数据库失败:', error);
+      alert(`调试失败: ${error.message}`);
     }
   };
 
@@ -1200,11 +1285,36 @@ const KnowledgeBase = ({ isOpen, onClose }) => {
       <div className="knowledge-base-modal">
         <div className="knowledge-base-header">
           <h2>{currentLanguage === "zh" ? "知识库管理" : "Knowledge Base"}</h2>
-          <button className="close-button" onClick={onClose}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="header-actions">
+            <button
+              className="debug-button"
+              onClick={testDocumentAdd}
+              title="测试文档添加"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+                <path d="M2 17L12 22L22 17"/>
+                <path d="M2 12L12 17L22 12"/>
+              </svg>
+            </button>
+            <button
+              className="debug-button"
+              onClick={debugDatabase}
+              title="调试数据库"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="12 22 12 12"/>
+                <polyline points="12 12 2 9"/>
+                <polyline points="12 12 22 9"/>
+              </svg>
+            </button>
+            <button className="close-button" onClick={onClose}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="knowledge-base-content">
