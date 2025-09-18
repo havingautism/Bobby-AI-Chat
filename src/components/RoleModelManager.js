@@ -814,7 +814,7 @@ const RoleModelManager = ({ isOpen, onClose }) => {
           setRoles(defaultRoles);
         }
 
-        // 加载模型分组和模型数据（新的混合逻辑）
+        // 加载模型分组和模型数据（首次初始化逻辑）
         try {
           const savedGroups = await getAllModelGroups() || [];
           const savedModels = await getAllModels() || [];
@@ -822,11 +822,31 @@ const RoleModelManager = ({ isOpen, onClose }) => {
           console.log('从数据库加载的模型分组:', savedGroups);
           console.log('从数据库加载的模型:', savedModels);
 
-          // 检查是否有自定义或修改的项
-          const hasCustomItems = hasCustomOrModifiedItems(savedGroups, savedModels);
+          // 检查数据库是否为空（首次打开）
+          const isDatabaseEmpty = savedGroups.length === 0 && savedModels.length === 0;
 
-          if (hasCustomItems) {
-            // 有自定义或修改的项，使用合并逻辑
+          if (isDatabaseEmpty) {
+            // 首次打开，将默认模型同步到数据库
+            console.log('首次打开，初始化默认模型到数据库');
+            
+            // 保存默认分组到数据库
+            for (const group of DEFAULT_MODEL_GROUPS) {
+              await dbManager.save('modelGroups', group);
+            }
+            
+            // 保存默认模型到数据库
+            for (const model of DEFAULT_MODELS) {
+              await dbManager.save('models', model);
+            }
+            
+            console.log('默认模型已同步到数据库');
+            
+            // 使用默认配置
+            setModelGroups([...DEFAULT_MODEL_GROUPS]);
+            setModels([...DEFAULT_MODELS]);
+          } else {
+            // 数据库有数据，使用合并逻辑（包含用户的自定义修改）
+            console.log('数据库有数据，使用合并逻辑');
             const { mergedGroups, mergedModels } = mergeModelsWithDefaults(
               DEFAULT_MODEL_GROUPS,
               DEFAULT_MODELS,
@@ -839,28 +859,6 @@ const RoleModelManager = ({ isOpen, onClose }) => {
 
             setModelGroups(mergedGroups);
             setModels(mergedModels);
-          } else {
-            // 没有自定义项，使用默认配置
-            console.log('使用默认模型配置');
-            setModelGroups([...DEFAULT_MODEL_GROUPS]);
-            setModels([...DEFAULT_MODELS]);
-
-            // 清空数据库中的旧数据，确保下次重新开始
-            try {
-              // 只清除模型相关的数据，保留其他数据
-              const allGroups = await getAllModelGroups();
-              const allModels = await getAllModels();
-
-              for (const group of allGroups) {
-                await dbManager.delete('modelGroups', group.id);
-              }
-              for (const model of allModels) {
-                await dbManager.delete('models', model.id);
-              }
-              console.log('已清理数据库中的旧模型数据');
-            } catch (clearError) {
-              console.warn('清理数据库失败:', clearError);
-            }
           }
         } catch (error) {
           console.error('加载模型数据失败:', error);
