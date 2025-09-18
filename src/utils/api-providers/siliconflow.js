@@ -1,6 +1,6 @@
 import { BaseApiProvider } from './base.js';
 import axios from 'axios';
-import { knowledgeBaseManager } from "../knowledgeBaseQdrant.js";
+import { knowledgeBaseManager } from "../knowledgeBaseManager.js";
 
 export class SiliconFlowProvider extends BaseApiProvider {
   constructor(config = {}) {
@@ -121,30 +121,29 @@ export class SiliconFlowProvider extends BaseApiProvider {
           console.log(`🔍 搜索选中的文档:`, options.selectedDocuments);
           console.log(`🔍 用户问题:`, userMessage.content);
           
-          const searchResults = await knowledgeBaseManager.searchDocuments(
+          const searchResults = await knowledgeBaseManager.search(
             userMessage.content,
-            20, // 增加搜索结果数量以获得更多选择
-            0.01,
-            true
+            {
+              limit: 20,
+              threshold: 0.5,
+              documentIds: options.selectedDocuments || null,
+            }
           );
           
           console.log(`🔍 搜索结果总数:`, searchResults.length);
-          console.log(`🔍 搜索结果ID:`, searchResults.map(r => r.id));
           console.log(`🔍 搜索结果详情:`, searchResults.map(r => ({ 
-            id: r.id, 
-            title: r.title, 
-            score: r.score,
-            contentLength: r.content?.length || 0,
-            contentPreview: r.content?.substring(0, 100) + (r.content?.length > 100 ? '...' : ''),
-            sourceType: r.sourceType
+            chunkId: r.id || r.chunk_id, 
+            documentId: r.documentId || r.document_id,
+            title: r.documentTitle || r.document_title, 
+            score: r.similarity || r.score,
+            contentLength: (r.content || r.chunk_text || '').length,
+            contentPreview: (r.content || r.chunk_text || '').substring(0, 100)
           })));
           
                 // 首先尝试过滤选中文档中的相关内容
-          const filteredResults = searchResults.filter(result => {
-            const isSelected = options.selectedDocuments.includes(result.id);
-            console.log(`🔍 文档 "${result.title}" (ID: ${result.id}) 是否被选中: ${isSelected}`);
-            return isSelected;
-          });
+          const filteredResults = Array.isArray(options.selectedDocuments) && options.selectedDocuments.length > 0
+            ? searchResults.filter(r => options.selectedDocuments.includes(r.documentId || r.document_id))
+            : searchResults;
           
           console.log(`🔍 选中文档中的相关结果数量:`, filteredResults.length);
           
@@ -152,7 +151,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
           if (filteredResults.length > 0) {
             // 按分数排序，取前5个
             const topResults = filteredResults
-              .sort((a, b) => (b.score || 0) - (a.score || 0))
+              .sort((a, b) => (b.similarity || b.score || 0) - (a.similarity || a.score || 0))
               .slice(0, 5);
             
             console.log(`🔍 使用选中文档中分数最高的 ${topResults.length} 个结果:`, topResults.map(d => ({ title: d.title, score: d.score })));
@@ -165,9 +164,9 @@ export class SiliconFlowProvider extends BaseApiProvider {
                 contentLength: result.content?.length || 0,
                 contentPreview: result.content?.substring(0, 100) + (result.content?.length > 100 ? '...' : '')
               });
-              knowledgeContext += `  <document index="${index + 1}" source="${result.title || 'Unknown'}">\n`;
+              knowledgeContext += `  <document index="${index + 1}" source="${result.documentTitle || result.title || 'Unknown'}">\n`;
               knowledgeContext += `    <content>\n`;
-              knowledgeContext += `      ${result.content}\n`;
+              knowledgeContext += `      ${(result.content || result.chunk_text || '').trim()}\n`;
               knowledgeContext += `    </content>\n`;
               knowledgeContext += `  </document>\n\n`;
             });
@@ -176,7 +175,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
             // 如果选中文档中没有相关内容，使用所有搜索结果中分数最高的前5个
             console.log(`🔍 选中文档中未找到相关内容，使用全局搜索结果中分数最高的前5个`);
             const topResults = searchResults
-              .sort((a, b) => (b.score || 0) - (a.score || 0))
+              .sort((a, b) => (b.similarity || b.score || 0) - (a.similarity || a.score || 0))
               .slice(0, 5);
             
             console.log(`🔍 使用全局搜索结果中分数最高的 ${topResults.length} 个结果:`, topResults.map(d => ({ title: d.title, score: d.score })));
@@ -189,9 +188,9 @@ export class SiliconFlowProvider extends BaseApiProvider {
                 contentLength: result.content?.length || 0,
                 contentPreview: result.content?.substring(0, 100) + (result.content?.length > 100 ? '...' : '')
               });
-              knowledgeContext += `  <document index="${index + 1}" source="${result.title || 'Unknown'}">\n`;
+              knowledgeContext += `  <document index="${index + 1}" source="${result.documentTitle || result.title || 'Unknown'}">\n`;
               knowledgeContext += `    <content>\n`;
-              knowledgeContext += `      ${result.content}\n`;
+              knowledgeContext += `      ${(result.content || result.chunk_text || '').trim()}\n`;
               knowledgeContext += `    </content>\n`;
               knowledgeContext += `  </document>\n\n`;
             });

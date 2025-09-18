@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { getCurrentLanguage, t } from "../utils/language";
 import { isModelSupportResponseModes } from "../utils/modelUtils";
 // import { isTauriEnvironment } from "../utils/tauriDetector";
-import { knowledgeBaseManager } from "../utils/knowledgeBaseQdrant";
+import { knowledgeBaseManager } from "../utils/knowledgeBaseManager";
 import FileIcon from "./FileIcon";
 import "./ChatInput.css";
 
@@ -94,15 +94,10 @@ const ChatInput = ({
     setSelectedDocuments([]);
   };
 
-  // 过滤文档列表
+  // 过滤文档列表（与 KnowledgeBase modal 保持一致：按标题包含匹配，不区分大小写）
   const filteredDocuments = knowledgeDocuments.filter(doc => {
     if (!documentSearchQuery.trim()) return true;
-    const query = documentSearchQuery.toLowerCase();
-    return (
-      doc.title.toLowerCase().includes(query) ||
-      (doc.fileName && doc.fileName.toLowerCase().includes(query)) ||
-      (doc.sourceType && doc.sourceType.toLowerCase().includes(query))
-    );
+    return (doc.title || '').toLowerCase().includes(documentSearchQuery.toLowerCase());
   });
 
   // 使用知识库结果的功能已内联到onClick处理函数中
