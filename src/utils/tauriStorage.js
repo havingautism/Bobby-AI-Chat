@@ -1,348 +1,379 @@
-import { exists, readTextFile, writeTextFile, mkdir, BaseDirectory } from '@tauri-apps/plugin-fs';
-import { join, homeDir } from '@tauri-apps/api/path';
+// Tauri SQLite 存储适配器 - 直接使用 Tauri 后端的 SQLite + sqlite-vec 系统
+import { invoke } from '@tauri-apps/api/core';
 
-const DEFAULT_DATA_DIR = 'ai-chat-data';
-const CONVERSATIONS_FILE = 'conversations.json';
-const SETTINGS_FILE = 'settings.json';
-
-// 获取自定义数据目录路径
-let customDataDir = null;
-let baseDirectory = BaseDirectory.AppLocalData; // 改为使用AppLocalData
-
-// 设置自定义数据目录
-export const setCustomDataDir = async (customPath) => {
-  try {
-    if (customPath && customPath.trim()) {
-      // 如果是相对路径，相对于用户主目录
-      if (!customPath.startsWith('/') && !customPath.includes(':\\')) {
-        const home = await homeDir();
-        customDataDir = await join(home, customPath.trim());
-      } else {
-        customDataDir = customPath.trim();
-      }
-      baseDirectory = null; // 使用绝对路径
-      console.log(`设置自定义数据目录: ${customDataDir}`);
-    } else {
-      // 使用默认路径
-      customDataDir = null;
-      baseDirectory = BaseDirectory.AppLocalData;
-      console.log('使用默认数据目录');
-    }
-  } catch (error) {
-    console.error('设置自定义数据目录失败:', error);
-    // 回退到默认设置
-    customDataDir = null;
-    baseDirectory = BaseDirectory.AppLocalData;
+// 数据转换函数
+// 将前端对话格式转换为后端格式
+const convertToBackendFormat = (frontendConversation) => {
+  // 验证 role_id，如果为空字符串或无效值，则设为 null
+  let roleId = frontendConversation.role;
+  if (!roleId || roleId === '' || roleId === 'null' || roleId === 'undefined') {
+    roleId = null;
   }
-};
-
-// 获取当前数据目录路径
-const getCurrentDataDir = () => {
-  return customDataDir || DEFAULT_DATA_DIR;
-};
-
-// 获取当前基础目录
-const getCurrentBaseDirectory = () => {
-  return baseDirectory;
-};
-
-// 确保数据目录存在
-const ensureDataDir = async () => {
-  try {
-    const dataDir = getCurrentDataDir();
-    const baseDir = getCurrentBaseDirectory();
-    
-    if (baseDir) {
-      // 使用相对路径
-      await mkdir(dataDir, {
-        baseDir: baseDir,
-        recursive: true
-      });
-    } else {
-      // 使用绝对路径
-      await mkdir(dataDir, {
-        recursive: true
-      });
-    }
-    console.log(`数据目录已确保存在: ${dataDir}`);
-  } catch (error) {
-    console.error('创建数据目录失败:', error);
-    // 尝试使用备用目录
-    try {
-      const fallbackDir = 'ai-chat-fallback';
-      await mkdir(fallbackDir, {
-        baseDir: BaseDirectory.AppLocalData,
-        recursive: true
-      });
-      console.log(`使用备用数据目录: ${fallbackDir}`);
-    } catch (fallbackError) {
-      console.error('备用目录创建也失败:', fallbackError);
-      throw new Error('无法创建数据存储目录');
-    }
-  }
-};
-
-// 压缩数据 - 移除大型文件数据
-const compressConversation = (conversation) => {
+  
   return {
-    ...conversation,
-    messages: conversation.messages.map(msg => ({
-      id: msg.id,
-      role: msg.role,
-      content: msg.content,
-      timestamp: msg.timestamp,
-      hasReasoning: msg.hasReasoning || false,
-      reasoning: msg.reasoning,
-      uploadedFile: msg.uploadedFile ? {
-        name: msg.uploadedFile.name,
-        type: msg.uploadedFile.type,
-        size: msg.uploadedFile.size
-      } : null
-    }))
+    id: frontendConversation.id,
+    title: frontendConversation.title || null,
+    role_id: roleId,
+    response_mode: frontendConversation.responseMode || 'stream',
+    messages: JSON.stringify(frontendConversation.messages || []),
+    settings: JSON.stringify({
+      model: frontendConversation.model,
+      temperature: 0.7,
+      max_tokens: 4000
+    }),
+    created_at: frontendConversation.createdAt || new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
 };
 
-// 清理旧数据
-const cleanOldConversations = (conversations) => {
+// 将后端对话格式转换为前端格式
+const convertToFrontendFormat = (backendConversation) => {
+  let messages = [];
+  let settings = {};
+  
   try {
-    const sorted = conversations.sort((a, b) => {
-      const aTime = a.lastUpdated || 0;
-      const bTime = b.lastUpdated || 0;
-      return bTime - aTime;
-    });
-
-    // 只保留最新的20个对话
-    return sorted.slice(0, 20);
-  } catch (error) {
-    console.error("清理对话数据失败:", error);
-    return conversations;
+    messages = JSON.parse(backendConversation.messages || '[]');
+  } catch (e) {
+    console.warn('解析消息失败:', e);
   }
+  
+  try {
+    settings = JSON.parse(backendConversation.settings || '{}');
+  } catch (e) {
+    console.warn('解析设置失败:', e);
+  }
+  
+  return {
+    id: backendConversation.id,
+    title: backendConversation.title || '新对话',
+    messages: messages,
+    createdAt: backendConversation.created_at,
+    role: backendConversation.role_id,
+    model: settings.model || 'deepseek-ai/DeepSeek-V3.1',
+    responseMode: backendConversation.response_mode || 'stream'
+  };
 };
 
-// 读取JSON文件
-const readJsonFile = async (filename, defaultValue = []) => {
-  try {
-    await ensureDataDir();
-    const dataDir = getCurrentDataDir();
-    const baseDir = getCurrentBaseDirectory();
-    const filePath = baseDir ? `${dataDir}/${filename}` : `${dataDir}/${filename}`;
-    
-    const fileExists = await exists(filePath, baseDir ? { baseDir } : {});
-    if (!fileExists) {
-      return defaultValue;
-    }
-
-    const content = await readTextFile(filePath, baseDir ? { baseDir } : {});
-    return JSON.parse(content);
-  } catch (error) {
-    console.error(`读取文件 ${filename} 失败:`, error);
-    return defaultValue;
-  }
+// 检查是否在 Tauri 环境中 - 使用更宽松的检测
+const isTauriEnvironment = () => {
+  if (typeof window === 'undefined') return false;
+  
+  // 检查多种Tauri标识
+  const isTauri = Boolean(
+    window.__TAURI__ !== undefined || 
+    window.__TAURI_IPC__ !== undefined ||
+    window.__TAURI_INTERNALS__ !== undefined ||
+    window.__TAURI_METADATA__ !== undefined ||
+    navigator.userAgent.includes('Tauri') ||
+    Object.keys(window).some(key => key.includes('TAURI'))
+  );
+  
+  return isTauri;
 };
 
-// 写入JSON文件
-const writeJsonFile = async (filename, data) => {
+// 对话管理
+export const loadChatHistory = async () => {
   try {
-    await ensureDataDir();
-    const dataDir = getCurrentDataDir();
-    const baseDir = getCurrentBaseDirectory();
-    const filePath = baseDir ? `${dataDir}/${filename}` : `${dataDir}/${filename}`;
-    const content = JSON.stringify(data, null, 2);
-    
-    await writeTextFile(filePath, content, baseDir ? { baseDir } : {});
-    console.log(`文件已保存: ${filePath}`);
+    console.log('📖 从 SQLite 数据库加载对话历史...');
+    const backendConversations = await invoke('get_conversations');
+    const frontendConversations = backendConversations.map(convertToFrontendFormat);
+    console.log(`✅ 成功加载 ${frontendConversations.length} 个对话`);
+    return frontendConversations;
   } catch (error) {
-    console.error(`写入文件 ${filename} 失败:`, error);
+    console.error('❌ 加载对话历史失败:', error);
     throw error;
   }
 };
 
-// 加载聊天历史
-export const loadChatHistory = async () => {
-  try {
-    const conversations = await readJsonFile(CONVERSATIONS_FILE, []);
-    
-    // 按时间排序
-    return conversations.sort((a, b) => {
-      const aTime = a.lastUpdated || 0;
-      const bTime = b.lastUpdated || 0;
-      return bTime - aTime;
-    });
-  } catch (error) {
-    console.error("加载聊天历史失败:", error);
-    return [];
-  }
-};
-
-// 保存聊天历史
 export const saveChatHistory = async (conversations) => {
   try {
-    // 清理旧数据
-    const cleaned = cleanOldConversations(conversations);
+    console.log(`💾 保存 ${conversations.length} 个对话到 SQLite 数据库...`);
     
-    // 压缩数据
-    const compressed = cleaned.map(compressConversation);
-    
-    // 添加更新时间戳
-    const now = Date.now();
-    const conversationsWithTimestamp = compressed.map(conv => ({
-      ...conv,
-      lastUpdated: now
-    }));
-    
-    await writeJsonFile(CONVERSATIONS_FILE, conversationsWithTimestamp);
-    console.log(`已保存 ${conversationsWithTimestamp.length} 个对话到本地文件`);
-  } catch (error) {
-    console.error("保存聊天历史失败:", error);
-  }
-};
-
-// 保存单个对话
-export const saveConversation = async (conversation) => {
-  try {
-    const conversations = await loadChatHistory();
-    const compressed = compressConversation(conversation);
-    
-    // 更新或添加对话
-    const existingIndex = conversations.findIndex(c => c.id === conversation.id);
-    if (existingIndex >= 0) {
-      conversations[existingIndex] = {
-        ...compressed,
-        lastUpdated: Date.now()
-      };
-    } else {
-      conversations.push({
-        ...compressed,
-        lastUpdated: Date.now()
-      });
+    // 批量保存对话
+    for (const conversation of conversations) {
+      const convertedConversation = convertToBackendFormat(conversation);
+      await invoke('save_conversation', { conversation: convertedConversation });
     }
     
-    await saveChatHistory(conversations);
+    console.log('✅ 对话历史保存成功');
   } catch (error) {
-    console.error("保存单个对话失败:", error);
+    console.error('❌ 保存对话历史失败:', error);
+    throw error;
   }
 };
 
-// 删除对话
+export const saveConversation = async (conversation) => {
+  try {
+    console.log('💾 保存单个对话到 SQLite 数据库...');
+    const convertedConversation = convertToBackendFormat(conversation);
+    await invoke('save_conversation', { conversation: convertedConversation });
+    console.log('✅ 对话保存成功');
+  } catch (error) {
+    console.error('❌ 保存对话失败:', error);
+    throw error;
+  }
+};
+
 export const deleteConversation = async (conversationId) => {
   try {
-    const conversations = await loadChatHistory();
-    const filtered = conversations.filter(c => c.id !== conversationId);
-    await saveChatHistory(filtered);
+    console.log(`🗑️ 从 SQLite 数据库删除对话: ${conversationId}`);
+    await invoke('delete_conversation', { conversationId });
+    console.log('✅ 对话删除成功');
   } catch (error) {
-    console.error("删除对话失败:", error);
+    console.error('❌ 删除对话失败:', error);
+    throw error;
   }
 };
 
-// 清除所有聊天历史
 export const clearChatHistory = async () => {
   try {
-    await writeJsonFile(CONVERSATIONS_FILE, []);
-    console.log("已清除所有聊天历史");
+    console.log('🗑️ 清空所有对话...');
+    await invoke('clear_conversations');
+    console.log('✅ 所有对话已清空');
   } catch (error) {
-    console.error("清除聊天历史失败:", error);
+    console.error('❌ 清空对话失败:', error);
+    throw error;
   }
 };
 
-// 设置相关存储
+// 设置管理
 export const saveSetting = async (key, value) => {
   try {
-    const settings = await readJsonFile(SETTINGS_FILE, {});
-    settings[key] = value;
-    await writeJsonFile(SETTINGS_FILE, settings);
+    // 将复杂数据类型序列化为字符串
+    const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+    console.log(`💾 保存设置到 SQLite 数据库: ${key} = ${stringValue}`);
+    await invoke('save_setting', { key, value: stringValue });
+    console.log('✅ 设置保存成功');
   } catch (error) {
-    console.error("保存设置失败:", error);
+    console.error('❌ 保存设置失败:', error);
+    throw error;
   }
 };
 
-// 加载设置
 export const loadSetting = async (key, defaultValue = null) => {
   try {
-    const settings = await readJsonFile(SETTINGS_FILE, {});
-    return settings[key] !== undefined ? settings[key] : defaultValue;
+    console.log(`📖 从 SQLite 数据库加载设置: ${key}`);
+    const value = await invoke('get_setting', { key });
+    
+    if (value === null || value === undefined) {
+      return defaultValue;
+    }
+    
+    // 尝试解析 JSON 字符串，如果失败则返回原始字符串
+    let result = value;
+    try {
+      result = JSON.parse(value);
+    } catch (e) {
+      // 不是有效的 JSON，返回原始字符串
+      result = value;
+    }
+    
+    console.log(`✅ 设置加载成功: ${key} = ${result}`);
+    return result;
   } catch (error) {
-    console.error("加载设置失败:", error);
+    console.error('❌ 加载设置失败:', error);
     return defaultValue;
   }
 };
 
-// 从IndexedDB迁移数据
-export const migrateFromIndexedDB = async (oldConversations = []) => {
+// 角色管理
+export const saveRole = async (role) => {
   try {
-    if (oldConversations.length > 0) {
-      await saveChatHistory(oldConversations);
-      console.log(`已迁移 ${oldConversations.length} 个对话到本地文件`);
-      return true;
-    }
+    console.log(`💾 保存角色到 SQLite 数据库: ${role.name}`);
+    await invoke('save_role', { role });
+    console.log('✅ 角色保存成功');
   } catch (error) {
-    console.error("迁移数据失败:", error);
+    console.error('❌ 保存角色失败:', error);
+    throw error;
   }
-  return false;
 };
 
-// 获取存储信息
+export const getAllRoles = async () => {
+  try {
+    console.log('📖 从 SQLite 数据库加载所有角色...');
+    const roles = await invoke('get_roles');
+    console.log(`✅ 成功加载 ${roles.length} 个角色`);
+    return roles;
+  } catch (error) {
+    console.error('❌ 加载角色失败:', error);
+    throw error;
+  }
+};
+
+export const deleteRole = async (roleId) => {
+  try {
+    console.log(`🗑️ 从 SQLite 数据库删除角色: ${roleId}`);
+    await invoke('delete_role', { roleId });
+    console.log('✅ 角色删除成功');
+  } catch (error) {
+    console.error('❌ 删除角色失败:', error);
+    throw error;
+  }
+};
+
+// 模型管理
+export const saveModelGroup = async (group) => {
+  try {
+    console.log(`💾 保存模型分组到 SQLite 数据库: ${group.name}`);
+    await invoke('save_model_group', { group });
+    console.log('✅ 模型分组保存成功');
+  } catch (error) {
+    console.error('❌ 保存模型分组失败:', error);
+    throw error;
+  }
+};
+
+export const getAllModelGroups = async () => {
+  try {
+    console.log('📖 从 SQLite 数据库加载所有模型分组...');
+    const groups = await invoke('get_model_groups');
+    console.log(`✅ 成功加载 ${groups.length} 个模型分组`);
+    return groups;
+  } catch (error) {
+    console.error('❌ 加载模型分组失败:', error);
+    throw error;
+  }
+};
+
+export const deleteModelGroup = async (groupId) => {
+  try {
+    console.log(`🗑️ 从 SQLite 数据库删除模型分组: ${groupId}`);
+    await invoke('delete_model_group', { groupId });
+    console.log('✅ 模型分组删除成功');
+  } catch (error) {
+    console.error('❌ 删除模型分组失败:', error);
+    throw error;
+  }
+};
+
+export const saveModel = async (model) => {
+  try {
+    console.log(`💾 保存模型到 SQLite 数据库: ${model.name}`);
+    await invoke('save_model', { model });
+    console.log('✅ 模型保存成功');
+  } catch (error) {
+    console.error('❌ 保存模型失败:', error);
+    throw error;
+  }
+};
+
+export const getAllModels = async () => {
+  try {
+    console.log('📖 从 SQLite 数据库加载所有模型...');
+    const models = await invoke('get_models');
+    console.log(`✅ 成功加载 ${models.length} 个模型`);
+    return models;
+  } catch (error) {
+    console.error('❌ 加载模型失败:', error);
+    throw error;
+  }
+};
+
+export const deleteModel = async (modelId) => {
+  try {
+    console.log(`🗑️ 从 SQLite 数据库删除模型: ${modelId}`);
+    await invoke('delete_model', { modelId });
+    console.log('✅ 模型删除成功');
+  } catch (error) {
+    console.error('❌ 删除模型失败:', error);
+    throw error;
+  }
+};
+
+// 存储信息
 export const getStorageInfo = async () => {
-  try {
-    const conversations = await loadChatHistory();
-    const settings = await readJsonFile(SETTINGS_FILE, {});
-    
-    const conversationsSize = new Blob([JSON.stringify(conversations)]).size;
-    const settingsSize = new Blob([JSON.stringify(settings)]).size;
-    const totalSize = conversationsSize + settingsSize;
-    const sizeInMB = (totalSize / (1024 * 1024)).toFixed(2);
-    
-    // 添加调试信息
-    const debugInfo = {
-      baseDirectory: baseDirectory,
-      customDataDir: customDataDir,
-      actualDataDir: getCurrentDataDir(),
-      isTauriEnv: isTauriEnvironment()
+  if (!isTauriEnvironment()) {
+    return {
+      type: 'tauri-sqlite',
+      available: false,
+      error: 'Tauri environment not available'
     };
+  }
+
+  try {
+    console.log('📊 获取 SQLite 存储信息...');
+    const stats = await invoke('get_database_stats');
+    console.log('✅ 存储信息获取成功:', stats);
     
     return {
-      totalSize: sizeInMB + ' MB',
-      dataDirectory: getCurrentDataDir(),
-      isCustomPath: !!customDataDir,
-      debugInfo: debugInfo,
-      conversations: {
-        count: conversations.length,
-        size: (conversationsSize / (1024 * 1024)).toFixed(2) + ' MB',
-        items: conversations.map(c => ({
-          id: c.id,
-          title: c.title,
-          messageCount: c.messages.length,
-          lastUpdated: c.lastUpdated
-        }))
-      },
-      settings: {
-        size: (settingsSize / 1024).toFixed(2) + ' KB'
-      }
+      type: 'tauri-sqlite',
+      available: true,
+      stats: stats,
+      description: 'Tauri SQLite + sqlite-vec 系统'
     };
   } catch (error) {
-    console.error("获取存储信息失败:", error);
+    console.error('❌ 获取存储信息失败:', error);
     return {
-      error: error.message,
-      debugInfo: {
-        baseDirectory: baseDirectory,
-        customDataDir: customDataDir,
-        actualDataDir: getCurrentDataDir(),
-        isTauriEnv: isTauriEnvironment()
-      }
+      type: 'tauri-sqlite',
+      available: false,
+      error: error.message
     };
   }
 };
 
+// 数据迁移（从 IndexedDB 到 SQLite）
+export const migrateFromIndexedDB = async (oldConversations = []) => {
+  if (!isTauriEnvironment()) {
+    return false;
+  }
 
-// 获取当前数据目录信息
+  if (oldConversations.length === 0) {
+    console.log('📦 没有需要迁移的对话数据');
+    return false;
+  }
+
+  try {
+    console.log(`🔄 开始迁移 ${oldConversations.length} 个对话到 SQLite 数据库...`);
+    
+    for (const conversation of oldConversations) {
+      const convertedConversation = convertToBackendFormat(conversation);
+      await invoke('save_conversation', { conversation: convertedConversation });
+    }
+    
+    console.log('✅ 对话数据迁移完成');
+    return true;
+  } catch (error) {
+    console.error('❌ 数据迁移失败:', error);
+    return false;
+  }
+};
+
+// 设置自定义数据目录（不再需要，因为使用 SQLite 数据库）
+export const setCustomDataDir = async (customPath) => {
+  console.log('⚠️ setCustomDataDir 已弃用，现在使用 SQLite 数据库');
+  return true;
+};
+
+// 获取数据目录信息
 export const getDataDirectoryInfo = () => {
   return {
-    path: getCurrentDataDir(),
-    isCustom: !!customDataDir,
-    baseDirectory: baseDirectory
+    path: 'sqlite-database',
+    isCustom: false,
+    baseDirectory: 'tauri-sqlite',
+    description: '使用 Tauri SQLite + sqlite-vec 系统'
   };
 };
 
-// 检查是否在Tauri环境中
-export const isTauriEnvironment = () => {
-  return typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
+// 导出所有函数，保持与原始 storage.js 的 API 兼容
+export default {
+  loadChatHistory,
+  saveChatHistory,
+  saveConversation,
+  deleteConversation,
+  clearChatHistory,
+  saveSetting,
+  loadSetting,
+  getStorageInfo,
+  migrateFromIndexedDB,
+  setCustomDataDir,
+  getDataDirectoryInfo,
+  saveRole,
+  getAllRoles,
+  deleteRole,
+  saveModelGroup,
+  getAllModelGroups,
+  deleteModelGroup,
+  saveModel,
+  getAllModels,
+  deleteModel
 };

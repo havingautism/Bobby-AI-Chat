@@ -2,6 +2,63 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
+use sqlx::FromRow;
+
+// 对话结构
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct Conversation {
+    pub id: String,
+    pub title: Option<String>,
+    pub role_id: Option<String>,
+    pub response_mode: String,
+    pub messages: String, // JSON string
+    pub settings: String, // JSON string
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// 角色结构
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct Role {
+    pub id: String,
+    pub name: String,
+    pub icon: Option<String>,
+    pub avatar: Option<String>,
+    pub description: Option<String>,
+    pub temperature: f64,
+    pub system_prompt: Option<String>,
+    pub color: Option<String>,
+    pub sort_order: i32,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// 模型分组结构
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct ModelGroup {
+    pub id: String,
+    pub name: String,
+    pub provider: String,
+    pub description: Option<String>,
+    pub sort_order: i32,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// 模型结构
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct Model {
+    pub id: String,
+    pub group_id: String,
+    pub name: String,
+    pub model_id: String,
+    pub enabled: bool,
+    pub description: Option<String>,
+    pub api_params: Option<String>, // JSON string
+    pub sort_order: i32,
+    pub created_at: String,
+    pub updated_at: String,
+}
 
 // 知识库集合
 #[derive(Debug, Clone, Serialize, Deserialize)]

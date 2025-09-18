@@ -183,9 +183,48 @@ impl DatabaseManager {
             "CREATE TABLE IF NOT EXISTS model_groups (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
+                provider TEXT NOT NULL,
                 description TEXT,
                 sort_order INTEGER DEFAULT 0,
                 created_at TEXT,
+                updated_at TEXT
+            )",
+            "CREATE TABLE IF NOT EXISTS models (
+                id TEXT PRIMARY KEY,
+                group_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                model_id TEXT NOT NULL,
+                enabled BOOLEAN DEFAULT TRUE,
+                description TEXT,
+                api_params TEXT,
+                sort_order INTEGER DEFAULT 0,
+                created_at TEXT,
+                updated_at TEXT,
+                FOREIGN KEY (group_id) REFERENCES model_groups (id) ON DELETE CASCADE
+            )",
+            "CREATE TABLE IF NOT EXISTS conversations (
+                id TEXT PRIMARY KEY,
+                title TEXT,
+                role_id TEXT,
+                response_mode TEXT DEFAULT 'stream',
+                messages TEXT,
+                settings TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE SET NULL
+            )",
+            "CREATE TABLE IF NOT EXISTS messages (
+                id TEXT PRIMARY KEY,
+                conversation_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                timestamp TEXT,
+                metadata TEXT,
+                FOREIGN KEY (conversation_id) REFERENCES conversations (id) ON DELETE CASCADE
+            )",
+            "CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT,
                 updated_at TEXT
             )",
             "CREATE TABLE IF NOT EXISTS embedding_models (
@@ -206,6 +245,88 @@ impl DatabaseManager {
                 error!("Failed to execute main query: {}", e);
                 error!("Query: {}", query);
                 return Err(anyhow!("Failed to initialize main database: {}", e));
+            }
+        }
+
+        // 创建索引
+        let index_queries = vec![
+            "CREATE INDEX IF NOT EXISTS idx_roles_sort_order ON roles(sort_order)",
+            "CREATE INDEX IF NOT EXISTS idx_model_groups_sort_order ON model_groups(sort_order)",
+            "CREATE INDEX IF NOT EXISTS idx_models_group_id ON models(group_id)",
+            "CREATE INDEX IF NOT EXISTS idx_models_sort_order ON models(sort_order)",
+            "CREATE INDEX IF NOT EXISTS idx_models_enabled ON models(enabled)",
+            "CREATE INDEX IF NOT EXISTS idx_conversations_role_id ON conversations(role_id)",
+            "CREATE INDEX IF NOT EXISTS idx_conversations_created_at ON conversations(created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id)",
+            "CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp)",
+            "CREATE INDEX IF NOT EXISTS idx_settings_updated_at ON settings(updated_at)"
+        ];
+
+        for query in index_queries {
+            if let Err(e) = sqlx::query(query).execute(main_pool).await {
+                error!("Failed to create index: {}", e);
+                error!("Query: {}", query);
+            }
+        }
+
+        // 插入默认角色
+        let default_roles = vec![
+            ("bobby", "Bobby", "🐱", "😸", "可爱的猫猫助手，日常聊天伙伴", 0.8, "你是Bobby，一只超级可爱的小猫咪！🐱 请用可爱、活泼的语气回答，多使用emoji表情，让对话充满趣味和温暖。记住你是一只爱撒娇的小猫，喜欢用'喵~'、'nya~'等可爱的语气词。💕", "#f97316", 0),
+            ("developer", "编程专家", "👨🏻‍💻", "👨🏻‍💻", "专业的编程和技术支持", 0.4, "你是一个经验丰富的编程专家，请提供准确的代码示例和技术解决方案。如果可以，请在回答最后添加markdown流程图来清晰地展示代码执行流程、算法逻辑或系统架构。使用mermaid语法创建流程图，例如：\n\n```mermaid\ngraph TD\n    A[开始] --> B{条件判断}\n    B -->|是| C[执行操作]\n    B -->|否| D[其他操作]\n    C --> E[结束]\n    D --> E\n```", "#8b5cf6", 1),
+            ("creative", "创意伙伴", "🎨", "🎨", "富有创意和想象力", 0.9, "你是一个富有创意的伙伴，请用创新、有趣的方式回答问题，提供独特的见解和创意想法。", "#f59e0b", 2),
+            ("analyst", "数据分析师", "📊", "📊", "专业的数据分析和洞察", 0.3, "你是一个专业的数据分析师，请用准确、客观的方式分析问题，提供基于数据的见解。", "#3b82f6", 3),
+            ("teacher", "知识导师", "👨‍🏫", "👨‍🏫", "耐心的教学和解释", 0.5, "你是一个耐心的导师，请用清晰、易懂的方式解释概念，循序渐进地帮助用户学习。如果可以，请在回答最后添加markdown流程图来清晰地展示知识结构、学习路径或概念之间的关系。使用mermaid语法创建流程图，例如：\n\n```mermaid\ngraph TD\n    A[基础概念] --> B[进阶概念]\n    B --> C[应用实例]\n    C --> D[深入理解]\n    A --> E[相关概念]\n    E --> D\n```", "#10b981", 4),
+            ("writer", "写作助手", "✍️", "✍️", "优雅的文字创作", 0.8, "你是一个优秀的写作助手，请用优美、流畅的文字帮助用户创作和改进文本。", "#ef4444", 5),
+        ];
+
+        let now_str = chrono::Utc::now().to_rfc3339();
+        for (id, name, icon, avatar, description, temperature, system_prompt, color, sort_order) in default_roles {
+            let insert_query = sqlx::query(
+                "INSERT OR IGNORE INTO roles (id, name, icon, avatar, description, temperature, system_prompt, color, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            )
+            .bind(id)
+            .bind(name)
+            .bind(icon)
+            .bind(avatar)
+            .bind(description)
+            .bind(temperature)
+            .bind(system_prompt)
+            .bind(color)
+            .bind(sort_order)
+            .bind(&now_str)
+            .bind(&now_str);
+
+            if let Err(e) = insert_query.execute(main_pool).await {
+                error!("Failed to insert role {}: {}", id, e);
+            }
+        }
+
+        // 插入默认设置
+        let default_settings = vec![
+            ("theme", "light"),
+            ("language", "zh-CN"),
+            ("auto_save", "true"),
+            ("max_history", "100"),
+            ("default_model", "gpt-3.5-turbo"),
+            ("api_key", ""),
+            ("enable_voice", "false"),
+            ("voice_speed", "1.0"),
+            ("voice_pitch", "1.0"),
+            ("notification_enabled", "true"),
+            ("cache_enabled", "true"),
+            ("debug_mode", "false")
+        ];
+
+        for (key, value) in default_settings {
+            let insert_query = sqlx::query(
+                "INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?, ?, ?)"
+            )
+            .bind(key)
+            .bind(value)
+            .bind(&now_str);
+
+            if let Err(e) = insert_query.execute(main_pool).await {
+                error!("Failed to insert setting {}: {}", key, e);
             }
         }
 
@@ -1026,7 +1147,221 @@ impl DatabaseManager {
     }
 }
 
-#[cfg(test)]
+// 对话管理方法
+impl DatabaseManager {
+    // 保存对话
+    pub async fn save_conversation(&self, conversation: &Conversation) -> Result<()> {
+        let query = sqlx::query(
+            "INSERT OR REPLACE INTO conversations (id, title, role_id, response_mode, messages, settings, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind(&conversation.id)
+        .bind(&conversation.title)
+        .bind(&conversation.role_id)
+        .bind(&conversation.response_mode)
+        .bind(&conversation.messages)
+        .bind(&conversation.settings)
+        .bind(&conversation.created_at)
+        .bind(&conversation.updated_at);
+
+        query.execute(self.main_pool()).await?;
+        Ok(())
+    }
+
+    // 获取所有对话
+    pub async fn get_conversations(&self) -> Result<Vec<Conversation>> {
+        let rows = sqlx::query_as::<_, Conversation>(
+            "SELECT * FROM conversations ORDER BY created_at DESC"
+        )
+        .fetch_all(self.main_pool())
+        .await?;
+
+        Ok(rows)
+    }
+
+    // 删除对话
+    pub async fn delete_conversation(&self, conversation_id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM conversations WHERE id = ?")
+            .bind(conversation_id)
+            .execute(self.main_pool())
+            .await?;
+        Ok(())
+    }
+
+    // 清空所有对话
+    pub async fn clear_conversations(&self) -> Result<()> {
+        sqlx::query("DELETE FROM conversations").execute(self.main_pool()).await?;
+        Ok(())
+    }
+}
+
+// 设置管理方法
+impl DatabaseManager {
+    // 保存设置
+    pub async fn save_setting(&self, key: &str, value: &str) -> Result<()> {
+        let now = chrono::Utc::now().to_rfc3339();
+        let query = sqlx::query(
+            "INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)"
+        )
+        .bind(key)
+        .bind(value)
+        .bind(&now);
+
+        query.execute(self.main_pool()).await?;
+        Ok(())
+    }
+
+    // 获取设置
+    pub async fn get_setting(&self, key: &str) -> Result<Option<String>> {
+        let row = sqlx::query("SELECT value FROM settings WHERE key = ?")
+            .bind(key)
+            .fetch_optional(self.main_pool())
+            .await?;
+
+        Ok(row.map(|r| r.get("value")))
+    }
+
+    // 获取所有设置
+    pub async fn get_all_settings(&self) -> Result<Vec<(String, String)>> {
+        let rows = sqlx::query("SELECT key, value FROM settings")
+            .fetch_all(self.main_pool())
+            .await?;
+
+        let settings = rows.into_iter()
+            .map(|row| (row.get("key"), row.get("value")))
+            .collect();
+
+        Ok(settings)
+    }
+}
+
+// 角色管理方法
+impl DatabaseManager {
+    // 保存角色
+    pub async fn save_role(&self, role: &Role) -> Result<()> {
+        let query = sqlx::query(
+            "INSERT OR REPLACE INTO roles (id, name, icon, avatar, description, temperature, system_prompt, color, sort_order, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind(&role.id)
+        .bind(&role.name)
+        .bind(&role.icon)
+        .bind(&role.avatar)
+        .bind(&role.description)
+        .bind(role.temperature)
+        .bind(&role.system_prompt)
+        .bind(&role.color)
+        .bind(role.sort_order)
+        .bind(&role.created_at)
+        .bind(&role.updated_at);
+
+        query.execute(self.main_pool()).await?;
+        Ok(())
+    }
+
+    // 获取所有角色
+    pub async fn get_roles(&self) -> Result<Vec<Role>> {
+        let rows = sqlx::query_as::<_, Role>(
+            "SELECT * FROM roles ORDER BY sort_order ASC, created_at ASC"
+        )
+        .fetch_all(self.main_pool())
+        .await?;
+
+        Ok(rows)
+    }
+
+    // 删除角色
+    pub async fn delete_role(&self, role_id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM roles WHERE id = ?")
+            .bind(role_id)
+            .execute(self.main_pool())
+            .await?;
+        Ok(())
+    }
+}
+
+// 模型管理方法
+impl DatabaseManager {
+    // 保存模型分组
+    pub async fn save_model_group(&self, group: &ModelGroup) -> Result<()> {
+        let query = sqlx::query(
+            "INSERT OR REPLACE INTO model_groups (id, name, provider, description, sort_order, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind(&group.id)
+        .bind(&group.name)
+        .bind(&group.provider)
+        .bind(&group.description)
+        .bind(group.sort_order)
+        .bind(&group.created_at)
+        .bind(&group.updated_at);
+
+        query.execute(self.main_pool()).await?;
+        Ok(())
+    }
+
+    // 获取所有模型分组
+    pub async fn get_model_groups(&self) -> Result<Vec<ModelGroup>> {
+        let rows = sqlx::query_as::<_, ModelGroup>(
+            "SELECT * FROM model_groups ORDER BY sort_order ASC, created_at ASC"
+        )
+        .fetch_all(self.main_pool())
+        .await?;
+
+        Ok(rows)
+    }
+
+    // 删除模型分组
+    pub async fn delete_model_group(&self, group_id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM model_groups WHERE id = ?")
+            .bind(group_id)
+            .execute(self.main_pool())
+            .await?;
+        Ok(())
+    }
+
+    // 保存模型
+    pub async fn save_model(&self, model: &Model) -> Result<()> {
+        let query = sqlx::query(
+            "INSERT OR REPLACE INTO models (id, group_id, name, model_id, enabled, description, api_params, sort_order, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind(&model.id)
+        .bind(&model.group_id)
+        .bind(&model.name)
+        .bind(&model.model_id)
+        .bind(model.enabled)
+        .bind(&model.description)
+        .bind(&model.api_params)
+        .bind(model.sort_order)
+        .bind(&model.created_at)
+        .bind(&model.updated_at);
+
+        query.execute(self.main_pool()).await?;
+        Ok(())
+    }
+
+    // 获取所有模型
+    pub async fn get_models(&self) -> Result<Vec<Model>> {
+        let rows = sqlx::query_as::<_, Model>(
+            "SELECT * FROM models ORDER BY sort_order ASC, created_at ASC"
+        )
+        .fetch_all(self.main_pool())
+        .await?;
+
+        Ok(rows)
+    }
+
+    // 删除模型
+    pub async fn delete_model(&self, model_id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM models WHERE id = ?")
+            .bind(model_id)
+            .execute(self.main_pool())
+            .await?;
+        Ok(())
+    }
+}
+
 mod tests {
     use super::*;
 

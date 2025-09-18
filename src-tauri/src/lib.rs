@@ -121,6 +121,31 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       // 基础命令
       get_file_size,
+      get_database_stats,
+
+      // 对话管理命令
+      save_conversation,
+      get_conversations,
+      delete_conversation,
+      clear_conversations,
+
+      // 设置管理命令
+      save_setting,
+      get_setting,
+      get_all_settings,
+
+      // 角色管理命令
+      save_role,
+      get_roles,
+      delete_role,
+
+      // 模型管理命令
+      save_model_group,
+      get_model_groups,
+      delete_model_group,
+      save_model,
+      get_models,
+      delete_model,
 
       // 知识库管理命令
       init_knowledge_base,
@@ -884,6 +909,157 @@ async fn get_file_size(file_path: String) -> Result<u64, String> {
     let metadata = fs::metadata(&file_path)
         .map_err(|e| format!("无法获取文件元数据: {}", e))?;
     Ok(metadata.len())
+}
+
+// 对话管理命令
+#[tauri::command]
+async fn save_conversation(conversation: Conversation, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    match state.db.save_conversation(&conversation).await {
+        Ok(_) => Ok("对话保存成功".to_string()),
+        Err(e) => Err(format!("保存对话失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn get_conversations(state: tauri::State<'_, AppState>) -> Result<Vec<Conversation>, String> {
+    match state.db.get_conversations().await {
+        Ok(conversations) => Ok(conversations),
+        Err(e) => Err(format!("获取对话列表失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn delete_conversation(conversation_id: String, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    match state.db.delete_conversation(&conversation_id).await {
+        Ok(_) => Ok("对话删除成功".to_string()),
+        Err(e) => Err(format!("删除对话失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn clear_conversations(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    match state.db.clear_conversations().await {
+        Ok(_) => Ok("所有对话已清空".to_string()),
+        Err(e) => Err(format!("清空对话失败: {}", e))
+    }
+}
+
+// 设置管理命令
+#[tauri::command]
+async fn save_setting(key: String, value: String, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    match state.db.save_setting(&key, &value).await {
+        Ok(_) => Ok("设置保存成功".to_string()),
+        Err(e) => Err(format!("保存设置失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn get_setting(key: String, state: tauri::State<'_, AppState>) -> Result<Option<String>, String> {
+    match state.db.get_setting(&key).await {
+        Ok(value) => Ok(value),
+        Err(e) => Err(format!("获取设置失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn get_all_settings(state: tauri::State<'_, AppState>) -> Result<Vec<(String, String)>, String> {
+    match state.db.get_all_settings().await {
+        Ok(settings) => Ok(settings),
+        Err(e) => Err(format!("获取所有设置失败: {}", e))
+    }
+}
+
+// 角色管理命令
+#[tauri::command]
+async fn save_role(role: Role, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    match state.db.save_role(&role).await {
+        Ok(_) => Ok("角色保存成功".to_string()),
+        Err(e) => Err(format!("保存角色失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn get_roles(state: tauri::State<'_, AppState>) -> Result<Vec<Role>, String> {
+    match state.db.get_roles().await {
+        Ok(roles) => Ok(roles),
+        Err(e) => Err(format!("获取角色列表失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn delete_role(role_id: String, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    match state.db.delete_role(&role_id).await {
+        Ok(_) => Ok("角色删除成功".to_string()),
+        Err(e) => Err(format!("删除角色失败: {}", e))
+    }
+}
+
+// 模型管理命令
+#[tauri::command]
+async fn save_model_group(group: ModelGroup, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    match state.db.save_model_group(&group).await {
+        Ok(_) => Ok("模型分组保存成功".to_string()),
+        Err(e) => Err(format!("保存模型分组失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn get_model_groups(state: tauri::State<'_, AppState>) -> Result<Vec<ModelGroup>, String> {
+    match state.db.get_model_groups().await {
+        Ok(groups) => Ok(groups),
+        Err(e) => Err(format!("获取模型分组列表失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn delete_model_group(group_id: String, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    match state.db.delete_model_group(&group_id).await {
+        Ok(_) => Ok("模型分组删除成功".to_string()),
+        Err(e) => Err(format!("删除模型分组失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn save_model(model: Model, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    match state.db.save_model(&model).await {
+        Ok(_) => Ok("模型保存成功".to_string()),
+        Err(e) => Err(format!("保存模型失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn get_models(state: tauri::State<'_, AppState>) -> Result<Vec<Model>, String> {
+    match state.db.get_models().await {
+        Ok(models) => Ok(models),
+        Err(e) => Err(format!("获取模型列表失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn delete_model(model_id: String, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    match state.db.delete_model(&model_id).await {
+        Ok(_) => Ok("模型删除成功".to_string()),
+        Err(e) => Err(format!("删除模型失败: {}", e))
+    }
+}
+
+// 数据库统计信息
+#[tauri::command]
+async fn get_database_stats(state: tauri::State<'_, AppState>) -> Result<serde_json::Value, String> {
+    match state.db.health_check().await {
+        Ok(health) => {
+            let stats = serde_json::json!({
+                "main_db": health.main_db,
+                "knowledge_db": health.knowledge_db,
+                "vec_extension": health.vec_extension,
+                "cache_stats": health.cache_stats,
+                "storage_type": "sqlite-vec",
+                "description": "Tauri SQLite + sqlite-vec 系统"
+            });
+            Ok(stats)
+        }
+        Err(e) => Err(format!("获取数据库统计信息失败: {}", e))
+    }
 }
 
 
