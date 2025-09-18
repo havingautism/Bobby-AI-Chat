@@ -592,16 +592,11 @@ impl DatabaseManager {
         limit: usize,
         threshold: f32,
     ) -> Result<Vec<SearchResult>> {
-        // 更稳健的缓存键：包含集合、limit、threshold 与查询向量字节级哈希，避免碰撞
-        let embedding_bytes = query_embedding.as_bytes();
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::Hasher;
-        let mut hasher = DefaultHasher::new();
-        hasher.write(collection_id.as_bytes());
-        hasher.write(&limit.to_le_bytes());
-        hasher.write(&threshold.to_bits().to_le_bytes());
-        hasher.write(embedding_bytes);
-        let cache_key = format!("search:{:016x}", hasher.finish());
+        let cache_key = format!("search:{}:{}:{}",
+            collection_id,
+            limit,
+            query_embedding.iter().map(|x| x.to_bits() as u64).sum::<u64>()
+        );
 
         // 检查缓存
         {
@@ -613,31 +608,6 @@ impl DatabaseManager {
         }
 
         println!("🔍 [搜索] 开始向量搜索，集合: {}, 限制: {}, 阈值: {}", collection_id, limit, threshold);
-
-        // 调试：打印集合的文档/分块/向量计数，帮助定位“集合为空”的问题
-        if let Ok(doc_count_row) = sqlx::query("SELECT COUNT(*) FROM knowledge_documents WHERE collection_id = ?")
-            .bind(collection_id)
-            .fetch_one(self.knowledge_pool())
-            .await
-        {
-            let doc_count: i64 = doc_count_row.get::<i64, _>(0);
-            let chunk_count_row = sqlx::query(
-                "SELECT COUNT(*) FROM knowledge_chunks kc JOIN knowledge_documents kd ON kc.document_id = kd.id WHERE kd.collection_id = ?",
-            )
-            .bind(collection_id)
-            .fetch_one(self.knowledge_pool())
-            .await;
-            let chunk_count: i64 = chunk_count_row.map(|r| r.get::<i64, _>(0)).unwrap_or(0);
-            let vec_count_row = sqlx::query("SELECT COUNT(*) FROM knowledge_vectors WHERE collection_id = ?")
-                .bind(collection_id)
-                .fetch_one(self.knowledge_pool())
-                .await;
-            let vec_count: i64 = vec_count_row.map(|r| r.get::<i64, _>(0)).unwrap_or(0);
-            println!(
-                "📊 [集合统计] documents: {}, chunks: {}, vectors: {}",
-                doc_count, chunk_count, vec_count
-            );
-        }
 
         // 使用 sqlite-vec 进行向量搜索
         let results = self.search_vectors_with_vec_extension(query_embedding, collection_id, limit, threshold).await?;
@@ -707,12 +677,11 @@ impl DatabaseManager {
         let mut document_results: std::collections::HashMap<String, Vec<(f32, SearchResult)>> = std::collections::HashMap::new();
 
         for row in rows {
-            let distance: f64 = row.get(6); // L2 距离 [0, +∞)
+            let distance: f64 = row.get(6); // distance现在是第7列（索引6）
             let _chunk_index: i32 = row.get(5); // chunk_index是第6列（索引5）
 
-            // 将 L2 距离映射为相似度：sim = 1 / (1 + d) ∈ (0,1]
-            let d = distance as f32;
-            let similarity = 1.0 / (1.0 + d);
+            // 使用诚实的相似度计算
+            let similarity = 1.0 - (distance as f32).min(1.0);
 
             // 只考虑高于阈值的分数
             if similarity >= threshold {
@@ -772,7 +741,7 @@ impl DatabaseManager {
         });
 
         // 选择前limit个文档的最佳结果
-        for (document_id, mut doc_results) in document_entries.clone() {
+        for (document_id, mut doc_results) in document_entries {
             if results.len() >= limit {
                 break;
             }
@@ -785,55 +754,11 @@ impl DatabaseManager {
             }
         }
 
-        // 若结果不足 limit，则在全局候选中按分数追加（允许同文档多条，但避免重复）
-        if results.len() < limit {
-            let mut all_candidates: Vec<(f32, SearchResult)> = Vec::new();
-            for (_doc_id, doc_results) in document_entries {
-                for (score, r) in doc_results {
-                    all_candidates.push((score, r));
-                }
-            }
-
-            all_candidates.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-            use std::collections::HashSet;
-            let mut selected_ids: HashSet<String> = results.iter().map(|r| r.chunk_id.clone()).collect();
-            for (_score, r) in all_candidates {
-                if results.len() >= limit { break; }
-                if !selected_ids.contains(&r.chunk_id) {
-                    selected_ids.insert(r.chunk_id.clone());
-                    results.push(r);
-                }
-            }
-        }
-
         // 重新按相似度排序并限制最终结果数量
         results.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap_or(std::cmp::Ordering::Equal));
+        results.truncate(limit);
 
-        // 最终安全去重（按 chunk_id 与规范化文本双重去重）
-        use std::collections::HashSet;
-        use std::collections::hash_map::DefaultHasher as FinalHasher;
-        use std::hash::Hasher as _;
-
-        let mut seen_ids: HashSet<String> = HashSet::new();
-        let mut seen_text_hashes: HashSet<u64> = HashSet::new();
-        let mut unique_results: Vec<SearchResult> = Vec::with_capacity(results.len());
-
-        for r in results.into_iter() {
-            let mut text_hasher = FinalHasher::new();
-            let normalized = r.chunk_text.trim();
-            text_hasher.write(normalized.as_bytes());
-            let th = text_hasher.finish();
-
-            let is_dup = seen_ids.contains(&r.chunk_id) || seen_text_hashes.contains(&th);
-            if !is_dup {
-                seen_ids.insert(r.chunk_id.clone());
-                seen_text_hashes.insert(th);
-                unique_results.push(r);
-            }
-        }
-
-        unique_results.truncate(limit);
-        Ok(unique_results)
+        Ok(results)
     }
 
     
@@ -846,16 +771,6 @@ impl DatabaseManager {
             "DELETE FROM knowledge_vectors WHERE chunk_id IN (SELECT id FROM knowledge_chunks WHERE document_id = ?)"
         )
         .bind(document_id)
-        .execute(&mut *tx)
-        .await?;
-
-        // 兼容清理：删除旧接口遗留的孤儿向量（chunk_id 使用 document_id_chunk_index 命名且无对应 chunk）
-        // 注意：这一步仅针对以 "{document_id}_chunk_" 开头的向量，防止误删
-        let legacy_prefix = format!("{}_chunk_%", document_id);
-        sqlx::query(
-            "DELETE FROM knowledge_vectors WHERE chunk_id LIKE ? AND NOT EXISTS (SELECT 1 FROM knowledge_chunks WHERE knowledge_chunks.id = knowledge_vectors.chunk_id)"
-        )
-        .bind(legacy_prefix)
         .execute(&mut *tx)
         .await?;
 

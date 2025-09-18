@@ -1815,6 +1815,19 @@
   justify-content: center;
 }
 
+.edit-button {
+  padding: 8px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--border-radius-sm);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .delete-button:hover {
   background: var(--danger-color-light);
   color: var(--danger-color);

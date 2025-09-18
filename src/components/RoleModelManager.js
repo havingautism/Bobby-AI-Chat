@@ -1052,7 +1052,7 @@ const RoleModelManager = ({ isOpen, onClose }) => {
                         <div className="group-info">
                           <div className="group-name">
                             <h4>{group.name}</h4>
-                            <span className="provider-badge">{group.provider}</span>
+                            {/* <span className="provider-badge">{group.provider}</span> */}
                           </div>
                           <p className="group-description">{group.description}</p>
                         </div>
@@ -1076,12 +1076,12 @@ const RoleModelManager = ({ isOpen, onClose }) => {
                             </svg>
                             {currentLanguage === 'zh' ? '添加模型' : 'Add Model'}
                           </button>
-                          <button className="edit-button" onClick={() => handleEditGroup(group)}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                          </button>
+                           <button className="edit-button" onClick={() => handleEditModel(group)}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                              </button>
                           <button className="delete-button" onClick={() => handleDeleteGroup(group.id)}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/>
@@ -1094,11 +1094,11 @@ const RoleModelManager = ({ isOpen, onClose }) => {
                         {models.filter(model => model.groupId === group.id).map((model) => (
                           <div key={model.id} className="model-item">
                             <div className="model-info">
-                              <div className="model-status">
-                                <div className={`status-indicator ${model.enabled ? 'enabled' : 'disabled'}`}></div>
-                              </div>
                               <div className="model-details">
                                 <div className="model-header">
+                                  <div className="model-status">
+                                    <div className={`status-indicator ${model.enabled ? 'enabled' : 'disabled'}`}></div>
+                                  </div>
                                   {model.logo && (
                                     <img
                                       src={model.logo}
@@ -1113,8 +1113,10 @@ const RoleModelManager = ({ isOpen, onClose }) => {
                                   <h4>{model.name}</h4>
                                   {model.isPro && <span className="pro-badge">PRO</span>}
                                 </div>
-                                <p>ID: {model.modelId}</p>
-                                {model.description && <p className="model-desc">{model.description}</p>}
+                                <div className="model-subline">
+                                  <p className="model-id">ID: {model.modelId}</p>
+                                  {model.description && <p className="model-desc">{model.description}</p>}
+                                </div>
                               </div>
                             </div>
                             <div className="model-actions">
