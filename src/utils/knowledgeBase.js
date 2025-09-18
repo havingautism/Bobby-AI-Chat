@@ -12,11 +12,15 @@ class KnowledgeBaseManager {
     return storageAdapter.getStorageType() === 'sqlite';
   }
 
-  // 获取SQL插件实例
+  // 获取SQLite实例（现在使用专门的 SQLite + sqlite-vec 系统）
   async getSQLiteInstance() {
     if (!this.sqliteInstance) {
-      const { knowledgeBaseSQLite } = await import('./knowledgeBaseSQLite');
-      this.sqliteInstance = knowledgeBaseSQLite;
+      // 现在直接使用 Tauri 后端的 SQLite + sqlite-vec 系统
+      // 通过 invoke 命令与后端通信，不再需要前端 SQLite 插件
+      this.sqliteInstance = {
+        // 这里可以添加一些兼容性方法，但主要功能都通过 invoke 实现
+        isAvailable: () => this.isTauriEnvironment()
+      };
     }
     return this.sqliteInstance;
   }

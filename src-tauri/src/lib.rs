@@ -61,7 +61,6 @@ pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_shell::init())
-    .plugin(tauri_plugin_sql::Builder::default().build())
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -121,7 +120,6 @@ pub fn run() {
     })
     .invoke_handler(tauri::generate_handler![
       // 基础命令
-      ensure_data_directory,
       get_file_size,
 
       // 知识库管理命令
@@ -878,28 +876,6 @@ async fn reset_all_databases(state: tauri::State<'_, AppState>) -> Result<String
             Err(format!("重置所有数据库失败: {}", e))
         }
     }
-}
-
-// 基础命令保持不变
-
-#[tauri::command]
-async fn ensure_data_directory() -> Result<String, String> {
-  use std::fs;
-  
-  // 统一使用用户数据目录，避免debug和release模式路径不一致
-  let data_dir = if cfg!(debug_assertions) {
-    // debug模式也使用用户数据目录，保持一致性
-    let app_data = std::env::var("APPDATA").unwrap_or_else(|_| ".".to_string());
-    format!("{}/ai_chat", app_data)
-  } else {
-    // release模式使用用户数据目录
-    let app_data = std::env::var("APPDATA").unwrap_or_else(|_| ".".to_string());
-    format!("{}/ai_chat", app_data)
-  };
-  
-  fs::create_dir_all(&data_dir).map_err(|e| format!("创建数据目录失败: {}", e))?;
-  println!("📁 数据目录: {}", data_dir);
-  Ok(data_dir)
 }
 
 #[tauri::command]

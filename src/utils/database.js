@@ -80,10 +80,14 @@ class DatabaseManager {
   // 初始化SQLite（Tauri端）
   async initSQLite() {
     try {
-      // 动态导入SQLite适配器
-      const { initSQLite } = await import('./sqlite.js');
-      this.sqlite = await initSQLite();
-      await this.createTables();
+      // 现在直接使用 Tauri 后端的 SQLite + sqlite-vec 系统
+      // 通过 invoke 命令与后端通信，不再需要前端 SQLite 插件
+      console.log('使用 Tauri 后端的 SQLite + sqlite-vec 系统');
+      this.sqlite = {
+        // 标记为已初始化，实际数据库操作通过 invoke 实现
+        initialized: true,
+        type: 'tauri-sqlite-vec'
+      };
     } catch (error) {
       console.warn('SQLite初始化失败，降级到localStorage:', error);
       this.useLocalStorage = true;

@@ -125,43 +125,19 @@ const language = await getSetting('language');
 
 ## Tauri 端配置
 
-### 1. 安装 Tauri SQLite 插件
+### 1. 使用专门的 SQLite + sqlite-vec 系统
 
-```bash
-# 在 Tauri 项目中
-npm add @tauri-apps/plugin-sql
-```
+Tauri 端使用专门的 Rust 后端数据库系统，支持：
+- SQLite 数据库存储
+- sqlite-vec 向量搜索
+- 自动数据目录管理
+- 数据库健康检查
 
-### 2. 配置 tauri.conf.json
+### 2. 数据库位置
 
-```json
-{
-  "plugins": {
-    "sql": {
-      "databases": [
-        {
-          "name": "bobby_chat",
-          "type": "sqlite"
-        }
-      ]
-    }
-  }
-}
-```
-
-### 3. 在 Rust 代码中启用插件
-
-```rust
-// src-tauri/src/main.rs
-use tauri_plugin_sql::{TauriSql};
-
-fn main() {
-    tauri::Builder::default()
-        .plugin(TauriSql::default())
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
-}
-```
+- **主数据库**: `src-tauri/data/bobby_chat.db`
+- **知识库数据库**: `src-tauri/data/knowledge_base.db`
+- **数据目录**: 自动检测用户数据目录
 
 ## 数据备份和恢复
 
@@ -185,17 +161,15 @@ a.download = `bobby-backup-${new Date().toISOString().split('T')[0]}.json`;
 a.click();
 ```
 
-### Tauri端 (SQLite)
+### Tauri端 (SQLite + sqlite-vec)
 
 ```javascript
-import { getSQLiteStats, sqliteAdapter } from './utils/sqlite';
-
-// 获取数据库统计信息
-const stats = await getSQLiteStats();
+// 通过 Tauri 命令获取数据库统计信息
+const stats = await invoke('get_database_stats');
 console.log('数据库统计:', stats);
 
-// 备份数据库 (需要实现文件系统操作)
-// await sqliteAdapter.backup('/path/to/backup.db');
+// 重置数据库
+await invoke('reset_all_databases');
 ```
 
 ## 性能优化
@@ -248,10 +222,8 @@ localStorage.setItem('debug-db', 'true');
 ### 查看数据库统计
 
 ```javascript
-import { getSQLiteStats } from './utils/sqlite';
-
 if (window.__TAURI__) {
-  const stats = await getSQLiteStats();
+  const stats = await invoke('get_database_stats');
   console.log('数据库统计信息:', stats);
 }
 ```
