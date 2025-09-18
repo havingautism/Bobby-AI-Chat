@@ -152,9 +152,10 @@ impl VectorService {
 
     // 批量调用实际的嵌入服务
     async fn generate_real_embeddings_batch(&self, texts: &[String], model: &EmbeddingModel, api_key: &str) -> Result<Vec<Vec<f32>>> {
-        const MAX_BATCH_SIZE: usize = 32; // SiliconFlow API限制
+        // 硅基流动限制：batch 最大 32
+        let max_batch_size: usize = 32;
 
-        if texts.len() <= MAX_BATCH_SIZE {
+        if texts.len() <= max_batch_size {
             // 如果数量在限制内，直接调用
             let result = crate::siliconflow_embedding::generate_siliconflow_batch_embeddings(
                 api_key.to_string(),
@@ -165,11 +166,11 @@ impl VectorService {
         }
 
         // 分批发送请求
-        println!("📦 文本数量({})超过API限制({})，开始分批发送...", texts.len(), MAX_BATCH_SIZE);
+        println!("📦 文本数量({})超过API限制({})，开始分批发送...", texts.len(), max_batch_size);
         let mut all_embeddings = Vec::new();
 
-        for (batch_index, chunk) in texts.chunks(MAX_BATCH_SIZE).enumerate() {
-            println!("🔄 处理第 {}/{} 批 ({} 个文本)", batch_index + 1, (texts.len() + MAX_BATCH_SIZE - 1) / MAX_BATCH_SIZE, chunk.len());
+        for (batch_index, chunk) in texts.chunks(max_batch_size).enumerate() {
+            println!("🔄 处理第 {}/{} 批 ({} 个文本)", batch_index + 1, (texts.len() + max_batch_size - 1) / max_batch_size, chunk.len());
 
             let result = crate::siliconflow_embedding::generate_siliconflow_batch_embeddings(
                 api_key.to_string(),

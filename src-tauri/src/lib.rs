@@ -273,15 +273,21 @@ async fn search_knowledge_base(
 
     let request = SearchRequest {
         query,
-        collection_id: Some(final_collection_id),
+        collection_id: Some(final_collection_id.clone()),
         limit,
         threshold,
         embedding_model: None,
         api_key, // 现在是必选参数
     };
 
-    state.search_service.search(request).await
-        .map_err(|e| format!("搜索知识库失败: {}", e))
+    match state.search_service.search(request).await {
+        Ok(mut resp) => {
+            // 强制保证返回的 collection_id 与本次请求一致，避免上层混用
+            resp.collection_id = final_collection_id;
+            Ok(resp)
+        }
+        Err(e) => Err(format!("搜索知识库失败: {}", e))
+    }
 }
 
 #[tauri::command]
@@ -347,9 +353,14 @@ async fn delete_knowledge_document(
     document_id: String,
     state: tauri::State<'_, AppState>,
 ) -> Result<String, String> {
-    state.db.delete_document(&document_id).await
-        .map(|_| "文档删除成功".to_string())
-        .map_err(|e| format!("删除文档失败: {}", e))
+    match state.db.delete_document(&document_id).await {
+        Ok(_) => {
+            // 删除后同步清理向量服务缓存，避免旧嵌入结果干扰
+            state.vector_service.clear_cache().await;
+            Ok("文档删除成功".to_string())
+        }
+        Err(e) => Err(format!("删除文档失败: {}", e))
+    }
 }
 
 #[tauri::command]
@@ -413,7 +424,7 @@ async fn get_available_embedding_models(state: tauri::State<'_, AppState>) -> Re
 
 #[tauri::command]
 async fn clear_cache(state: tauri::State<'_, AppState>) -> Result<String, String> {
-    state.db.clear_cache();
+    state.db.clear_query_cache();
     state.vector_service.clear_cache().await;
     Ok("缓存已清理".to_string())
 }
@@ -542,9 +553,13 @@ struct LegacyKnowledgeVector {
 
 #[tauri::command]
 async fn add_knowledge_vector(vector: LegacyKnowledgeVector, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    // 通过 document_id 解析真实 collection_id，避免误写入 default 集合
+    let document = state.db.get_document_by_id(&vector.document_id).await
+        .map_err(|e| format!("获取文档失败以确定集合ID: {}", e))?;
+
     let vector_embedding = VectorEmbedding::new(
         format!("{}_chunk_{}", vector.document_id, vector.chunk_index),
-        "default".to_string(),
+        document.collection_id,
         vector.embedding,
     );
 

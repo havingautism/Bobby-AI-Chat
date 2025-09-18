@@ -131,10 +131,11 @@ class KnowledgeBaseManager {
   async search(query, options = {}) {
     try {
       const {
-        limit = 10,
+        limit = 5,
         threshold = 0.7,
         collectionId = null,
-        useHybridSearch = false
+        useHybridSearch = false,
+        documentIds = null,
       } = options;
 
       let results = [];
@@ -145,7 +146,8 @@ class KnowledgeBaseManager {
           query,
           collectionId,
           limit,
-          threshold
+          threshold,
+          documentIds
         );
       } else {
         // 搜索所有集合
@@ -158,7 +160,8 @@ class KnowledgeBaseManager {
               query,
               collection.id,
               Math.ceil(limit / collections.length), // 分配限制
-              threshold
+              threshold,
+              documentIds
             );
             console.log(`✅ 集合 ${collection.name} 搜索完成，找到 ${collectionResults ? collectionResults.length : 'undefined'} 个结果`);
 
@@ -178,9 +181,24 @@ class KnowledgeBaseManager {
           }
         }
 
+        // 去重（优先按 chunk_id），避免“缓存+回退”或多源累积导致的重复
+        const seenIds = new Set();
+        const seenText = new Set();
+        const unique = [];
+        for (const r of results) {
+          const id = r.chunk_id || r.id;
+          const textKey = (r.chunk_text || r.content || '').trim().slice(0, 200);
+          const dup = (id && seenIds.has(id)) || (textKey && seenText.has(textKey));
+          if (!dup) {
+            if (id) seenIds.add(id);
+            if (textKey) seenText.add(textKey);
+            unique.push(r);
+          }
+        }
+
         // 按相似度排序并限制结果数量
-        results.sort((a, b) => (b.similarity || b.score || 0) - (a.similarity || a.score || 0));
-        results = results.slice(0, limit);
+        unique.sort((a, b) => (b.similarity || b.score || 0) - (a.similarity || a.score || 0));
+        results = unique.slice(0, limit);
       }
 
       // 转换结果格式以兼容原有接口

@@ -55,11 +55,14 @@ class KnowledgeBaseSQLiteVec {
       const systemStatus = await invoke('get_system_status');
       console.log('📊 系统状态检查:', systemStatus);
 
-      if (!systemStatus.databaseHealth) {
+      // 更严格的健康检查：需要知识库库与 vec 扩展都为真
+      const dbHealth = systemStatus?.databaseHealth || systemStatus?.database_health || {};
+      const ok = Boolean(dbHealth.knowledge_db) && Boolean(dbHealth.vec_extension);
+      if (!ok) {
         throw new Error('知识库数据库不可用');
       }
 
-      console.log('✅ 数据库健康状态:', systemStatus.databaseHealth);
+      console.log('✅ 数据库健康状态:', dbHealth);
 
       console.log('✅ SQLite + sqlite-vec知识库初始化成功');
       this.isInitialized = true;
@@ -245,16 +248,19 @@ class KnowledgeBaseSQLiteVec {
   }
 
   // 搜索知识库
-  async searchKnowledgeBase(query, collectionId = null, limit = 10, threshold = 0.7) {
+  async searchKnowledgeBase(query, collectionId = null, limit = 5, threshold = 0.5, documentIds = null) {
     try {
       console.log(`🔍 搜索知识库: "${query}"`);
+      // 阈值前端侧范围钳制，统一维护策略（0.65 ~ 0.75）
+      const numericThreshold = Number(threshold);
+      const clampedThreshold = Math.min(0.75, Math.max(0.50, isNaN(numericThreshold) ? 0.5 : numericThreshold));
       console.log(`🔍 搜索参数详情:`, {
         query: query,
         queryType: typeof query,
         collectionId: collectionId,
         collectionIdType: typeof collectionId,
         limit: limit,
-        threshold: threshold
+        threshold: clampedThreshold
       });
 
       // 获取API配置用于搜索
@@ -271,7 +277,7 @@ class KnowledgeBaseSQLiteVec {
         query: query,
         collection_id: collectionId,
         limit: limit,
-        threshold: threshold,
+        threshold: clampedThreshold,
         apiKey: apiConfig.apiKey || ''
       };
 
@@ -280,6 +286,7 @@ class KnowledgeBaseSQLiteVec {
         apiKey: searchParams.apiKey ? `${searchParams.apiKey.substring(0, 10)}...` : 'null'
       });
 
+      // 统一使用单集合搜索，若传入 documentIds 则在客户端做过滤
       const response = await invoke('search_knowledge_base', searchParams);
 
       console.log(`✅ 搜索完成: 收到响应`);
@@ -292,7 +299,10 @@ class KnowledgeBaseSQLiteVec {
         return [];
       }
 
-      const results = response.results;
+      let results = response.results || [];
+      if (documentIds && Array.isArray(documentIds) && documentIds.length > 0) {
+        results = results.filter(r => documentIds.includes(r.document_id));
+      }
       console.log(`✅ 提取到 ${results.length} 个搜索结果`);
       console.log(`🔍 搜索耗时: ${response.query_time_ms}ms`);
       console.log(`🔍 搜索集合: ${response.collection_id}`);

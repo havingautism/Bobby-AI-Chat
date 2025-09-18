@@ -76,9 +76,29 @@ impl DocumentProcessor {
             });
         }
 
-        // 分块处理
-        let chunk_size = request.chunk_size.unwrap_or(config.chunk_size);
-        let chunk_overlap = request.chunk_overlap.unwrap_or(config.chunk_overlap);
+        // 分块处理：按模型采用推荐 chunk 参数（请求未显式提供时）
+        let model_id = collection.embedding_model.to_lowercase();
+        let mut chunk_size = request.chunk_size.unwrap_or(config.chunk_size);
+        let mut chunk_overlap = request.chunk_overlap.unwrap_or(config.chunk_overlap);
+        if request.chunk_size.is_none() {
+            chunk_size = if model_id.contains("bge-m3") {
+                900 // 建议 800-1024，取中位偏上
+            } else if model_id.contains("bge-large-zh") {
+                480 // 安全上限，避免超过512 tokens
+            } else if model_id.contains("bge-large-en") {
+                900 // 建议 800-1024
+            } else { chunk_size };
+        }
+        if request.chunk_overlap.is_none() {
+            chunk_overlap = if model_id.contains("bge-m3") {
+                120 // 建议 100-150
+            } else if model_id.contains("bge-large-zh") {
+                80 // 建议 50-100
+            } else if model_id.contains("bge-large-en") {
+                100 // 建议 80-120
+            } else { chunk_overlap };
+        }
+        println!("🧩 [分块参数] 模型: {}, chunk_size: {}, overlap: {}", collection.embedding_model, chunk_size, chunk_overlap);
 
         let mut chunks = self.chunk_document(&request.content, chunk_size, chunk_overlap).await?;
 
@@ -90,8 +110,18 @@ impl DocumentProcessor {
         }
 
         // 生成嵌入向量 - 使用API密钥调用实际服务
+        // 安全截断：避免单条文本超出模型 token 限制导致 413
+        // 以字符近似 token 限制：CJK 1字符≈1token，其他 4字符≈1token。目标≤512 tokens
+        let safe_texts: Vec<String> = chunks.iter().map(|c| {
+            let s = c.chunk_text.as_str();
+            let is_cjk = s.chars().any(|ch| (ch >= '\u{4E00}' && ch <= '\u{9FFF}') || (ch >= '\u{3400}' && ch <= '\u{4DBF}'));
+            let max_chars = if is_cjk { 512 } else { 2048 };
+            let count = s.chars().count();
+            if count > max_chars { s.chars().take(max_chars).collect::<String>() } else { s.to_string() }
+        }).collect();
+
         let embeddings = self.generate_embeddings_with_api_key(
-            &chunks.iter().map(|c| c.chunk_text.clone()).collect::<Vec<_>>(),
+            &safe_texts,
             &collection.embedding_model,
             api_key
         ).await?;
@@ -180,9 +210,29 @@ impl DocumentProcessor {
             new_doc
         };
 
-        // 分块处理
-        let chunk_size = request.chunk_size.unwrap_or(config.chunk_size);
-        let chunk_overlap = request.chunk_overlap.unwrap_or(config.chunk_overlap);
+        // 分块处理：按模型采用推荐 chunk 参数（请求未显式提供时）
+        let model_id = collection.embedding_model.to_lowercase();
+        let mut chunk_size = request.chunk_size.unwrap_or(config.chunk_size);
+        let mut chunk_overlap = request.chunk_overlap.unwrap_or(config.chunk_overlap);
+        if request.chunk_size.is_none() {
+            chunk_size = if model_id.contains("bge-m3") {
+                900
+            } else if model_id.contains("bge-large-zh") {
+                640
+            } else if model_id.contains("bge-large-en") {
+                900
+            } else { chunk_size };
+        }
+        if request.chunk_overlap.is_none() {
+            chunk_overlap = if model_id.contains("bge-m3") {
+                120
+            } else if model_id.contains("bge-large-zh") {
+                80
+            } else if model_id.contains("bge-large-en") {
+                100
+            } else { chunk_overlap };
+        }
+        println!("🧩 [分块参数] 模型: {}, chunk_size: {}, overlap: {}", collection.embedding_model, chunk_size, chunk_overlap);
 
         let mut chunks = self.chunk_document(&request.content, chunk_size, chunk_overlap).await?;
 
@@ -194,8 +244,16 @@ impl DocumentProcessor {
         }
 
         // 生成嵌入向量
+        let safe_texts: Vec<String> = chunks.iter().map(|c| {
+            let s = c.chunk_text.as_str();
+            let is_cjk = s.chars().any(|ch| (ch >= '\u{4E00}' && ch <= '\u{9FFF}') || (ch >= '\u{3400}' && ch <= '\u{4DBF}'));
+            let max_chars = if is_cjk { 512 } else { 2048 };
+            let count = s.chars().count();
+            if count > max_chars { s.chars().take(max_chars).collect::<String>() } else { s.to_string() }
+        }).collect();
+
         let embeddings = self.vector_service.generate_embeddings_batch(
-            &chunks.iter().map(|c| c.chunk_text.clone()).collect::<Vec<_>>(),
+            &safe_texts,
             &collection.embedding_model,
         ).await?;
 
@@ -353,27 +411,69 @@ impl KnowledgeSearchService {
 
         // 设置搜索参数
         let limit = request.limit.unwrap_or(config.search_limit);
-        let threshold = request.threshold.unwrap_or(config.similarity_threshold);
 
-        // 生成查询向量
+        // 模型差异化默认阈值
+        let model_id = collection.embedding_model.to_lowercase();
+        let model_default_threshold: f32 = if model_id.contains("bge-m3") {
+            0.80
+        } else if model_id.contains("bge-large-zh") {
+            0.75
+        } else if model_id.contains("bge-large-en") {
+            0.70
+        } else {
+            config.similarity_threshold
+        };
+
+        // 采用请求阈值或模型默认阈值；仅在过低时做一个安全下限（0.50）
+        let mut threshold = request.threshold.unwrap_or(model_default_threshold);
+        if threshold < 0.50 {
+            println!("🔧 [阈值调整] 传入阈值过低，提升为 0.50 (原: {:.3})", threshold);
+            threshold = 0.50;
+        }
+
+        // 生成查询向量（bge-large-zh 需要加官方查询指令前缀）
+        let mut query_text = request.query.clone();
+        if model_id.contains("bge-large-zh") {
+            let prefix = "为这个句子生成表示以用于检索相关文章：";
+            query_text = format!("{}{}", prefix, query_text);
+            println!("🧩 [查询指令] 使用 bge-large-zh，已添加查询前缀");
+        }
+
         let query_embedding = if !request.api_key.is_empty() {
             println!("🔍 使用提供的API密钥生成查询向量，密钥长度: {}", request.api_key.len());
             // 直接使用vector_service的方法
             let model = self.vector_service.get_embedding_model(&collection.embedding_model).await?;
-            let embeddings = self.vector_service.generate_embeddings_with_api_key_batch(&[request.query.clone()], &model, &request.api_key).await?;
+            let embeddings = self.vector_service.generate_embeddings_with_api_key_batch(&[query_text.clone()], &model, &request.api_key).await?;
             embeddings.into_iter().next().unwrap_or_default()
         } else {
             println!("🔍 API密钥为空，使用无密钥方式生成查询向量");
-            self.vector_service.generate_embedding(&request.query, &collection.embedding_model).await?
+            self.vector_service.generate_embedding(&query_text, &collection.embedding_model).await?
         };
 
         // 执行向量搜索
-        let results = self.db.search_vectors(
+        let mut results = self.db.search_vectors(
             &query_embedding,
             &collection_id,
             limit,
             threshold,
         ).await?;
+
+        // 空结果自动降阈回退：先 0.40，再 0.30
+        if results.is_empty() {
+            let retry_thresholds = [0.40_f32, 0.30_f32];
+            for rt in retry_thresholds {
+                if threshold > rt { // 仅当当前阈值高于回退阈值时才回退
+                    println!("🛠️ [回退] 初次检索无结果，降阈至 {:.2} 重试", rt);
+                    results = self.db.search_vectors(
+                        &query_embedding,
+                        &collection_id,
+                        limit,
+                        rt,
+                    ).await?;
+                    if !results.is_empty() { break; }
+                }
+            }
+        }
 
         // 记录搜索历史
         if self.is_search_history_enabled().await? {
