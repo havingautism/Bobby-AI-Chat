@@ -146,6 +146,11 @@ const ChatInterface = ({
     onUpdateConversation(conversation.id, { responseMode: newMode });
   };
 
+  // 处理知识库文档选择变化
+  const handleSelectedDocumentsChange = (selectedDocuments) => {
+    onUpdateConversation(conversation.id, { selectedDocuments });
+  };
+
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       // 移动端使用更流畅的滚动方式
@@ -354,6 +359,11 @@ const ChatInterface = ({
     const updates = {
       messages: updatedMessages,
     };
+
+    // 保存选中的知识库文档到会话历史中
+    if (options.selectedDocuments && options.selectedDocuments.length > 0) {
+      updates.selectedDocuments = options.selectedDocuments;
+    }
 
     if (conversation.messages.length === 0) {
       if (options.role) {
@@ -828,6 +838,8 @@ const ChatInterface = ({
           console.log("添加新标签页");
         }}
         onOpenKnowledgeBase={onOpenKnowledgeBase}
+        conversation={conversation}
+        onSelectedDocumentsChange={handleSelectedDocumentsChange}
       />
       <ConversationTimeline
         messages={conversation.messages}

@@ -29,7 +29,9 @@ const Sidebar = ({
   const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
   const [showRoleFilter, setShowRoleFilter] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(() => getCurrentTheme());
-  const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+  const [currentLanguage, setCurrentLanguage] = useState(() =>
+    getCurrentLanguage()
+  );
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState(null);
   const [roleModelManagerOpen, setRoleModelManagerOpen] = useState(false);
@@ -82,17 +84,17 @@ const Sidebar = ({
     const loadRoles = async () => {
       try {
         // 尝试从数据库加载角色
-        const { dbManager, getAllRoles } = await import('../utils/database');
+        const { dbManager, getAllRoles } = await import("../utils/database");
         await dbManager.init();
 
         const rolesFromDB = await getAllRoles();
-        console.log('Sidebar从数据库加载的角色:', rolesFromDB);
+        console.log("Sidebar从数据库加载的角色:", rolesFromDB);
 
         if (rolesFromDB && rolesFromDB.length > 0) {
           setRoles(rolesFromDB);
         } else {
           // 如果数据库中没有角色，使用默认角色
-          const { AI_ROLES } = require('../utils/roles');
+          const { AI_ROLES } = require("../utils/roles");
           setRoles(AI_ROLES);
         }
       } catch (error) {
@@ -100,8 +102,8 @@ const Sidebar = ({
 
         // 降级到localStorage
         try {
-          const savedRoles = localStorage.getItem('ai-roles-updated');
-          const customRoles = localStorage.getItem('custom-roles');
+          const savedRoles = localStorage.getItem("ai-roles-updated");
+          const customRoles = localStorage.getItem("custom-roles");
 
           let rolesToUse = [];
 
@@ -111,7 +113,7 @@ const Sidebar = ({
             rolesToUse = JSON.parse(customRoles);
           } else {
             // 如果没有保存的角色，使用默认角色
-            const { AI_ROLES } = require('../utils/roles');
+            const { AI_ROLES } = require("../utils/roles");
             rolesToUse = AI_ROLES;
           }
 
@@ -119,7 +121,7 @@ const Sidebar = ({
         } catch (fallbackError) {
           console.error("从localStorage加载角色也失败:", fallbackError);
           // 最终降级到默认角色
-          const { AI_ROLES } = require('../utils/roles');
+          const { AI_ROLES } = require("../utils/roles");
           setRoles(AI_ROLES);
         }
       }
@@ -129,22 +131,22 @@ const Sidebar = ({
 
     // 监听角色更新事件
     const handleRolesUpdated = (event) => {
-      console.log('Sidebar接收到rolesUpdated事件:', event.detail);
+      console.log("Sidebar接收到rolesUpdated事件:", event.detail);
       setRoles(event.detail);
     };
 
     const handleRolesReset = () => {
-      console.log('Sidebar接收到rolesReset事件');
-      const { AI_ROLES } = require('../utils/roles');
+      console.log("Sidebar接收到rolesReset事件");
+      const { AI_ROLES } = require("../utils/roles");
       setRoles(AI_ROLES);
     };
 
-    window.addEventListener('rolesUpdated', handleRolesUpdated);
-    window.addEventListener('rolesReset', handleRolesReset);
+    window.addEventListener("rolesUpdated", handleRolesUpdated);
+    window.addEventListener("rolesReset", handleRolesReset);
 
     return () => {
-      window.removeEventListener('rolesUpdated', handleRolesUpdated);
-      window.removeEventListener('rolesReset', handleRolesReset);
+      window.removeEventListener("rolesUpdated", handleRolesUpdated);
+      window.removeEventListener("rolesReset", handleRolesReset);
     };
   }, []);
 
@@ -176,7 +178,7 @@ const Sidebar = ({
     }
     setDeleteModalOpen(false);
     setConversationToDelete(null);
-    
+
     // 移动端优化：删除后立即关闭侧边栏，避免卡顿
     if (window.innerWidth <= 768 && isOpen && !isCollapsed) {
       setTimeout(() => {
@@ -191,7 +193,6 @@ const Sidebar = ({
     setConversationToDelete(null);
   };
 
-  
   // 过滤对话
   const filteredConversations = useMemo(() => {
     let filtered = conversations;
@@ -224,22 +225,28 @@ const Sidebar = ({
     const today = new Date();
     const todayStr = today.toDateString();
 
-    const todayConversations = filteredConversations.filter((conv) => {
-      const date = new Date(conv.createdAt);
-      return date.toDateString() === todayStr;
-    }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // 按创建时间倒序排列
+    const todayConversations = filteredConversations
+      .filter((conv) => {
+        const date = new Date(conv.createdAt);
+        return date.toDateString() === todayStr;
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // 按创建时间倒序排列
 
-    const previousConversations = filteredConversations.filter((conv) => {
-      const date = new Date(conv.createdAt);
-      return date.toDateString() !== todayStr;
-    }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // 按创建时间倒序排列
+    const previousConversations = filteredConversations
+      .filter((conv) => {
+        const date = new Date(conv.createdAt);
+        return date.toDateString() !== todayStr;
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // 按创建时间倒序排列
 
     return { today: todayConversations, previous: previousConversations };
   }, [filteredConversations]);
 
   return (
     <>
-      {isOpen && !isCollapsed && <div className="sidebar-overlay" onClick={onToggle} />}
+      {isOpen && !isCollapsed && (
+        <div className="sidebar-overlay" onClick={onToggle} />
+      )}
       <div
         className={`sidebar glass-pane ${isOpen ? "open" : ""} ${
           isCollapsed ? "collapsed" : ""
@@ -314,7 +321,9 @@ const Sidebar = ({
                     {selectedRoleFilter === "all" ? (
                       <>
                         <span className="filter-icon">🎭</span>
-                        <span className="filter-text">{currentLanguage === "zh" ? "所有角色" : "All Roles"}</span>
+                        <span className="filter-text">
+                          {currentLanguage === "zh" ? "所有角色" : "All Roles"}
+                        </span>
                       </>
                     ) : (
                       <>
@@ -357,7 +366,9 @@ const Sidebar = ({
                       }}
                     >
                       <span className="option-icon">🎭</span>
-                      <span className="option-text">{currentLanguage === "zh" ? "所有角色" : "All Roles"}</span>
+                      <span className="option-text">
+                        {currentLanguage === "zh" ? "所有角色" : "All Roles"}
+                      </span>
                       {selectedRoleFilter === "all" && (
                         <svg
                           className="check-icon"
@@ -418,16 +429,40 @@ const Sidebar = ({
             <button
               className="role-model-button"
               onClick={() => setRoleModelManagerOpen(true)}
-              title={currentLanguage === "zh" ? "角色与模型管理" : "Role & Model Management"}
+              title={
+                currentLanguage === "zh"
+                  ? "角色与模型管理"
+                  : "Role & Model Management"
+              }
             >
               <div className="role-model-icon">
-             
-
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" >{/* Icon from Iconoir by Luca Burgio - https://github.com/iconoir-icons/iconoir/blob/main/LICENSE */}<g fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 16V8a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 14.5s-1.5 2-4.5 2s-4.5-2-4.5-2" /><path fill="currentColor" strokeLinecap="round" strokeLinejoin="round" d="M8.5 10a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1m7 0a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1" /></g></svg>
- 
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                >
+                  {/* Icon from Iconoir by Luca Burgio - https://github.com/iconoir-icons/iconoir/blob/main/LICENSE */}
+                  <g fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M3 16V8a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5Z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16.5 14.5s-1.5 2-4.5 2s-4.5-2-4.5-2"
+                    />
+                    <path
+                      fill="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8.5 10a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1m7 0a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1"
+                    />
+                  </g>
+                </svg>
               </div>
               <span className="role-model-text">
-                {currentLanguage === "zh" ? "角色 / 模型管理" : "Roles & Models"}
+                {currentLanguage === "zh"
+                  ? "角色 / 模型管理"
+                  : "Roles & Models"}
               </span>
             </button>
           </div>
@@ -442,12 +477,19 @@ const Sidebar = ({
               title={currentLanguage === "zh" ? "知识库管理" : "Knowledge Base"}
             >
               <div className="knowledge-base-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                  <path d="M8 7h8"/>
-                  <path d="M8 11h8"/>
-                  <path d="M8 15h5"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  <path d="M8 7h8" />
+                  <path d="M8 11h8" />
+                  <path d="M8 15h5" />
                 </svg>
               </div>
               <span className="knowledge-base-text">
@@ -464,49 +506,78 @@ const Sidebar = ({
               {/* 今日 */}
               {groupedConversations.today.length > 0 && (
                 <>
-                  {([...groupedConversations.today]
-                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                    .slice(0, 50)).map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      className={`conversation-item collapsed ${
-                        currentConversationId === conversation.id ? "active" : ""
-                      }`}
-                      onClick={() => handleMobileConversationSelect(conversation.id)}
-                      title={conversation.title}
-                    >
-                      <div className="role-avatar" style={{ color: getRoleById(conversation.role)?.color }}>
-                        {conversation.role ? (getRoleById(conversation.role)?.avatar) : "💬"}
+                  {[...groupedConversations.today]
+                    .sort(
+                      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+                    )
+                    .slice(0, 50)
+                    .map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        className={`conversation-item collapsed ${
+                          currentConversationId === conversation.id
+                            ? "active"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          handleMobileConversationSelect(conversation.id)
+                        }
+                        title={conversation.title}
+                      >
+                        <div
+                          className="role-avatar"
+                          style={{
+                            color: getRoleById(conversation.role)?.color,
+                          }}
+                        >
+                          {conversation.role
+                            ? getRoleById(conversation.role)?.avatar
+                            : "💬"}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </>
               )}
 
               {/* 分割线，仅当两组都存在时显示 */}
-              {groupedConversations.today.length > 0 && groupedConversations.previous.length > 0 && (
-                <div className="collapsed-divider" />
-              )}
+              {groupedConversations.today.length > 0 &&
+                groupedConversations.previous.length > 0 && (
+                  <div className="collapsed-divider" />
+                )}
 
               {/* 之前 */}
               {groupedConversations.previous.length > 0 && (
                 <>
-                  {([...groupedConversations.previous]
-                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                    .slice(0, 50)).map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      className={`conversation-item collapsed ${
-                        currentConversationId === conversation.id ? "active" : ""
-                      }`}
-                      onClick={() => handleMobileConversationSelect(conversation.id)}
-                      title={conversation.title}
-                    >
-                      <div className="role-avatar" style={{ color: getRoleById(conversation.role)?.color }}>
-                        {conversation.role ? (getRoleById(conversation.role)?.avatar) : "💬"}
+                  {[...groupedConversations.previous]
+                    .sort(
+                      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+                    )
+                    .slice(0, 50)
+                    .map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        className={`conversation-item collapsed ${
+                          currentConversationId === conversation.id
+                            ? "active"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          handleMobileConversationSelect(conversation.id)
+                        }
+                        title={conversation.title}
+                      >
+                        <div
+                          className="role-avatar"
+                          style={{
+                            color: getRoleById(conversation.role)?.color,
+                          }}
+                        >
+                          {conversation.role
+                            ? getRoleById(conversation.role)?.avatar
+                            : "💬"}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </>
               )}
             </div>
@@ -545,7 +616,9 @@ const Sidebar = ({
 
               {groupedConversations.today.length > 0 && (
                 <div className="conversations-section">
-                  <div className="section-title">{currentLanguage === "zh" ? "今天" : "Today"}</div>
+                  <div className="section-title">
+                    {currentLanguage === "zh" ? "今天" : "Today"}
+                  </div>
                   {groupedConversations.today.map((conversation) => (
                     <ConversationItem
                       key={conversation.id}
@@ -553,7 +626,9 @@ const Sidebar = ({
                       isActive={currentConversationId === conversation.id}
                       onSelect={handleMobileConversationSelect}
                       onDelete={handleDeleteConfirm}
-                      onUpdateTitle={(id, title) => onUpdateConversation(id, { title })}
+                      onUpdateTitle={(id, title) =>
+                        onUpdateConversation(id, { title })
+                      }
                       searchQuery={searchQuery}
                       currentLanguage={currentLanguage}
                     />
@@ -564,10 +639,13 @@ const Sidebar = ({
               {groupedConversations.previous.length > 0 && (
                 <div className="conversations-section">
                   <div className="section-title">
-                    {searchQuery ? 
-                      (currentLanguage === "zh" ? "其他结果" : "Other Results") : 
-                      (currentLanguage === "zh" ? "之前" : "Previous")
-                    }
+                    {searchQuery
+                      ? currentLanguage === "zh"
+                        ? "其他结果"
+                        : "Other Results"
+                      : currentLanguage === "zh"
+                      ? "之前"
+                      : "Previous"}
                   </div>
                   {groupedConversations.previous.map((conversation) => (
                     <ConversationItem
@@ -576,7 +654,9 @@ const Sidebar = ({
                       isActive={currentConversationId === conversation.id}
                       onSelect={handleMobileConversationSelect}
                       onDelete={handleDeleteConfirm}
-                      onUpdateTitle={(id, title) => onUpdateConversation(id, { title })}
+                      onUpdateTitle={(id, title) =>
+                        onUpdateConversation(id, { title })
+                      }
                       searchQuery={searchQuery}
                       currentLanguage={currentLanguage}
                     />
@@ -604,10 +684,19 @@ const Sidebar = ({
               onClick={onOpenAbout}
               title="关于"
             >
-           
-
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512" >{/* Icon from Siemens Industrial Experience Icons by Siemens AG - https://github.com/siemens/ix-icons/blob/main/LICENSE.md */}<path fill="currentColor" fillRule="evenodd" d="M256 42.667C138.18 42.667 42.667 138.179 42.667 256c0 117.82 95.513 213.334 213.333 213.334c117.822 0 213.334-95.513 213.334-213.334S373.822 42.667 256 42.667m0 384c-94.105 0-170.666-76.561-170.666-170.667S161.894 85.334 256 85.334c94.107 0 170.667 76.56 170.667 170.666S350.107 426.667 256 426.667m26.714-256c0 15.468-11.262 26.667-26.497 26.667c-15.851 0-26.837-11.2-26.837-26.963c0-15.15 11.283-26.37 26.837-26.37c15.235 0 26.497 11.22 26.497 26.666m-48 64h42.666v128h-42.666z" /></svg>
-
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 512 512"
+              >
+                {/* Icon from Siemens Industrial Experience Icons by Siemens AG - https://github.com/siemens/ix-icons/blob/main/LICENSE.md */}
+                <path
+                  fill="currentColor"
+                  fillRule="evenodd"
+                  d="M256 42.667C138.18 42.667 42.667 138.179 42.667 256c0 117.82 95.513 213.334 213.333 213.334c117.822 0 213.334-95.513 213.334-213.334S373.822 42.667 256 42.667m0 384c-94.105 0-170.666-76.561-170.666-170.667S161.894 85.334 256 85.334c94.107 0 170.667 76.56 170.667 170.666S350.107 426.667 256 426.667m26.714-256c0 15.468-11.262 26.667-26.497 26.667c-15.851 0-26.837-11.2-26.837-26.963c0-15.15 11.283-26.37 26.837-26.37c15.235 0 26.497 11.22 26.497 26.666m-48 64h42.666v128h-42.666z"
+                />
+              </svg>
             </button>
 
             {/* 设置按钮 */}
@@ -616,10 +705,18 @@ const Sidebar = ({
               onClick={onOpenSettings}
               title={t("settings", currentLanguage)}
             >
-             
-
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" >{/* Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE */}<path fill="currentColor" d="m9.25 22l-.4-3.2q-.325-.125-.612-.3t-.563-.375L4.7 19.375l-2.75-4.75l2.575-1.95Q4.5 12.5 4.5 12.338v-.675q0-.163.025-.338L1.95 9.375l2.75-4.75l2.975 1.25q.275-.2.575-.375t.6-.3l.4-3.2h5.5l.4 3.2q.325.125.613.3t.562.375l2.975-1.25l2.75 4.75l-2.575 1.95q.025.175.025.338v.674q0 .163-.05.338l2.575 1.95l-2.75 4.75l-2.95-1.25q-.275.2-.575.375t-.6.3l-.4 3.2zM11 20h1.975l.35-2.65q.775-.2 1.438-.587t1.212-.938l2.475 1.025l.975-1.7l-2.15-1.625q.125-.35.175-.737T17.5 12t-.05-.787t-.175-.738l2.15-1.625l-.975-1.7l-2.475 1.05q-.55-.575-1.212-.962t-1.438-.588L13 4h-1.975l-.35 2.65q-.775.2-1.437.588t-1.213.937L5.55 7.15l-.975 1.7l2.15 1.6q-.125.375-.175.75t-.05.8q0 .4.05.775t.175.75l-2.15 1.625l.975 1.7l2.475-1.05q.55.575 1.213.963t1.437.587zm1.05-4.5q1.45 0 2.475-1.025T15.55 12t-1.025-2.475T12.05 8.5q-1.475 0-2.488 1.025T8.55 12t1.013 2.475T12.05 15.5M12 12" /></svg>
-
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+              >
+                {/* Icon from Solar by 480 Design - https://creativecommons.org/licenses/by/4.0/ */}
+                <g fill="currentColor" fillRule="evenodd" clipRule="evenodd">
+                  <path d="M12 8.25a3.75 3.75 0 1 0 0 7.5a3.75 3.75 0 0 0 0-7.5M9.75 12a2.25 2.25 0 1 1 4.5 0a2.25 2.25 0 0 1-4.5 0" />
+                  <path d="M11.975 1.25c-.445 0-.816 0-1.12.02a2.8 2.8 0 0 0-.907.19a2.75 2.75 0 0 0-1.489 1.488c-.145.35-.184.72-.2 1.122a.87.87 0 0 1-.415.731a.87.87 0 0 1-.841-.005c-.356-.188-.696-.339-1.072-.389a2.75 2.75 0 0 0-2.033.545a2.8 2.8 0 0 0-.617.691c-.17.254-.356.575-.578.96l-.025.044c-.223.385-.408.706-.542.98c-.14.286-.25.568-.29.88a2.75 2.75 0 0 0 .544 2.033c.231.301.532.52.872.734a.87.87 0 0 1 .426.726a.87.87 0 0 1-.426.726c-.34.214-.64.433-.872.734a2.75 2.75 0 0 0-.545 2.033c.041.312.15.594.29.88c.135.274.32.595.543.98l.025.044c.222.385.408.706.578.96c.177.263.367.5.617.69a2.75 2.75 0 0 0 2.033.546c.376-.05.716-.2 1.072-.389a.87.87 0 0 1 .84-.005a.86.86 0 0 1 .417.731c.015.402.054.772.2 1.122a2.75 2.75 0 0 0 1.488 1.489c.29.12.59.167.907.188c.304.021.675.021 1.12.021h.05c.445 0 .816 0 1.12-.02c.318-.022.617-.069.907-.19a2.75 2.75 0 0 0 1.489-1.488c.145-.35.184-.72.2-1.122a.87.87 0 0 1 .415-.732a.87.87 0 0 1 .841.006c.356.188.696.339 1.072.388a2.75 2.75 0 0 0 2.033-.544c.25-.192.44-.428.617-.691c.17-.254.356-.575.578-.96l.025-.044c.223-.385.408-.706.542-.98c.14-.286.25-.569.29-.88a2.75 2.75 0 0 0-.544-2.033c-.231-.301-.532-.52-.872-.734a.87.87 0 0 1-.426-.726c0-.278.152-.554.426-.726c.34-.214.64-.433.872-.734a2.75 2.75 0 0 0 .545-2.033a2.8 2.8 0 0 0-.29-.88a18 18 0 0 0-.543-.98l-.025-.044a18 18 0 0 0-.578-.96a2.8 2.8 0 0 0-.617-.69a2.75 2.75 0 0 0-2.033-.546c-.376.05-.716.2-1.072.389a.87.87 0 0 1-.84.005a.87.87 0 0 1-.417-.731c-.015-.402-.054-.772-.2-1.122a2.75 2.75 0 0 0-1.488-1.489c-.29-.12-.59-.167-.907-.188c-.304-.021-.675-.021-1.12-.021zm-1.453 1.595c.077-.032.194-.061.435-.078c.247-.017.567-.017 1.043-.017s.796 0 1.043.017c.241.017.358.046.435.078c.307.127.55.37.677.677c.04.096.073.247.086.604c.03.792.439 1.555 1.165 1.974s1.591.392 2.292.022c.316-.167.463-.214.567-.227a1.25 1.25 0 0 1 .924.247c.066.051.15.138.285.338c.139.206.299.483.537.895s.397.69.506.912c.107.217.14.333.15.416a1.25 1.25 0 0 1-.247.924c-.064.083-.178.187-.48.377c-.672.422-1.128 1.158-1.128 1.996s.456 1.574 1.128 1.996c.302.19.416.294.48.377c.202.263.29.595.247.924c-.01.083-.044.2-.15.416c-.109.223-.268.5-.506.912s-.399.689-.537.895c-.135.2-.219.287-.285.338a1.25 1.25 0 0 1-.924.247c-.104-.013-.25-.06-.567-.227c-.7-.37-1.566-.398-2.292.021s-1.135 1.183-1.165 1.975c-.013.357-.046.508-.086.604a1.25 1.25 0 0 1-.677.677c-.077.032-.194.061-.435.078c-.247.017-.567.017-1.043.017s-.796 0-1.043-.017c-.241-.017-.358-.046-.435-.078a1.25 1.25 0 0 1-.677-.677c-.04-.096-.073-.247-.086-.604c-.03-.792-.439-1.555-1.165-1.974s-1.591-.392-2.292-.022c-.316.167-.463.214-.567.227a1.25 1.25 0 0 1-.924-.247c-.066-.051-.15-.138-.285-.338a17 17 0 0 1-.537-.895c-.238-.412-.397-.69-.506-.912c-.107-.217-.14-.333-.15-.416a1.25 1.25 0 0 1 .247-.924c.064-.083.178-.187.48-.377c.672-.422 1.128-1.158 1.128-1.996s-.456-1.574-1.128-1.996c-.302-.19-.416-.294-.48-.377a1.25 1.25 0 0 1-.247-.924c.01-.083.044-.2.15-.416c.109-.223.268-.5.506-.912s.399-.689.537-.895c.135-.2.219-.287.285-.338a1.25 1.25 0 0 1 .924-.247c.104.013.25.06.567.227c.7.37 1.566.398 2.292-.022c.726-.419 1.135-1.182 1.165-1.974c.013-.357.046-.508.086-.604c.127-.307.37-.55.677-.677" />
+                </g>
+              </svg>
             </button>
 
             {/* 主题切换按钮 */}
@@ -698,8 +795,7 @@ const Sidebar = ({
         isOpen={roleModelManagerOpen}
         onClose={() => setRoleModelManagerOpen(false)}
       />
-      
-          </>
+    </>
   );
 };
 
@@ -771,12 +867,11 @@ const ConversationItem = ({
     handleDeleteClick(e);
   };
 
-  
   // 处理键盘事件
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       saveEdit();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       cancelEdit();
     }
   };
@@ -852,7 +947,13 @@ const ConversationItem = ({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <span onDoubleClick={startEdit} className={conversation.isTitleGenerating ? "title-generating" : ""} title={conversation.title}>
+            <span
+              onDoubleClick={startEdit}
+              className={
+                conversation.isTitleGenerating ? "title-generating" : ""
+              }
+              title={conversation.title}
+            >
               {conversation.isTitleGenerating && (
                 <span className="title-loading-dots">
                   <span></span>
@@ -875,7 +976,9 @@ const ConversationItem = ({
               {getRoleById(conversation.role).name}
             </div>
           )}
-          <div className={`conversation-actions${showMenu ? " menu-open" : ""}`}>
+          <div
+            className={`conversation-actions${showMenu ? " menu-open" : ""}`}
+          >
             <button
               className="menu-btn"
               onClick={handleMenuClick}
@@ -897,10 +1000,7 @@ const ConversationItem = ({
               {showMenu && (
                 <div className="conversation-menu">
                   {conversation.role && (
-                    <button
-                      className="menu-item"
-                      onClick={handleRename}
-                    >
+                    <button className="menu-item" onClick={handleRename}>
                       <svg
                         width="14"
                         height="14"
@@ -912,13 +1012,14 @@ const ConversationItem = ({
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
-                      <span>{currentLanguage === "zh" ? "重命名对话" : "Rename conversation"}</span>
+                      <span>
+                        {currentLanguage === "zh"
+                          ? "重命名对话"
+                          : "Rename conversation"}
+                      </span>
                     </button>
                   )}
-                                    <button
-                    className="menu-item"
-                    onClick={handleDelete}
-                  >
+                  <button className="menu-item" onClick={handleDelete}>
                     <svg
                       width="14"
                       height="14"
@@ -929,7 +1030,11 @@ const ConversationItem = ({
                     >
                       <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                     </svg>
-                    <span>{currentLanguage === "zh" ? "删除对话" : "Delete conversation"}</span>
+                    <span>
+                      {currentLanguage === "zh"
+                        ? "删除对话"
+                        : "Delete conversation"}
+                    </span>
                   </button>
                 </div>
               )}
