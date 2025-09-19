@@ -141,3 +141,4 @@ pub async fn check_migration_needed(pool: &Pool<Sqlite>) -> Result<bool> {
         }
     }
 }
+
