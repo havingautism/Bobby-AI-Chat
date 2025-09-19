@@ -140,6 +140,12 @@ impl DatabaseManager {
             return Err(anyhow!("Failed to initialize database schema: {}", e));
         }
 
+        // 检查并执行向量表迁移（如果需要）
+        if let Err(e) = Self::migrate_vector_table_if_needed(&knowledge_pool).await {
+            error!("Failed to migrate vector table: {}", e);
+            return Err(anyhow!("Failed to migrate vector table: {}", e));
+        }
+
         // 验证 sqlite-vec 扩展是否正常工作
         match sqlx::query("SELECT vec_version()")
             .fetch_one(&knowledge_pool)
@@ -160,6 +166,121 @@ impl DatabaseManager {
             knowledge_pool,
             query_cache: Arc::new(std::sync::Mutex::new(LruCache::new(std::num::NonZeroUsize::new(1000).unwrap()))),
         })
+    }
+
+    // 检查并执行向量表迁移
+    async fn migrate_vector_table_if_needed(knowledge_pool: &Pool<Sqlite>) -> Result<()> {
+        // 检查表是否存在
+        let table_exists = sqlx::query("SELECT name FROM sqlite_master WHERE type='table' AND name='knowledge_vectors'")
+            .fetch_optional(knowledge_pool)
+            .await?;
+        
+        if table_exists.is_none() {
+            println!("📋 向量表不存在，将在初始化时创建");
+            return Ok(());
+        }
+        
+        // 检查是否支持余弦距离函数
+        match sqlx::query("SELECT vec_distance_cosine(embedding, embedding) FROM knowledge_vectors LIMIT 1")
+            .fetch_optional(knowledge_pool)
+            .await
+        {
+            Ok(Some(_)) => {
+                println!("✅ 向量表已支持余弦距离，无需迁移");
+                Ok(())
+            }
+            Ok(None) => {
+                println!("⚠️ 向量表为空，但支持余弦距离，无需迁移");
+                Ok(())
+            }
+            Err(_) => {
+                println!("🔄 向量表需要迁移以支持余弦距离");
+                Self::migrate_vector_table(knowledge_pool).await
+            }
+        }
+    }
+
+    // 迁移向量表以支持余弦距离
+    async fn migrate_vector_table(pool: &Pool<Sqlite>) -> Result<()> {
+        println!("🔄 开始迁移向量表以支持正确的余弦距离...");
+        
+        // 备份现有数据
+        println!("💾 备份现有向量数据...");
+        let backup_data = sqlx::query("SELECT * FROM knowledge_vectors")
+            .fetch_all(pool)
+            .await?;
+        
+        println!("📊 备份了 {} 条向量记录", backup_data.len());
+        
+        // 删除旧的向量表
+        println!("🗑️ 删除旧的向量表...");
+        sqlx::query("DROP TABLE IF EXISTS knowledge_vectors")
+            .execute(pool)
+            .await?;
+        
+        // 创建新的向量表（使用正确的余弦距离配置）
+        println!("🏗️ 创建新的向量表（支持余弦距离）...");
+        sqlx::query(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_vectors USING vec0(
+                embedding float[1024],
+                chunk_id TEXT,
+                collection_id TEXT,
+                created_at INTEGER,
+                distance=cosine
+            )"
+        )
+        .execute(pool)
+        .await?;
+        
+        // 恢复数据
+        if !backup_data.is_empty() {
+            println!("🔄 恢复向量数据...");
+            
+            for (i, row) in backup_data.iter().enumerate() {
+                let embedding: Vec<u8> = row.get(0);
+                let chunk_id: String = row.get(1);
+                let collection_id: String = row.get(2);
+                let created_at: i64 = row.get(3);
+                
+                sqlx::query(
+                    "INSERT INTO knowledge_vectors (embedding, chunk_id, collection_id, created_at) 
+                     VALUES (?, ?, ?, ?)"
+                )
+                .bind(&embedding)
+                .bind(&chunk_id)
+                .bind(&collection_id)
+                .bind(created_at)
+                .execute(pool)
+                .await?;
+                
+                if (i + 1) % 100 == 0 {
+                    println!("   - 已恢复 {} / {} 条记录", i + 1, backup_data.len());
+                }
+            }
+            
+            println!("✅ 成功恢复 {} 条向量记录", backup_data.len());
+        }
+        
+        // 测试余弦距离函数
+        println!("🧪 测试余弦距离函数...");
+        match sqlx::query("SELECT vec_distance_cosine(embedding, embedding) FROM knowledge_vectors LIMIT 1")
+            .fetch_one(pool)
+            .await
+        {
+            Ok(row) => {
+                let distance: f64 = row.get(0);
+                println!("✅ 余弦距离函数测试成功，距离: {:.6}", distance);
+            }
+            Err(e) => {
+                println!("❌ 余弦距离函数测试失败: {}", e);
+                return Err(anyhow::anyhow!("余弦距离函数不可用: {}", e));
+            }
+        }
+        
+        println!("🎉 向量表迁移完成！");
+        println!("💡 现在使用正确的余弦距离进行向量搜索");
+        
+        Ok(())
     }
 
     async fn initialize_databases(main_pool: &Pool<Sqlite>, knowledge_pool: &Pool<Sqlite>) -> Result<()> {
@@ -393,7 +514,8 @@ impl DatabaseManager {
                 embedding float[1024],
                 chunk_id TEXT,
                 collection_id TEXT,
-                created_at INTEGER
+                created_at INTEGER,
+                distance=cosine
             )",
             "CREATE TABLE IF NOT EXISTS system_config (
                 key TEXT PRIMARY KEY,
@@ -767,7 +889,7 @@ impl DatabaseManager {
                 kd.title as document_title,
                 kd.file_name,
                 kc.chunk_index,
-                vec_distance_L2(kv.embedding, ?) as distance
+                vec_distance_cosine(kv.embedding, ?) as distance
             FROM knowledge_vectors kv
             JOIN knowledge_chunks kc ON kv.chunk_id = kc.id
             JOIN knowledge_documents kd ON kc.document_id = kd.id
@@ -801,10 +923,11 @@ impl DatabaseManager {
             let distance: f64 = row.get(6); // distance现在是第7列（索引6）
             let _chunk_index: i32 = row.get(5); // chunk_index是第6列（索引5）
 
-            // 使用诚实的相似度计算
-            let similarity = 1.0 - (distance as f32).min(1.0);
+            // 使用正确的余弦相似度计算
+            // sqlite-vec返回的是余弦距离(0-2)，转换为余弦相似度(0-1)
+            let similarity = 1.0 - (distance as f32);
 
-            // 只考虑高于阈值的分数
+            // 使用阈值过滤结果
             if similarity >= threshold {
                 let document_id: String = row.get(2);
                 let chunk_text: String = row.get(1);
@@ -823,9 +946,9 @@ impl DatabaseManager {
                 }
                 seen_content_hashes.insert(content_hash);
 
-                // 基础质量检查：跳过过短或过长的chunks
+                // 暂时放宽质量检查：接受更多长度的chunks
                 let chunk_len = chunk_text.chars().count();
-                if chunk_len >= 10 && chunk_len <= 2000 {
+                if chunk_len >= 5 && chunk_len <= 5000 { // 放宽长度限制
                     let search_result = SearchResult {
                         chunk_id: row.get(0),
                         chunk_text: chunk_text.clone(),

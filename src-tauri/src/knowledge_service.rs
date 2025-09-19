@@ -424,12 +424,9 @@ impl KnowledgeSearchService {
             config.similarity_threshold
         };
 
-        // 采用请求阈值或模型默认阈值；仅在过低时做一个安全下限（0.50）
-        let mut threshold = request.threshold.unwrap_or(model_default_threshold);
-        if threshold < 0.50 {
-            println!("🔧 [阈值调整] 传入阈值过低，提升为 0.50 (原: {:.3})", threshold);
-            threshold = 0.50;
-        }
+        // 使用合理的阈值设置
+        let mut threshold = request.threshold.unwrap_or(0.3); // 使用合理的阈值
+        println!("🔧 [阈值调整] 使用阈值: {:.3}", threshold);
 
         // 生成查询向量（bge-large-zh 需要加官方查询指令前缀）
         let mut query_text = request.query.clone();
@@ -441,12 +438,28 @@ impl KnowledgeSearchService {
 
         let query_embedding = if !request.api_key.is_empty() {
             println!("🔍 使用提供的API密钥生成查询向量，密钥长度: {}", request.api_key.len());
+            
+            // =================================================================
+            // VVVV 关键的调试日志 VVVV
+            // 请把这一行日志加到你的代码里
+            println!("[最终验证] 即将被BGE-ZH模型编码的字符串是: '{}'", query_text);
+            // ^^^^ 关键的调试日志 ^^^^
+            // =================================================================
+            
             // 直接使用vector_service的方法
             let model = self.vector_service.get_embedding_model(&collection.embedding_model).await?;
             let embeddings = self.vector_service.generate_embeddings_with_api_key_batch(&[query_text.clone()], &model, &request.api_key).await?;
             embeddings.into_iter().next().unwrap_or_default()
         } else {
             println!("🔍 API密钥为空，使用无密钥方式生成查询向量");
+            
+            // =================================================================
+            // VVVV 关键的调试日志 VVVV
+            // 请把这一行日志加到你的代码里
+            println!("[最终验证] 即将被BGE-ZH模型编码的字符串是: '{}'", query_text);
+            // ^^^^ 关键的调试日志 ^^^^
+            // =================================================================
+            
             self.vector_service.generate_embedding(&query_text, &collection.embedding_model).await?
         };
 

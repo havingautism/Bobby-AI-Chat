@@ -49,6 +49,13 @@ pub async fn generate_siliconflow_embedding(api_key: String, text: String, model
     println!("   - 模型: {}", model);
     println!("   - 输入类型: 单文本");
     println!("   - 文本长度: {} 字符", text.len());
+    
+    // =================================================================
+    // VVVV 关键的调试日志 VVVV
+    // 请把这一行日志加到你的代码里
+    println!("[最终验证] 即将被SiliconFlow API编码的字符串是: '{}'", text);
+    // ^^^^ 关键的调试日志 ^^^^
+    // =================================================================
 
     let client = reqwest::Client::new();
     let url = "https://api.siliconflow.cn/v1/embeddings";
@@ -145,6 +152,20 @@ pub async fn generate_siliconflow_batch_embeddings(api_key: String, texts: Vec<S
     println!("   - 模型: {}", model);
     println!("   - 输入类型: 多文本批量");
     println!("   - 文本数量: {} 个", texts.len());
+    
+    // =================================================================
+    // VVVV 关键的调试日志 VVVV
+    // 请把这一行日志加到你的代码里
+    if texts.len() == 1 {
+        println!("[最终验证] 即将被SiliconFlow API编码的字符串是: '{}'", texts[0]);
+    } else {
+        println!("[最终验证] 即将被SiliconFlow API编码的字符串列表:");
+        for (i, text) in texts.iter().enumerate() {
+            println!("   [{}] '{}'", i, text);
+        }
+    }
+    // ^^^^ 关键的调试日志 ^^^^
+    // =================================================================
 
     let client = reqwest::Client::new();
     let url = "https://api.siliconflow.cn/v1/embeddings";

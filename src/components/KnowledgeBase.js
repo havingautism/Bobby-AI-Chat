@@ -410,8 +410,8 @@ ${debugInfo.collections.map(c => `
           console.log(`\n🧪 [${i + 1}/${testQueries.length}] 测试用例: "${testCase.query}"`);
           console.log(`📝 描述: ${testCase.description}`);
           
-          // 执行混合搜索
-          const results = await knowledgeBaseManager.searchSQLite(testCase.query, 5, 0.01, false); // 禁用混合搜索，只使用Qdrant
+          // 执行向量搜索
+          const results = await knowledgeBaseManager.searchSQLite(testCase.query, 5, 0.3, false);
           totalResults += results.length;
           
           console.log(`📊 结果统计: 找到 ${results.length} 个匹配文档`);
@@ -543,8 +543,8 @@ ${debugInfo.collections.map(c => `
       console.log(`🔍 查询内容: "${testCase.query}"`);
       console.log(`⏰ 测试时间: ${new Date().toLocaleString()}`);
       
-      // 执行混合搜索
-      const results = await knowledgeBaseManager.searchSQLite(testCase.query, 5, 0.01, false); // 禁用混合搜索，只使用Qdrant
+      // 执行向量搜索
+      const results = await knowledgeBaseManager.searchSQLite(testCase.query, 5, 0.3, false);
       
       console.log(`\n📊 搜索结果统计:`);
       console.log(`   - 总结果数: ${results.length}`);
