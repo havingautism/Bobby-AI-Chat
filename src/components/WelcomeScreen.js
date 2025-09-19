@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { AI_ROLES, saveSelectedRole, loadSelectedRole } from "../utils/roles";
 import { getCurrentLanguage } from "../utils/language";
 import { getApiConfig } from "../utils/api";
+import { getAllRoles } from "../utils/database";
 import ChatInput from "./ChatInput";
 import "./WelcomeScreen.css";
 
@@ -14,19 +15,34 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
     return localStorage.getItem('lastResponseMode') || "normal";
   });
   const [defaultModel, setDefaultModel] = useState("");
+  const [roles, setRoles] = useState(AI_ROLES);
+  const [isLoading, setIsLoading] = useState(true);
   const dropdownRef = useRef(null);
 
-  // 获取默认模型
+  // 组件挂载时加载角色和默认模型
   useEffect(() => {
-    const loadDefaultModel = async () => {
+    const loadInitialData = async () => {
       try {
+        setIsLoading(true);
+
+        // 从数据库加载角色
+        const databaseRoles = await getAllRoles();
+        console.log('WelcomeScreen: 从数据库加载的角色:', databaseRoles);
+        if (databaseRoles && databaseRoles.length > 0) {
+          setRoles(databaseRoles);
+        }
+
+        // 获取默认模型
         const config = await getApiConfig();
         setDefaultModel(config.model || "");
+
+        setIsLoading(false);
       } catch (error) {
-        console.error("获取默认模型失败:", error);
+        console.error("加载初始数据失败:", error);
+        setIsLoading(false);
       }
     };
-    loadDefaultModel();
+    loadInitialData();
   }, []);
 
   // 点击外部关闭下拉菜单
@@ -55,7 +71,26 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
     };
   }, []);
 
-  const roles = AI_ROLES;
+  // 监听角色更新事件
+  useEffect(() => {
+    const handleRolesUpdated = (event) => {
+      console.log('WelcomeScreen: 角色已更新', event.detail);
+      setRoles([...event.detail]);
+    };
+
+    const handleRolesReset = () => {
+      console.log('WelcomeScreen: 角色已重置');
+      setRoles([...AI_ROLES]);
+    };
+
+    window.addEventListener('rolesUpdated', handleRolesUpdated);
+    window.addEventListener('rolesReset', handleRolesReset);
+
+    return () => {
+      window.removeEventListener('rolesUpdated', handleRolesUpdated);
+      window.removeEventListener('rolesReset', handleRolesReset);
+    };
+  }, []);
 
   const quickPrompts = currentLanguage === "zh" ? [
     "🤔 解释一个复杂的概念",
@@ -172,8 +207,13 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
             {showRoleDropdown && (
               <div className="role-dropdown-menu">
-                {roles.map((role) => (
-                  <button
+                {isLoading ? (
+                  <div className="loading-roles">
+                    <div className="loading-spinner"></div>
+                    <span>{currentLanguage === "zh" ? "加载角色..." : "Loading roles..."}</span>
+                  </div>
+                ) : (
+                  roles.map((role) => (<button
                     key={role.id}
                     className={`role-option ${
                       selectedRole === role.id ? "selected" : ""
@@ -200,8 +240,9 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
                         <path d="m9 12 2 2 4-4" />
                       </svg>
                     )}
-                  </button>
-                ))}
+                  </button>)
+                  )
+                )}
               </div>
             )}
           </div>

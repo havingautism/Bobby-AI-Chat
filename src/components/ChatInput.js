@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { getCurrentLanguage, t } from "../utils/language";
 import { isModelSupportResponseModes } from "../utils/modelUtils";
 // import { isTauriEnvironment } from "../utils/tauriDetector";
-import { knowledgeBaseManager } from "../utils/knowledgeBaseQdrant";
+import { knowledgeBaseManager } from "../utils/knowledgeBaseManager";
 import FileIcon from "./FileIcon";
 import "./ChatInput.css";
 
@@ -30,6 +30,8 @@ const ChatInput = ({
   onResponseModeChange,
   currentModel = "", // 当前选择的模型
   onOpenKnowledgeBase, // 知识库管理功能
+  conversation = null, // 当前会话信息
+  onSelectedDocumentsChange = null, // 选中文档变化回调
 }) => {
   const [message, setMessage] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -81,28 +83,35 @@ const ChatInput = ({
   // 处理文档选择
   const toggleDocumentSelection = (docId) => {
     setSelectedDocuments(prev => {
+      let newSelection;
       if (prev.includes(docId)) {
-        return prev.filter(id => id !== docId);
+        newSelection = prev.filter(id => id !== docId);
       } else {
-        return [...prev, docId];
+        newSelection = [...prev, docId];
       }
+      
+      // 通知父组件选中文档的变化
+      if (onSelectedDocumentsChange) {
+        onSelectedDocumentsChange(newSelection);
+      }
+      
+      return newSelection;
     });
   };
 
   // 清除所有选择的文档
   const clearSelectedDocuments = () => {
     setSelectedDocuments([]);
+    // 通知父组件选中文档的变化
+    if (onSelectedDocumentsChange) {
+      onSelectedDocumentsChange([]);
+    }
   };
 
-  // 过滤文档列表
+  // 过滤文档列表（与 KnowledgeBase modal 保持一致：按标题包含匹配，不区分大小写）
   const filteredDocuments = knowledgeDocuments.filter(doc => {
     if (!documentSearchQuery.trim()) return true;
-    const query = documentSearchQuery.toLowerCase();
-    return (
-      doc.title.toLowerCase().includes(query) ||
-      (doc.fileName && doc.fileName.toLowerCase().includes(query)) ||
-      (doc.sourceType && doc.sourceType.toLowerCase().includes(query))
-    );
+    return (doc.title || '').toLowerCase().includes(documentSearchQuery.toLowerCase());
   });
 
   // 使用知识库结果的功能已内联到onClick处理函数中
@@ -158,6 +167,7 @@ const ChatInput = ({
       }
       if (knowledgeBaseRef.current && !knowledgeBaseRef.current.contains(event.target)) {
         setShowKnowledgeBaseDropdown(false);
+        saveDropdownState(false);
       }
       if (uploadDropdownRef.current && !uploadDropdownRef.current.contains(event.target)) {
         setShowUploadDropdown(false);
@@ -215,6 +225,41 @@ const ChatInput = ({
       loadKnowledgeDocuments();
     }
   }, [showKnowledgeBaseDropdown]);
+
+  // 从会话历史中恢复选中的知识库文档
+  useEffect(() => {
+    if (conversation && conversation.selectedDocuments) {
+      setSelectedDocuments(conversation.selectedDocuments);
+    }
+  }, [conversation]);
+
+  // 保存下拉框状态到localStorage
+  const saveDropdownState = (isOpen) => {
+    try {
+      localStorage.setItem('knowledgeBaseDropdownOpen', JSON.stringify(isOpen));
+    } catch (error) {
+      console.warn('保存下拉框状态失败:', error);
+    }
+  };
+
+  // 从localStorage恢复下拉框状态
+  const loadDropdownState = () => {
+    try {
+      const saved = localStorage.getItem('knowledgeBaseDropdownOpen');
+      return saved ? JSON.parse(saved) : false;
+    } catch (error) {
+      console.warn('加载下拉框状态失败:', error);
+      return false;
+    }
+  };
+
+  // 初始化时恢复下拉框状态
+  useEffect(() => {
+    const savedState = loadDropdownState();
+    if (savedState) {
+      setShowKnowledgeBaseDropdown(true);
+    }
+  }, []);
 
   // 监听message状态变化，当消息被清空时重置输入框高度
   useEffect(() => {
@@ -758,7 +803,11 @@ const ChatInput = ({
                   <button
                     type="button"
                     className={`knowledge-base-btn ${selectedDocuments.length > 0 ? 'active' : ''}`}
-                    onClick={() => setShowKnowledgeBaseDropdown(!showKnowledgeBaseDropdown)}
+                    onClick={() => {
+                      const newState = !showKnowledgeBaseDropdown;
+                      setShowKnowledgeBaseDropdown(newState);
+                      saveDropdownState(newState);
+                    }}
                     disabled={disabled}
                     title="知识库"
                   >

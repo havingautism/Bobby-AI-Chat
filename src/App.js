@@ -7,6 +7,8 @@ import Sidebar from "./components/Sidebar";
 import Settings from "./components/Settings";
 import AboutModal from "./components/AboutModal";
 import KnowledgeBase from "./components/KnowledgeBase";
+import RoleModelManager from "./components/RoleModelManager";
+import TestRoleManager from "./components/TestRoleManager";
 import TauriInitializer from "./components/TauriInitializer";
 import { initTheme } from "./utils/theme";
 import { smartCacheCleanup } from "./utils/cacheManager";
@@ -36,6 +38,7 @@ const MainContent = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [knowledgeBaseOpen, setKnowledgeBaseOpen] = useState(false);
+  const [roleModelManagerOpen, setRoleModelManagerOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
@@ -132,6 +135,7 @@ const MainContent = () => {
           onOpenSettings={() => setSettingsOpen(true)}
           onOpenAbout={() => setAboutOpen(true)}
           onOpenKnowledgeBase={isTauriEnvironment() ? () => setKnowledgeBaseOpen(true) : undefined}
+          onOpenRoleModelManager={() => setRoleModelManagerOpen(true)}
         />
         
         {sidebarOpen && !sidebarCollapsed && isMobile && (
@@ -208,6 +212,17 @@ const MainContent = () => {
             onClose={() => setKnowledgeBaseOpen(false)}
           />
         )}
+        {/* 测试版本 - 用于调试编辑按钮问题 */}
+        <TestRoleManager
+          isOpen={roleModelManagerOpen}
+          onClose={() => setRoleModelManagerOpen(false)}
+        />
+        {/*
+        <RoleModelManager
+          isOpen={roleModelManagerOpen}
+          onClose={() => setRoleModelManagerOpen(false)}
+        />
+        */}
       </div>
     </TauriInitializer>
   );

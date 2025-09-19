@@ -1,6 +1,5 @@
 import * as indexedDBStorage from './storage';
 import * as tauriStorage from './tauriStorage';
-import * as simpleSQLiteStorage from './simpleSQLiteStorage';
 import { isTauriEnvironment } from './tauriDetector';
 
 // 强制检测Tauri环境 - 使用更宽松的检测方法
@@ -36,10 +35,10 @@ const getStorage = () => {
       const useSQLite = localStorage.getItem('use-sqlite-storage') !== 'false';
       
       if (useSQLite) {
-        // 尝试使用真正的SQLite存储
-        console.log('Tauri环境检测成功，尝试使用SQLite存储');
+        // 使用专门的 SQLite + sqlite-vec 系统
+        console.log('Tauri环境检测成功，使用专门的 SQLite + sqlite-vec 系统');
         localStorage.setItem('use-sqlite-storage', 'true');
-        return simpleSQLiteStorage;
+        return tauriStorage; // 现在 tauriStorage 使用专门的 SQLite 系统
       } else {
         // 用户选择了JSON存储
         console.log('Tauri环境，用户选择使用JSON存储');
@@ -133,13 +132,10 @@ export const storageAdapter = {
     }
     
     try {
-      // 初始化真正的SQLite存储
-      await simpleSQLiteStorage.initialize();
-      
-      // 启用SQLite存储
+      // 启用SQLite存储（现在使用专门的 SQLite + sqlite-vec 系统）
       localStorage.setItem('use-sqlite-storage', 'true');
       
-      console.log('已成功切换到真正的SQLite存储');
+      console.log('已成功切换到专门的 SQLite + sqlite-vec 系统');
       return true;
     } catch (error) {
       console.error('切换到SQLite存储失败:', error);

@@ -51,7 +51,7 @@ const ensureDataDir = async () => {
   try {
     const dataDir = getCurrentDataDir();
     const baseDir = getCurrentBaseDirectory();
-    
+
     if (baseDir) {
       // 使用相对路径
       await mkdir(dataDir, {
@@ -126,7 +126,7 @@ const readJsonFile = async (filename, defaultValue = []) => {
     const dataDir = getCurrentDataDir();
     const baseDir = getCurrentBaseDirectory();
     const filePath = baseDir ? `${dataDir}/${filename}` : `${dataDir}/${filename}`;
-    
+
     const fileExists = await exists(filePath, baseDir ? { baseDir } : {});
     if (!fileExists) {
       return defaultValue;
@@ -148,7 +148,7 @@ const writeJsonFile = async (filename, data) => {
     const baseDir = getCurrentBaseDirectory();
     const filePath = baseDir ? `${dataDir}/${filename}` : `${dataDir}/${filename}`;
     const content = JSON.stringify(data, null, 2);
-    
+
     await writeTextFile(filePath, content, baseDir ? { baseDir } : {});
     console.log(`文件已保存: ${filePath}`);
   } catch (error) {
@@ -161,7 +161,7 @@ const writeJsonFile = async (filename, data) => {
 export const loadChatHistory = async () => {
   try {
     const conversations = await readJsonFile(CONVERSATIONS_FILE, []);
-    
+
     // 按时间排序
     return conversations.sort((a, b) => {
       const aTime = a.lastUpdated || 0;
@@ -179,17 +179,17 @@ export const saveChatHistory = async (conversations) => {
   try {
     // 清理旧数据
     const cleaned = cleanOldConversations(conversations);
-    
+
     // 压缩数据
     const compressed = cleaned.map(compressConversation);
-    
+
     // 添加更新时间戳
     const now = Date.now();
     const conversationsWithTimestamp = compressed.map(conv => ({
       ...conv,
       lastUpdated: now
     }));
-    
+
     await writeJsonFile(CONVERSATIONS_FILE, conversationsWithTimestamp);
     console.log(`已保存 ${conversationsWithTimestamp.length} 个对话到本地文件`);
   } catch (error) {
@@ -202,7 +202,7 @@ export const saveConversation = async (conversation) => {
   try {
     const conversations = await loadChatHistory();
     const compressed = compressConversation(conversation);
-    
+
     // 更新或添加对话
     const existingIndex = conversations.findIndex(c => c.id === conversation.id);
     if (existingIndex >= 0) {
@@ -216,7 +216,7 @@ export const saveConversation = async (conversation) => {
         lastUpdated: Date.now()
       });
     }
-    
+
     await saveChatHistory(conversations);
   } catch (error) {
     console.error("保存单个对话失败:", error);
@@ -285,12 +285,12 @@ export const getStorageInfo = async () => {
   try {
     const conversations = await loadChatHistory();
     const settings = await readJsonFile(SETTINGS_FILE, {});
-    
+
     const conversationsSize = new Blob([JSON.stringify(conversations)]).size;
     const settingsSize = new Blob([JSON.stringify(settings)]).size;
     const totalSize = conversationsSize + settingsSize;
     const sizeInMB = (totalSize / (1024 * 1024)).toFixed(2);
-    
+
     // 添加调试信息
     const debugInfo = {
       baseDirectory: baseDirectory,
@@ -298,7 +298,7 @@ export const getStorageInfo = async () => {
       actualDataDir: getCurrentDataDir(),
       isTauriEnv: isTauriEnvironment()
     };
-    
+
     return {
       totalSize: sizeInMB + ' MB',
       dataDirectory: getCurrentDataDir(),

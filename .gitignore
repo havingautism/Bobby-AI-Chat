@@ -104,6 +104,7 @@ temp/
 /src-tauri/qdrant_src/
 /src-tauri/qdrant_data/
 /src-tauri/snapshots/
+/src-tauri/data/
 
 # Qdrant data directory
 /qdrant_data/

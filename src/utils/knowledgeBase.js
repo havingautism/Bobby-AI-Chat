@@ -12,11 +12,15 @@ class KnowledgeBaseManager {
     return storageAdapter.getStorageType() === 'sqlite';
   }
 
-  // 获取SQL插件实例
+  // 获取SQLite实例（现在使用专门的 SQLite + sqlite-vec 系统）
   async getSQLiteInstance() {
     if (!this.sqliteInstance) {
-      const { knowledgeBaseSQLite } = await import('./knowledgeBaseSQLite');
-      this.sqliteInstance = knowledgeBaseSQLite;
+      // 现在直接使用 Tauri 后端的 SQLite + sqlite-vec 系统
+      // 通过 invoke 命令与后端通信，不再需要前端 SQLite 插件
+      this.sqliteInstance = {
+        // 这里可以添加一些兼容性方法，但主要功能都通过 invoke 实现
+        isAvailable: () => this.isTauriEnvironment()
+      };
     }
     return this.sqliteInstance;
   }
@@ -134,8 +138,7 @@ class KnowledgeBaseManager {
         // 自动生成向量嵌入
         if (this.isTauriEnvironment() && document.content.length > 100) {
           try {
-            const sqlite = await this.getSQLiteInstance();
-            await sqlite.generateDocumentEmbeddings(docId);
+            await this.generateDocumentEmbeddings(docId);
             console.log(`文档 ${docId} 的向量嵌入已生成`);
           } catch (error) {
             console.warn('生成向量嵌入失败:', error);
@@ -349,24 +352,35 @@ class KnowledgeBaseManager {
   async searchSQLite(query, limit, threshold, includeContent) {
     try {
       if (this.isTauriEnvironment()) {
-        // 在Tauri环境中，使用SQL插件进行搜索
-        const sqlite = await this.getSQLiteInstance();
+        // 在Tauri环境中，直接调用后端的搜索API
+        const { invoke } = await import('@tauri-apps/api/core');
         
-        // 使用混合搜索（结合文本搜索和向量搜索）
-        let results;
-        try {
-          results = await sqlite.hybridSearch(query, limit, 0.7, 0.3);
-        } catch (error) {
-          console.warn('混合搜索失败，使用文本搜索:', error);
-          results = await sqlite.searchDocuments(query, limit);
+        // 获取API密钥（从设置中获取）
+        const apiKey = await this.getApiKey();
+        
+        console.log('🔍 调用后端搜索API:', { query, limit, threshold, apiKeyLength: apiKey?.length || 0 });
+        
+        const response = await invoke('search_knowledge_base', {
+          query: query,
+          collectionId: null, // 使用默认集合
+          limit: limit,
+          threshold: threshold, // 使用传入的阈值
+          apiKey: apiKey || ''
+        });
+        
+        console.log('🔍 后端搜索响应:', response);
+        
+        if (!response || !response.results) {
+          console.warn('⚠️ 搜索响应格式不正确');
+          return [];
         }
         
-        return results.map(result => ({
-          id: result.id,
-          title: result.title,
-          content: includeContent ? (result.content || result.full_content) : null,
-          score: result.combinedScore || result.similarity || 1.0, // 使用综合分数或相似度
-          chunkIndex: result.chunk_index || 0,
+        return response.results.map(result => ({
+          id: result.document_id,
+          title: result.document_title,
+          content: includeContent ? result.chunk_text : null,
+          score: result.similarity,
+          chunkIndex: 0,
           sourceType: 'document',
           sourceUrl: null
         }));
@@ -584,9 +598,25 @@ class KnowledgeBaseManager {
   async generateDocumentEmbeddings(documentId) {
     try {
       if (this.isTauriEnvironment()) {
-        const sqlite = await this.getSQLiteInstance();
-        await sqlite.generateDocumentEmbeddings(documentId);
-        console.log(`文档 ${documentId} 的向量嵌入已生成`);
+        const { invoke } = await import('@tauri-apps/api/core');
+        
+        // 获取API密钥
+        const apiKey = await this.getApiKey();
+        
+        console.log(`🔧 为文档 ${documentId} 生成向量嵌入...`);
+        
+        const response = await invoke('generate_document_embeddings', {
+          request: {
+            document_id: documentId,
+            collection_id: null, // 使用默认集合
+            content: null,
+            model: null
+          },
+          apiKey: apiKey || ''
+        });
+        
+        console.log(`✅ 文档 ${documentId} 的向量嵌入已生成:`, response);
+        return response;
       } else {
         console.warn('向量嵌入生成仅在Tauri环境中支持');
       }
@@ -639,6 +669,18 @@ class KnowledgeBaseManager {
         vectorCount: 0,
         totalSize: 0
       };
+    }
+  }
+
+  // 获取API密钥
+  async getApiKey() {
+    try {
+      // 尝试从设置中获取API密钥
+      const apiKey = await storageAdapter.loadSetting('api_key');
+      return apiKey || '';
+    } catch (error) {
+      console.warn('获取API密钥失败:', error);
+      return '';
     }
   }
 

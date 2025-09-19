@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../contexts/SessionContext';
-import { AI_ROLES, saveSelectedRole, loadSelectedRole, getRoleById } from "../utils/roles";
+import { saveSelectedRole, loadSelectedRole, getRoleById } from "../utils/roles";
 import { getCurrentLanguage } from "../utils/language";
 import { getApiConfig, sendMessage } from "../utils/api";
 import ChatInput from "./ChatInput";
@@ -9,19 +9,28 @@ import "./WelcomeScreen.css";
 
 const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }) => {
   const navigate = useNavigate();
-  const { 
+  const {
     createNewConversation,
     updateConversation,
     currentConversationId,
     lastResponseMode,
     setLastResponseMode
   } = useSession();
-  
+
   const [selectedRole, setSelectedRole] = useState(loadSelectedRole());
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
   const [responseMode, setResponseMode] = useState(lastResponseMode);
   const [apiDefaultModel, setApiDefaultModel] = useState("");
+  const [roles, setRoles] = useState([]);
+
+  // 调试：跟踪roles状态变化
+  useEffect(() => {
+    console.log('WelcomeContent roles状态更新:', roles);
+    console.log('角色数量:', roles?.length || 0);
+    console.log('角色列表:', roles?.map(r => ({ id: r.id, name: r.name, createdAt: r.createdAt })) || []);
+  }, [roles]);
+  const [debugInfo, setDebugInfo] = useState("");
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -35,6 +44,110 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
     };
     loadDefaultModel();
   }, []);
+
+  // 加载角色列表
+  useEffect(() => {
+    const loadRoles = async () => {
+      console.log('WelcomeContent开始加载角色...');
+      try {
+        // 尝试从数据库加载角色
+        const { dbManager, getAllRoles } = await import('../utils/database');
+        await dbManager.init();
+
+        const rolesFromDB = await getAllRoles();
+        console.log('WelcomeContent从数据库加载的角色:', rolesFromDB);
+        console.log('数据库角色详情:', rolesFromDB?.map(r => ({ id: r.id, name: r.name, createdAt: r.createdAt })) || []);
+
+        if (rolesFromDB && rolesFromDB.length > 0) {
+          console.log('设置数据库角色到状态');
+          setRoles(rolesFromDB);
+        } else {
+          // 如果数据库中没有角色，使用默认角色
+          console.log('数据库中没有角色，使用默认角色');
+          const { AI_ROLES } = require('../utils/roles');
+          setRoles(AI_ROLES);
+        }
+      } catch (error) {
+        console.error("从数据库加载角色失败，降级到localStorage:", error);
+
+        // 降级到localStorage
+        try {
+          const savedRoles = localStorage.getItem('ai-roles-updated');
+          const customRoles = localStorage.getItem('custom-roles');
+
+          let rolesToUse = [];
+
+          if (savedRoles) {
+            rolesToUse = JSON.parse(savedRoles);
+          } else if (customRoles) {
+            rolesToUse = JSON.parse(customRoles);
+          } else {
+            // 如果没有保存的角色，使用默认角色
+            const { AI_ROLES } = require('../utils/roles');
+            rolesToUse = AI_ROLES;
+          }
+
+          setRoles(rolesToUse);
+        } catch (fallbackError) {
+          console.error("从localStorage加载角色也失败:", fallbackError);
+          // 最终降级到默认角色
+          const { AI_ROLES } = require('../utils/roles');
+          setRoles(AI_ROLES);
+        }
+      }
+    };
+
+    loadRoles();
+
+    // 监听角色更新事件
+    const handleRolesUpdated = (event) => {
+      console.log('WelcomeContent接收到rolesUpdated事件:', event.detail);
+      console.log('事件详情 - 角色数量:', event.detail?.length || 0);
+      console.log('事件详情 - 角色列表:', event.detail?.map(r => ({ id: r.id, name: r.name, createdAt: r.createdAt })) || []);
+      setRoles(event.detail);
+    };
+
+    const handleRolesReset = () => {
+      console.log('WelcomeContent接收到rolesReset事件');
+      const { AI_ROLES } = require('../utils/roles');
+      setRoles(AI_ROLES);
+    };
+
+    window.addEventListener('rolesUpdated', handleRolesUpdated);
+    window.addEventListener('rolesReset', handleRolesReset);
+
+    return () => {
+      window.removeEventListener('rolesUpdated', handleRolesUpdated);
+      window.removeEventListener('rolesReset', handleRolesReset);
+    };
+  }, []);
+
+  // 调试函数 - 检查数据库状态
+  const checkDatabaseStatus = async () => {
+    try {
+      const { dbManager, getAllRoles } = await import('../utils/database');
+      await dbManager.init();
+
+      const rolesFromDB = await getAllRoles();
+      const localStorageRoles = localStorage.getItem('ai-roles-updated');
+      const localStorageCustom = localStorage.getItem('custom-roles');
+
+      const debug = {
+        '数据库角色数量': rolesFromDB ? rolesFromDB.length : 0,
+        '数据库角色': rolesFromDB ? rolesFromDB.map(r => r.name) : [],
+        'localStorage(ai-roles-updated)': localStorageRoles ? JSON.parse(localStorageRoles).map(r => r.name) : '无',
+        'localStorage(custom-roles)': localStorageCustom ? JSON.parse(localStorageCustom).map(r => r.name) : '无',
+        '当前roles状态': roles.map(r => r.name),
+        '当前选中角色': selectedRole
+      };
+
+      setDebugInfo(JSON.stringify(debug, null, 2));
+      console.log('数据库状态:', debug);
+    } catch (error) {
+      setDebugInfo('检查失败: ' + error.message);
+      console.error('检查数据库状态失败:', error);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -60,7 +173,7 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
     };
   }, []);
 
-  const roles = AI_ROLES;
+  // roles are now loaded dynamically in the useEffect above
 
   const quickPrompts = currentLanguage === "zh" ? [
     "🤔 解释一个复杂的概念",
@@ -374,13 +487,17 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
 
             {showRoleDropdown && (
               <div className="role-dropdown-menu">
+                {console.log('渲染下拉框，roles数量:', roles?.length || 0)}
                 {roles.map((role) => (
                   <button
                     key={role.id}
                     className={`role-option ${
                       selectedRole === role.id ? "selected" : ""
                     }`}
-                    onClick={() => handleRoleChange(role.id)}
+                    onClick={() => {
+                      console.log('选择角色:', role);
+                      handleRoleChange(role.id);
+                    }}
                   >
                     <span className="role-icon">{role.icon}</span>
                     <div className="role-info">
@@ -442,6 +559,20 @@ const WelcomeContent = ({ onToggleSidebar, onOpenSettings, onOpenKnowledgeBase }
             ))}
           </div>
         </div>
+
+        {/* 调试面板 */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="debug-panel" style={{ marginTop: '20px', padding: '10px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+            <button onClick={checkDatabaseStatus} style={{ marginBottom: '10px', padding: '5px 10px' }}>
+              检查数据库状态
+            </button>
+            {debugInfo && (
+              <pre style={{ fontSize: '12px', backgroundColor: '#fff', padding: '10px', borderRadius: '4px', overflow: 'auto' }}>
+                {debugInfo}
+              </pre>
+            )}
+          </div>
+        )}
       </div>
     </div>
     </>
