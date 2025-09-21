@@ -1,9 +1,15 @@
-import { exists, readTextFile, writeTextFile, mkdir, BaseDirectory } from '@tauri-apps/plugin-fs';
-import { join, homeDir } from '@tauri-apps/api/path';
+import {
+  exists,
+  readTextFile,
+  writeTextFile,
+  mkdir,
+  BaseDirectory,
+} from "@tauri-apps/plugin-fs";
+import { join, homeDir } from "@tauri-apps/api/path";
 
-const DEFAULT_DATA_DIR = 'ai-chat-data';
-const CONVERSATIONS_FILE = 'conversations.json';
-const SETTINGS_FILE = 'settings.json';
+const DEFAULT_DATA_DIR = "ai-chat-data";
+const CONVERSATIONS_FILE = "conversations.json";
+const SETTINGS_FILE = "settings.json";
 
 // 获取自定义数据目录路径
 let customDataDir = null;
@@ -14,7 +20,7 @@ export const setCustomDataDir = async (customPath) => {
   try {
     if (customPath && customPath.trim()) {
       // 如果是相对路径，相对于用户主目录
-      if (!customPath.startsWith('/') && !customPath.includes(':\\')) {
+      if (!customPath.startsWith("/") && !customPath.includes(":\\")) {
         const home = await homeDir();
         customDataDir = await join(home, customPath.trim());
       } else {
@@ -26,10 +32,10 @@ export const setCustomDataDir = async (customPath) => {
       // 使用默认路径
       customDataDir = null;
       baseDirectory = BaseDirectory.AppLocalData;
-      console.log('使用默认数据目录');
+      console.log("使用默认数据目录");
     }
   } catch (error) {
-    console.error('设置自定义数据目录失败:', error);
+    console.error("设置自定义数据目录失败:", error);
     // 回退到默认设置
     customDataDir = null;
     baseDirectory = BaseDirectory.AppLocalData;
@@ -56,28 +62,28 @@ const ensureDataDir = async () => {
       // 使用相对路径
       await mkdir(dataDir, {
         baseDir: baseDir,
-        recursive: true
+        recursive: true,
       });
     } else {
       // 使用绝对路径
       await mkdir(dataDir, {
-        recursive: true
+        recursive: true,
       });
     }
     console.log(`数据目录已确保存在: ${dataDir}`);
   } catch (error) {
-    console.error('创建数据目录失败:', error);
+    console.error("创建数据目录失败:", error);
     // 尝试使用备用目录
     try {
-      const fallbackDir = 'ai-chat-fallback';
+      const fallbackDir = "ai-chat-fallback";
       await mkdir(fallbackDir, {
         baseDir: BaseDirectory.AppLocalData,
-        recursive: true
+        recursive: true,
       });
       console.log(`使用备用数据目录: ${fallbackDir}`);
     } catch (fallbackError) {
-      console.error('备用目录创建也失败:', fallbackError);
-      throw new Error('无法创建数据存储目录');
+      console.error("备用目录创建也失败:", fallbackError);
+      throw new Error("无法创建数据存储目录");
     }
   }
 };
@@ -86,19 +92,21 @@ const ensureDataDir = async () => {
 const compressConversation = (conversation) => {
   return {
     ...conversation,
-    messages: conversation.messages.map(msg => ({
+    messages: conversation.messages.map((msg) => ({
       id: msg.id,
       role: msg.role,
       content: msg.content,
       timestamp: msg.timestamp,
       hasReasoning: msg.hasReasoning || false,
       reasoning: msg.reasoning,
-      uploadedFile: msg.uploadedFile ? {
-        name: msg.uploadedFile.name,
-        type: msg.uploadedFile.type,
-        size: msg.uploadedFile.size
-      } : null
-    }))
+      uploadedFile: msg.uploadedFile
+        ? {
+            name: msg.uploadedFile.name,
+            type: msg.uploadedFile.type,
+            size: msg.uploadedFile.size,
+          }
+        : null,
+    })),
   };
 };
 
@@ -125,7 +133,9 @@ const readJsonFile = async (filename, defaultValue = []) => {
     await ensureDataDir();
     const dataDir = getCurrentDataDir();
     const baseDir = getCurrentBaseDirectory();
-    const filePath = baseDir ? `${dataDir}/${filename}` : `${dataDir}/${filename}`;
+    const filePath = baseDir
+      ? `${dataDir}/${filename}`
+      : `${dataDir}/${filename}`;
 
     const fileExists = await exists(filePath, baseDir ? { baseDir } : {});
     if (!fileExists) {
@@ -146,7 +156,9 @@ const writeJsonFile = async (filename, data) => {
     await ensureDataDir();
     const dataDir = getCurrentDataDir();
     const baseDir = getCurrentBaseDirectory();
-    const filePath = baseDir ? `${dataDir}/${filename}` : `${dataDir}/${filename}`;
+    const filePath = baseDir
+      ? `${dataDir}/${filename}`
+      : `${dataDir}/${filename}`;
     const content = JSON.stringify(data, null, 2);
 
     await writeTextFile(filePath, content, baseDir ? { baseDir } : {});
@@ -162,8 +174,23 @@ export const loadChatHistory = async () => {
   try {
     const conversations = await readJsonFile(CONVERSATIONS_FILE, []);
 
-    // 按时间排序
+    // 按收藏状态、置顶时间、最后更新时间排序
     return conversations.sort((a, b) => {
+      // 首先按收藏状态排序
+      if (a.is_favorite !== b.is_favorite) {
+        return b.is_favorite - a.is_favorite;
+      }
+
+      // 如果都是收藏的，按置顶时间排序
+      if (a.is_favorite && b.is_favorite) {
+        const aPinned = a.pinned_at || 0;
+        const bPinned = b.pinned_at || 0;
+        if (aPinned !== bPinned) {
+          return bPinned - aPinned;
+        }
+      }
+
+      // 最后按最后更新时间排序
       const aTime = a.lastUpdated || 0;
       const bTime = b.lastUpdated || 0;
       return bTime - aTime;
@@ -185,9 +212,9 @@ export const saveChatHistory = async (conversations) => {
 
     // 添加更新时间戳
     const now = Date.now();
-    const conversationsWithTimestamp = compressed.map(conv => ({
+    const conversationsWithTimestamp = compressed.map((conv) => ({
       ...conv,
-      lastUpdated: now
+      lastUpdated: now,
     }));
 
     await writeJsonFile(CONVERSATIONS_FILE, conversationsWithTimestamp);
@@ -204,16 +231,18 @@ export const saveConversation = async (conversation) => {
     const compressed = compressConversation(conversation);
 
     // 更新或添加对话
-    const existingIndex = conversations.findIndex(c => c.id === conversation.id);
+    const existingIndex = conversations.findIndex(
+      (c) => c.id === conversation.id
+    );
     if (existingIndex >= 0) {
       conversations[existingIndex] = {
         ...compressed,
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
       };
     } else {
       conversations.push({
         ...compressed,
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
       });
     }
 
@@ -227,7 +256,7 @@ export const saveConversation = async (conversation) => {
 export const deleteConversation = async (conversationId) => {
   try {
     const conversations = await loadChatHistory();
-    const filtered = conversations.filter(c => c.id !== conversationId);
+    const filtered = conversations.filter((c) => c.id !== conversationId);
     await saveChatHistory(filtered);
   } catch (error) {
     console.error("删除对话失败:", error);
@@ -280,6 +309,51 @@ export const migrateFromIndexedDB = async (oldConversations = []) => {
   return false;
 };
 
+// 切换对话收藏状态
+export const toggleConversationFavorite = async (conversationId) => {
+  try {
+    const conversations = await loadChatHistory();
+    const conversation = conversations.find((c) => c.id === conversationId);
+
+    if (conversation) {
+      const newFavorite = !conversation.is_favorite;
+      const pinnedAt = newFavorite ? Date.now() : null;
+
+      conversation.is_favorite = newFavorite;
+      conversation.pinned_at = pinnedAt;
+      conversation.lastUpdated = Date.now();
+
+      await saveChatHistory(conversations);
+      return newFavorite;
+    }
+    return false;
+  } catch (error) {
+    console.error("切换收藏状态失败:", error);
+    return false;
+  }
+};
+
+// 获取收藏的对话
+export const getFavoriteConversations = async () => {
+  try {
+    const conversations = await loadChatHistory();
+    const favorites = conversations.filter((c) => c.is_favorite);
+
+    // 按置顶时间排序
+    return favorites.sort((a, b) => {
+      const aPinned = a.pinned_at || 0;
+      const bPinned = b.pinned_at || 0;
+      if (aPinned !== bPinned) {
+        return bPinned - aPinned;
+      }
+      return (b.lastUpdated || 0) - (a.lastUpdated || 0);
+    });
+  } catch (error) {
+    console.error("获取收藏对话失败:", error);
+    return [];
+  }
+};
+
 // 获取存储信息
 export const getStorageInfo = async () => {
   try {
@@ -296,27 +370,28 @@ export const getStorageInfo = async () => {
       baseDirectory: baseDirectory,
       customDataDir: customDataDir,
       actualDataDir: getCurrentDataDir(),
-      isTauriEnv: isTauriEnvironment()
+      isTauriEnv: isTauriEnvironment(),
     };
 
     return {
-      totalSize: sizeInMB + ' MB',
+      totalSize: sizeInMB + " MB",
       dataDirectory: getCurrentDataDir(),
       isCustomPath: !!customDataDir,
       debugInfo: debugInfo,
       conversations: {
         count: conversations.length,
-        size: (conversationsSize / (1024 * 1024)).toFixed(2) + ' MB',
-        items: conversations.map(c => ({
+        size: (conversationsSize / (1024 * 1024)).toFixed(2) + " MB",
+        items: conversations.map((c) => ({
           id: c.id,
           title: c.title,
           messageCount: c.messages.length,
-          lastUpdated: c.lastUpdated
-        }))
+          lastUpdated: c.lastUpdated,
+          is_favorite: c.is_favorite || false,
+        })),
       },
       settings: {
-        size: (settingsSize / 1024).toFixed(2) + ' KB'
-      }
+        size: (settingsSize / 1024).toFixed(2) + " KB",
+      },
     };
   } catch (error) {
     console.error("获取存储信息失败:", error);
@@ -326,23 +401,24 @@ export const getStorageInfo = async () => {
         baseDirectory: baseDirectory,
         customDataDir: customDataDir,
         actualDataDir: getCurrentDataDir(),
-        isTauriEnv: isTauriEnvironment()
-      }
+        isTauriEnv: isTauriEnvironment(),
+      },
     };
   }
 };
-
 
 // 获取当前数据目录信息
 export const getDataDirectoryInfo = () => {
   return {
     path: getCurrentDataDir(),
     isCustom: !!customDataDir,
-    baseDirectory: baseDirectory
+    baseDirectory: baseDirectory,
   };
 };
 
 // 检查是否在Tauri环境中
 export const isTauriEnvironment = () => {
-  return typeof window !== 'undefined' && window.__TAURI_INTERNALS__ !== undefined;
+  return (
+    typeof window !== "undefined" && window.__TAURI_INTERNALS__ !== undefined
+  );
 };

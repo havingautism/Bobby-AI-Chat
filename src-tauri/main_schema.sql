@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS conversations (
     response_mode TEXT DEFAULT 'stream',
     messages TEXT,
     settings TEXT,
+    is_favorite BOOLEAN DEFAULT FALSE,
+    pinned_at TEXT,
     created_at TEXT,
     updated_at TEXT,
     FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE SET NULL
@@ -80,6 +82,8 @@ CREATE INDEX IF NOT EXISTS idx_models_sort_order ON models(sort_order);
 CREATE INDEX IF NOT EXISTS idx_models_enabled ON models(enabled);
 CREATE INDEX IF NOT EXISTS idx_conversations_role_id ON conversations(role_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_created_at ON conversations(created_at);
+CREATE INDEX IF NOT EXISTS idx_conversations_is_favorite ON conversations(is_favorite);
+CREATE INDEX IF NOT EXISTS idx_conversations_pinned_at ON conversations(pinned_at);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
 CREATE INDEX IF NOT EXISTS idx_settings_updated_at ON settings(updated_at);

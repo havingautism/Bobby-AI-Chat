@@ -13,6 +13,8 @@ pub struct Conversation {
     pub response_mode: String,
     pub messages: String, // JSON string
     pub settings: String, // JSON string
+    pub is_favorite: bool,
+    pub pinned_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

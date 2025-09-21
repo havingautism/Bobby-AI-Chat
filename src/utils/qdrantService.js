@@ -759,7 +759,7 @@ class QdrantService {
             chunk_index: chunkIndex,
             chunk_text: embeddingData.chunkText,
             title: metadata.title || 'Unknown',
-            source_type: metadata.sourceType || 'manual',
+            source_type: metadata.sourceType || 'text',
             file_name: metadata.fileName || null,
             file_size: metadata.fileSize || null,
             created_at: Date.now(),

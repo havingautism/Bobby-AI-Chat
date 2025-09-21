@@ -16,6 +16,7 @@ const Sidebar = ({
   onNewConversation,
   onDeleteConversation,
   onUpdateConversation,
+  onToggleFavorite,
   isOpen,
   onToggle,
   isCollapsed,
@@ -225,21 +226,38 @@ const Sidebar = ({
     const today = new Date();
     const todayStr = today.toDateString();
 
+    // 分离收藏的对话
+    const favoriteConversations = filteredConversations
+      .filter((conv) => conv.is_favorite)
+      .sort((a, b) => {
+        // 按置顶时间排序，然后按创建时间排序
+        const aPinned = a.pinned_at || 0;
+        const bPinned = b.pinned_at || 0;
+        if (aPinned !== bPinned) {
+          return bPinned - aPinned;
+        }
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+
     const todayConversations = filteredConversations
       .filter((conv) => {
         const date = new Date(conv.createdAt);
-        return date.toDateString() === todayStr;
+        return date.toDateString() === todayStr && !conv.is_favorite;
       })
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // 按创建时间倒序排列
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const previousConversations = filteredConversations
       .filter((conv) => {
         const date = new Date(conv.createdAt);
-        return date.toDateString() !== todayStr;
+        return date.toDateString() !== todayStr && !conv.is_favorite;
       })
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // 按创建时间倒序排列
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    return { today: todayConversations, previous: previousConversations };
+    return {
+      favorites: favoriteConversations,
+      today: todayConversations,
+      previous: previousConversations,
+    };
   }, [filteredConversations]);
 
   return (
@@ -503,6 +521,43 @@ const Sidebar = ({
           {isCollapsed ? (
             // 收起状态：只显示图标
             <div className="collapsed-conversations">
+              {/* 收藏的对话 */}
+              {groupedConversations.favorites.length > 0 && (
+                <>
+                  {groupedConversations.favorites
+                    .slice(0, 20)
+                    .map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        className={`conversation-item collapsed favorite ${
+                          currentConversationId === conversation.id
+                            ? "active"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          handleMobileConversationSelect(conversation.id)
+                        }
+                        title={`⭐ ${conversation.title}`}
+                      >
+                        <div
+                          className="role-avatar"
+                          style={{
+                            color: getRoleById(conversation.role)?.color,
+                          }}
+                        >
+                          {conversation.role
+                            ? getRoleById(conversation.role)?.avatar
+                            : "💬"}
+                        </div>
+                      </div>
+                    ))}
+                  {(groupedConversations.today.length > 0 ||
+                    groupedConversations.previous.length > 0) && (
+                    <div className="collapsed-divider" />
+                  )}
+                </>
+              )}
+
               {/* 今日 */}
               {groupedConversations.today.length > 0 && (
                 <>
@@ -510,7 +565,7 @@ const Sidebar = ({
                     .sort(
                       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
                     )
-                    .slice(0, 50)
+                    .slice(0, 30)
                     .map((conversation) => (
                       <div
                         key={conversation.id}
@@ -552,7 +607,7 @@ const Sidebar = ({
                     .sort(
                       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
                     )
-                    .slice(0, 50)
+                    .slice(0, 30)
                     .map((conversation) => (
                       <div
                         key={conversation.id}
@@ -614,6 +669,39 @@ const Sidebar = ({
                 </div>
               )}
 
+              {/* 收藏的对话 */}
+              {groupedConversations.favorites.length > 0 && (
+                <>
+                  {/* 收藏分割线 */}
+                  <div className="favorites-divider">
+                    <div className="divider-line"></div>
+                    <div className="divider-text">
+                      <span className="favorite-icon">⭐</span>
+                      {currentLanguage === "zh"
+                        ? "收藏对话"
+                        : "Favorite Conversations"}
+                    </div>
+                    <div className="divider-line"></div>
+                  </div>
+
+                  {groupedConversations.favorites.map((conversation) => (
+                    <ConversationItem
+                      key={conversation.id}
+                      conversation={conversation}
+                      isActive={currentConversationId === conversation.id}
+                      onSelect={handleMobileConversationSelect}
+                      onDelete={handleDeleteConfirm}
+                      onUpdateTitle={(id, title) =>
+                        onUpdateConversation(id, { title })
+                      }
+                      onToggleFavorite={onToggleFavorite}
+                      searchQuery={searchQuery}
+                      currentLanguage={currentLanguage}
+                    />
+                  ))}
+                </>
+              )}
+
               {groupedConversations.today.length > 0 && (
                 <div className="conversations-section">
                   <div className="section-title">
@@ -629,6 +717,7 @@ const Sidebar = ({
                       onUpdateTitle={(id, title) =>
                         onUpdateConversation(id, { title })
                       }
+                      onToggleFavorite={onToggleFavorite}
                       searchQuery={searchQuery}
                       currentLanguage={currentLanguage}
                     />
@@ -657,6 +746,7 @@ const Sidebar = ({
                       onUpdateTitle={(id, title) =>
                         onUpdateConversation(id, { title })
                       }
+                      onToggleFavorite={onToggleFavorite}
                       searchQuery={searchQuery}
                       currentLanguage={currentLanguage}
                     />
@@ -806,6 +896,7 @@ const ConversationItem = ({
   onSelect,
   onDelete,
   onUpdateTitle,
+  onToggleFavorite,
   searchQuery,
   currentLanguage,
 }) => {
@@ -865,6 +956,14 @@ const ConversationItem = ({
     e.stopPropagation();
     setShowMenu(false);
     handleDeleteClick(e);
+  };
+
+  // 处理收藏切换
+  const handleToggleFavorite = (e) => {
+    e.stopPropagation();
+    if (onToggleFavorite) {
+      onToggleFavorite(conversation.id);
+    }
   };
 
   // 处理键盘事件
@@ -979,6 +1078,33 @@ const ConversationItem = ({
           <div
             className={`conversation-actions${showMenu ? " menu-open" : ""}`}
           >
+            {/* 收藏按钮 */}
+            <button
+              className={`favorite-btn ${
+                conversation.is_favorite ? "favorited" : ""
+              }`}
+              onClick={handleToggleFavorite}
+              title={
+                conversation.is_favorite
+                  ? currentLanguage === "zh"
+                    ? "取消收藏"
+                    : "Remove from favorites"
+                  : currentLanguage === "zh"
+                  ? "添加到收藏"
+                  : "Add to favorites"
+              }
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill={conversation.is_favorite ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+              </svg>
+            </button>
             <button
               className="menu-btn"
               onClick={handleMenuClick}

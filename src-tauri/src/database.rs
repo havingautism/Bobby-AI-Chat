@@ -330,6 +330,8 @@ impl DatabaseManager {
                 response_mode TEXT DEFAULT 'stream',
                 messages TEXT,
                 settings TEXT,
+                is_favorite BOOLEAN DEFAULT FALSE,
+                pinned_at TEXT,
                 created_at TEXT,
                 updated_at TEXT,
                 FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE SET NULL
@@ -378,6 +380,8 @@ impl DatabaseManager {
             "CREATE INDEX IF NOT EXISTS idx_models_enabled ON models(enabled)",
             "CREATE INDEX IF NOT EXISTS idx_conversations_role_id ON conversations(role_id)",
             "CREATE INDEX IF NOT EXISTS idx_conversations_created_at ON conversations(created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_conversations_is_favorite ON conversations(is_favorite)",
+            "CREATE INDEX IF NOT EXISTS idx_conversations_pinned_at ON conversations(pinned_at)",
             "CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id)",
             "CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp)",
             "CREATE INDEX IF NOT EXISTS idx_settings_updated_at ON settings(updated_at)"
@@ -1275,8 +1279,8 @@ impl DatabaseManager {
     // 保存对话
     pub async fn save_conversation(&self, conversation: &Conversation) -> Result<()> {
         let query = sqlx::query(
-            "INSERT OR REPLACE INTO conversations (id, title, role_id, response_mode, messages, settings, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT OR REPLACE INTO conversations (id, title, role_id, response_mode, messages, settings, is_favorite, pinned_at, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         .bind(&conversation.id)
         .bind(&conversation.title)
@@ -1284,6 +1288,8 @@ impl DatabaseManager {
         .bind(&conversation.response_mode)
         .bind(&conversation.messages)
         .bind(&conversation.settings)
+        .bind(&conversation.is_favorite)
+        .bind(&conversation.pinned_at)
         .bind(&conversation.created_at)
         .bind(&conversation.updated_at);
 
@@ -1294,7 +1300,7 @@ impl DatabaseManager {
     // 获取所有对话
     pub async fn get_conversations(&self) -> Result<Vec<Conversation>> {
         let rows = sqlx::query_as::<_, Conversation>(
-            "SELECT * FROM conversations ORDER BY created_at DESC"
+            "SELECT * FROM conversations ORDER BY is_favorite DESC, pinned_at DESC, created_at DESC"
         )
         .fetch_all(self.main_pool())
         .await?;
@@ -1315,6 +1321,51 @@ impl DatabaseManager {
     pub async fn clear_conversations(&self) -> Result<()> {
         sqlx::query("DELETE FROM conversations").execute(self.main_pool()).await?;
         Ok(())
+    }
+
+    // 切换对话收藏状态
+    pub async fn toggle_conversation_favorite(&self, conversation_id: &str) -> Result<bool> {
+        // 先获取当前状态
+        let current = sqlx::query_as::<_, Conversation>(
+            "SELECT * FROM conversations WHERE id = ?"
+        )
+        .bind(conversation_id)
+        .fetch_optional(self.main_pool())
+        .await?;
+
+        if let Some(conversation) = current {
+            let new_favorite = !conversation.is_favorite;
+            let pinned_at = if new_favorite {
+                Some(chrono::Utc::now().to_rfc3339())
+            } else {
+                None
+            };
+
+            sqlx::query(
+                "UPDATE conversations SET is_favorite = ?, pinned_at = ?, updated_at = ? WHERE id = ?"
+            )
+            .bind(new_favorite)
+            .bind(&pinned_at)
+            .bind(&chrono::Utc::now().to_rfc3339())
+            .bind(conversation_id)
+            .execute(self.main_pool())
+            .await?;
+
+            Ok(new_favorite)
+        } else {
+            Err(anyhow!("Conversation not found"))
+        }
+    }
+
+    // 获取收藏的对话
+    pub async fn get_favorite_conversations(&self) -> Result<Vec<Conversation>> {
+        let rows = sqlx::query_as::<_, Conversation>(
+            "SELECT * FROM conversations WHERE is_favorite = TRUE ORDER BY pinned_at DESC, created_at DESC"
+        )
+        .fetch_all(self.main_pool())
+        .await?;
+
+        Ok(rows)
     }
 }
 

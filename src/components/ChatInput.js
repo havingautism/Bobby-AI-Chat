@@ -934,7 +934,7 @@ const ChatInput = ({
                               <div className="document-info">
                                 <div className="document-title">{doc.title}</div>
                                 <div className="document-meta">
-                                  <span className="document-type">{doc.sourceType || 'manual'}</span>
+                                  <span className="document-type">{doc.sourceType || 'text'}</span>
                                   <span className="document-date">
                                     {new Date(doc.created_at || doc.createdAt || Date.now()).toLocaleDateString()}
                                   </span>

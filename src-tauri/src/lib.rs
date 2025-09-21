@@ -128,6 +128,8 @@ pub fn run() {
       get_conversations,
       delete_conversation,
       clear_conversations,
+      toggle_conversation_favorite,
+      get_favorite_conversations,
 
       // 设置管理命令
       save_setting,
@@ -941,6 +943,22 @@ async fn clear_conversations(state: tauri::State<'_, AppState>) -> Result<String
     match state.db.clear_conversations().await {
         Ok(_) => Ok("所有对话已清空".to_string()),
         Err(e) => Err(format!("清空对话失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn toggle_conversation_favorite(conversation_id: String, state: tauri::State<'_, AppState>) -> Result<bool, String> {
+    match state.db.toggle_conversation_favorite(&conversation_id).await {
+        Ok(is_favorite) => Ok(is_favorite),
+        Err(e) => Err(format!("切换收藏状态失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn get_favorite_conversations(state: tauri::State<'_, AppState>) -> Result<Vec<Conversation>, String> {
+    match state.db.get_favorite_conversations().await {
+        Ok(conversations) => Ok(conversations),
+        Err(e) => Err(format!("获取收藏对话失败: {}", e))
     }
 }
 
