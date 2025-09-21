@@ -590,6 +590,11 @@
     /* margin-left: 0;
     margin-right: 0; */
     margin-bottom: 0 !important;
+    /* 允许文字选中 */
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
   }
   
   .message-content {
@@ -774,6 +779,11 @@
   overflow: hidden;
   transition: var(--transition-smooth);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  /* 允许文字选中 */
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
 }
 
 /* 确保悬停时文字颜色不变 */
@@ -781,27 +791,7 @@
   color: var(--text-primary);
 }
 
-/* 用户消息液态效果 */
-.message.user .message-content::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 255, 255, 0.4) 0%,
-    transparent 70%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.message.user .message-content:hover::before {
-  opacity: 1;
-}
-
+/* 用户消息hover效果 - 简化版，无反光 */
 .message.user .message-content:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
