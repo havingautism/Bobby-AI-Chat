@@ -129,6 +129,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
 
       // 处理知识库搜索
       let knowledgeContext = "";
+      let searchResults = []; // 在条件块外声明searchResults
       if (options.selectedDocuments && options.selectedDocuments.length > 0) {
         try {
           // 使用知识库管理器进行搜索
@@ -138,7 +139,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
           console.log(`🔍 搜索选中的文档:`, options.selectedDocuments);
           console.log(`🔍 用户问题:`, userMessage.content);
 
-          const searchResults = await knowledgeBaseManager.search(
+          searchResults = await knowledgeBaseManager.search(
             userMessage.content,
             {
               limit: 20,
@@ -296,6 +297,12 @@ export class SiliconFlowProvider extends BaseApiProvider {
       });
       requestBody = this.processModelSpecificParams(requestBody, options);
 
+      // 保存知识库引用信息，用于后续返回
+      const knowledgeReferences =
+        knowledgeContext && searchResults
+          ? this.extractKnowledgeReferences(searchResults)
+          : [];
+
       console.log("硅基流动API请求 (Stream):", {
         model: requestBody.model,
         isReasoningModel: this.isReasoningModel(requestBody.model),
@@ -306,6 +313,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
         messagesCount: requestBody.messages?.length || 0,
         hasKnowledgeContext: !!knowledgeContext,
         systemMessageLength: requestBody.messages?.[0]?.content?.length || 0,
+        knowledgeReferencesCount: knowledgeReferences.length,
       });
 
       // 发送流式请求
@@ -358,6 +366,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
                   const result = {
                     content: fullContent,
                     hasReasoning,
+                    knowledgeReferences: knowledgeReferences || [],
                   };
                   if (hasReasoning) {
                     result.reasoning = fullReasoning;
@@ -368,6 +377,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
                   content: fullContent,
                   reasoning: hasReasoning ? fullReasoning : undefined,
                   hasReasoning,
+                  knowledgeReferences: knowledgeReferences || [],
                 };
               }
 
