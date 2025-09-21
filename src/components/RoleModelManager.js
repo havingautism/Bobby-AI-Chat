@@ -289,6 +289,15 @@ const RoleModelManager = ({ isOpen, onClose }) => {
         setEditingRole(null);
         setIsAddingRole(false);
 
+        // 如果是新添加的角色，自动选中它
+        if (isAddingRole) {
+          const { saveSelectedRole } = await import('../utils/roles');
+          saveSelectedRole(roleToSave.id);
+          console.log('新角色已自动选中:', roleToSave.id);
+          // 触发角色选择变化事件，通知其他组件
+          window.dispatchEvent(new CustomEvent("roleChanged"));
+        }
+
         console.log('状态已更新');
 
         setLoading(false);
@@ -312,6 +321,15 @@ const RoleModelManager = ({ isOpen, onClose }) => {
           setRoles(updatedRoles);
           setEditingRole(null);
           setIsAddingRole(false);
+
+          // 如果是新添加的角色，自动选中它
+          if (isAddingRole) {
+            const { saveSelectedRole } = await import('../utils/roles');
+            saveSelectedRole(roleToSave.id);
+            console.log('新角色已自动选中（降级模式）:', roleToSave.id);
+            // 触发角色选择变化事件，通知其他组件
+            window.dispatchEvent(new CustomEvent("roleChanged"));
+          }
         } catch (fallbackError) {
           console.error('降级保存也失败:', fallbackError);
         }
@@ -402,22 +420,7 @@ const RoleModelManager = ({ isOpen, onClose }) => {
     }
   };
 
-  // 更新全局角色列表
-  const updateGlobalRoles = (updatedRoles) => {
-    // 这里需要更新utils/roles.js中的AI_ROLES数组
-    // 由于ES6模块的限制，我们需要通过修改全局对象来实现
-    try {
-      console.log('updateGlobalRoles被调用，角色数量:', updatedRoles.length);
-      // 将更新后的角色信息保存到localStorage，供其他组件使用
-      localStorage.setItem('ai-roles-updated', JSON.stringify(updatedRoles));
-      // 触发自定义事件通知其他组件角色已更新
-      console.log('触发rolesUpdated事件，详情:', updatedRoles);
-      window.dispatchEvent(new CustomEvent('rolesUpdated', { detail: updatedRoles }));
-    } catch (error) {
-      console.error('更新全局角色列表失败:', error);
-    }
-  };
-
+  
   const handleDeleteRole = async (roleId) => {
     console.log('删除角色被点击:', roleId); // 调试日志
     if (window.confirm(currentLanguage === 'zh' ? '确定要删除这个角色吗？' : 'Are you sure you want to delete this role?')) {

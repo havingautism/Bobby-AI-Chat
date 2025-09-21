@@ -128,6 +128,8 @@ pub fn run() {
       get_conversations,
       delete_conversation,
       clear_conversations,
+      toggle_conversation_favorite,
+      get_favorite_conversations,
 
       // 设置管理命令
       save_setting,
@@ -580,8 +582,10 @@ async fn add_knowledge_vector(vector: LegacyKnowledgeVector, state: tauri::State
     let document = state.db.get_document_by_id(&vector.document_id).await
         .map_err(|e| format!("获取文档失败以确定集合ID: {}", e))?;
 
+    // 注意：这里需要先查找对应的chunk ID，但LegacyKnowledgeVector结构体没有提供
+    // 暂时使用0作为占位符，实际使用时需要修改这个逻辑
     let vector_embedding = VectorEmbedding::new(
-        format!("{}_chunk_{}", vector.document_id, vector.chunk_index),
+        0, // 需要从chunk表中查找对应的ID
         document.collection_id,
         vector.embedding,
     );
@@ -941,6 +945,22 @@ async fn clear_conversations(state: tauri::State<'_, AppState>) -> Result<String
     match state.db.clear_conversations().await {
         Ok(_) => Ok("所有对话已清空".to_string()),
         Err(e) => Err(format!("清空对话失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn toggle_conversation_favorite(conversation_id: String, state: tauri::State<'_, AppState>) -> Result<bool, String> {
+    match state.db.toggle_conversation_favorite(&conversation_id).await {
+        Ok(is_favorite) => Ok(is_favorite),
+        Err(e) => Err(format!("切换收藏状态失败: {}", e))
+    }
+}
+
+#[tauri::command]
+async fn get_favorite_conversations(state: tauri::State<'_, AppState>) -> Result<Vec<Conversation>, String> {
+    match state.db.get_favorite_conversations().await {
+        Ok(conversations) => Ok(conversations),
+        Err(e) => Err(format!("获取收藏对话失败: {}", e))
     }
 }
 

@@ -4,10 +4,17 @@ import ChatInput from "./ChatInput";
 import WelcomeScreen from "./WelcomeScreen";
 import ModelSelector from "./ModelSelector";
 import ConversationTimeline from "./ConversationTimeline";
-import { sendMessage, sendMessageStream, isApiConfigured, generateChatTitleStream, getApiConfig } from "../utils/api";
+import {
+  sendMessage,
+  sendMessageStream,
+  isApiConfigured,
+  generateChatTitleStream,
+  getApiConfig,
+} from "../utils/api";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
 import { getCurrentLanguage, t } from "../utils/language";
 import { initMobileOptimizer } from "../utils/mobileOptimizer";
+import { useSession } from "../contexts/SessionContext";
 
 import "./ChatInterface.css";
 
@@ -69,10 +76,9 @@ const generateTitle = async (
           let fallbackTitle = "新对话";
           if (userMessage?.content) {
             // 过滤掉base64图片数据，只保留纯文本内容
-            const textContent = userMessage.content.replace(
-              /data:image\/[^;]+;base64,[^\s]+/g,
-              ""
-            ).trim();
+            const textContent = userMessage.content
+              .replace(/data:image\/[^;]+;base64,[^\s]+/g, "")
+              .trim();
             if (textContent) {
               fallbackTitle =
                 textContent.slice(0, 30) +
@@ -90,14 +96,12 @@ const generateTitle = async (
         // 使用用户的第一条消息作为标题，但过滤掉图片数据
         let fallbackTitle = "新对话";
         if (finalMessages[0]?.content) {
-          const textContent = finalMessages[0].content.replace(
-            /data:image\/[^;]+;base64,[^\s]+/g,
-            ""
-          ).trim();
+          const textContent = finalMessages[0].content
+            .replace(/data:image\/[^;]+;base64,[^\s]+/g, "")
+            .trim();
           if (textContent) {
             fallbackTitle =
-              textContent.slice(0, 30) +
-              (textContent.length > 30 ? "..." : "");
+              textContent.slice(0, 30) + (textContent.length > 30 ? "..." : "");
           }
         }
         onUpdateConversation(conversationId, {
@@ -116,9 +120,27 @@ const ChatInterface = ({
   onOpenSettings,
   onOpenKnowledgeBase,
 }) => {
-  const [responseMode, setResponseMode] = useState(conversation.responseMode || "normal");
+  const { startStreaming, endStreaming } = useSession();
+  const [responseMode, setResponseMode] = useState(
+    conversation.responseMode || "normal"
+  );
   const [currentRole, setCurrentRole] = useState(() => loadSelectedRole());
-  const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+
+  // 监听角色变化事件
+  useEffect(() => {
+    const handleRoleChanged = () => {
+      const newRole = loadSelectedRole();
+      setCurrentRole(newRole);
+    };
+
+    window.addEventListener("roleChanged", handleRoleChanged);
+    return () => {
+      window.removeEventListener("roleChanged", handleRoleChanged);
+    };
+  }, []);
+  const [currentLanguage, setCurrentLanguage] = useState(() =>
+    getCurrentLanguage()
+  );
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingState, setStreamingState] = useState("content"); // "thinking" | "content"
   const [streamingConversationId, setStreamingConversationId] = useState(null);
@@ -155,12 +177,12 @@ const ChatInterface = ({
     if (messagesEndRef.current) {
       // 移动端使用更流畅的滚动方式
       if (window.innerWidth <= 768) {
-        const chatMessages = document.querySelector('.chat-messages');
+        const chatMessages = document.querySelector(".chat-messages");
         if (chatMessages) {
           // 使用scrollTo而不是scrollIntoView，在移动端更流畅
           chatMessages.scrollTo({
             top: chatMessages.scrollHeight,
-            behavior: 'smooth'
+            behavior: "smooth",
           });
         }
       } else {
@@ -182,20 +204,19 @@ const ChatInterface = ({
     }
   };
 
-  
   useEffect(() => {
     scrollToBottom();
-    
+
     // 移动端滚动性能优化
     if (window.innerWidth <= 768) {
-      const chatMessages = document.querySelector('.chat-messages');
+      const chatMessages = document.querySelector(".chat-messages");
       if (chatMessages) {
         // 使用requestAnimationFrame确保滚动优化在下一帧执行
         requestAnimationFrame(() => {
-          chatMessages.style.willChange = 'scroll-position';
+          chatMessages.style.willChange = "scroll-position";
           // 滚动完成后移除will-change以节省性能
           setTimeout(() => {
-            chatMessages.style.willChange = 'auto';
+            chatMessages.style.willChange = "auto";
           }, 300);
         });
       }
@@ -205,53 +226,53 @@ const ChatInterface = ({
   // 初始化移动端优化器
   useEffect(() => {
     const mobileOptimizer = initMobileOptimizer();
-    const chatMessages = document.querySelector('.chat-messages');
-    
+    const chatMessages = document.querySelector(".chat-messages");
+
     // 移动端滚动修复函数
     const fixMobileScrolling = () => {
       if (chatMessages) {
-        chatMessages.classList.add('optimized-scrolling');
+        chatMessages.classList.add("optimized-scrolling");
         // 确保滚动容器在移动端正常工作
-        chatMessages.style.overflowY = 'auto';
-        chatMessages.style.webkitOverflowScrolling = 'touch';
-        chatMessages.style.touchAction = 'pan-y';
-        chatMessages.style.overscrollBehaviorY = 'contain';
-        chatMessages.style.overscrollBehaviorX = 'none';
+        chatMessages.style.overflowY = "auto";
+        chatMessages.style.webkitOverflowScrolling = "touch";
+        chatMessages.style.touchAction = "pan-y";
+        chatMessages.style.overscrollBehaviorY = "contain";
+        chatMessages.style.overscrollBehaviorX = "none";
         // 优化滚动性能
-        chatMessages.style.willChange = 'scroll-position';
-        chatMessages.style.transform = 'translateZ(0)';
-        chatMessages.style.scrollBehavior = 'smooth';
+        chatMessages.style.willChange = "scroll-position";
+        chatMessages.style.transform = "translateZ(0)";
+        chatMessages.style.scrollBehavior = "smooth";
         // 减少重绘
-        chatMessages.style.contain = 'layout style paint';
-        
+        chatMessages.style.contain = "layout style paint";
+
         // 强制重新计算样式，确保滚动正常工作
         void chatMessages.offsetHeight;
       }
     };
-    
+
     // 立即执行修复
     fixMobileScrolling();
-    
+
     // 延迟执行，确保DOM完全加载
     const timeoutId = setTimeout(fixMobileScrolling, 100);
-    
+
     return () => {
       clearTimeout(timeoutId);
       if (mobileOptimizer && mobileOptimizer.disable) {
         mobileOptimizer.disable();
       }
       if (chatMessages) {
-        chatMessages.classList.remove('optimized-scrolling');
+        chatMessages.classList.remove("optimized-scrolling");
         // 清理内联样式
-        chatMessages.style.overflowY = '';
-        chatMessages.style.webkitOverflowScrolling = '';
-        chatMessages.style.touchAction = '';
-        chatMessages.style.overscrollBehaviorY = '';
-        chatMessages.style.overscrollBehaviorX = '';
-        chatMessages.style.willChange = '';
-        chatMessages.style.transform = '';
-        chatMessages.style.scrollBehavior = '';
-        chatMessages.style.contain = '';
+        chatMessages.style.overflowY = "";
+        chatMessages.style.webkitOverflowScrolling = "";
+        chatMessages.style.touchAction = "";
+        chatMessages.style.overscrollBehaviorY = "";
+        chatMessages.style.overscrollBehaviorX = "";
+        chatMessages.style.willChange = "";
+        chatMessages.style.transform = "";
+        chatMessages.style.scrollBehavior = "";
+        chatMessages.style.contain = "";
       }
     };
   }, []);
@@ -287,7 +308,11 @@ const ChatInterface = ({
     };
   }, []);
 
-  const handleSendMessage = async (content, uploadedFile = null, options = {}) => {
+  const handleSendMessage = async (
+    content,
+    uploadedFile = null,
+    options = {}
+  ) => {
     if ((!content.trim() && !uploadedFile) || isStreaming) return;
 
     if (!isApiConfigured()) {
@@ -299,10 +324,10 @@ const ChatInterface = ({
 
     let fileContent = "";
     let imageData = null;
-    
+
     // 处理不同类型的上传文件
     if (uploadedFile) {
-      if (uploadedFile.type === 'image' && uploadedFile.file) {
+      if (uploadedFile.type === "image" && uploadedFile.file) {
         // 处理图片文件（来自ChatInput的图片上传）
         const reader = new FileReader();
         imageData = await new Promise((resolve) => {
@@ -311,10 +336,10 @@ const ChatInterface = ({
           };
           reader.readAsDataURL(uploadedFile.file);
         });
-      } else if (uploadedFile.type === 'document' && uploadedFile.content) {
+      } else if (uploadedFile.type === "document" && uploadedFile.content) {
         // 处理文档文件（来自ChatInput的文档上传）
         fileContent = `[文档: ${uploadedFile.name}]\n${uploadedFile.content}`;
-      } else if (uploadedFile.type && uploadedFile.type.startsWith('image/')) {
+      } else if (uploadedFile.type && uploadedFile.type.startsWith("image/")) {
         // 处理直接上传的图片文件
         const reader = new FileReader();
         imageData = await new Promise((resolve) => {
@@ -323,7 +348,11 @@ const ChatInterface = ({
           };
           reader.readAsDataURL(uploadedFile);
         });
-      } else if (uploadedFile.type && (uploadedFile.type.startsWith('text/') || uploadedFile.type === 'application/json')) {
+      } else if (
+        uploadedFile.type &&
+        (uploadedFile.type.startsWith("text/") ||
+          uploadedFile.type === "application/json")
+      ) {
         // 处理文本文件
         const reader = new FileReader();
         fileContent = await new Promise((resolve) => {
@@ -334,11 +363,20 @@ const ChatInterface = ({
         });
       } else {
         // 对于其他类型的文件，提供文件信息但不读取内容
-        fileContent = `[文件: ${uploadedFile.name || '未知文件'}]\n类型: ${uploadedFile.type || '未知类型'}\n大小: ${uploadedFile.size ? (uploadedFile.size / 1024).toFixed(2) + ' KB' : '未知大小'}\n(此文件类型不支持预览)`;
+        fileContent = `[文件: ${uploadedFile.name || "未知文件"}]\n类型: ${
+          uploadedFile.type || "未知类型"
+        }\n大小: ${
+          uploadedFile.size
+            ? (uploadedFile.size / 1024).toFixed(2) + " KB"
+            : "未知大小"
+        }\n(此文件类型不支持预览)`;
       }
     }
 
-    const fullContent = content.trim() + (fileContent ? `\n\n${fileContent}` : "") + (imageData ? `\n${imageData}` : "");
+    const fullContent =
+      content.trim() +
+      (fileContent ? `\n\n${fileContent}` : "") +
+      (imageData ? `\n${imageData}` : "");
 
     const userMessage = {
       id: Date.now().toString(),
@@ -348,9 +386,18 @@ const ChatInterface = ({
       options: { ...options, responseMode },
       uploadedFile: uploadedFile
         ? {
-            name: uploadedFile.name || (uploadedFile.file && uploadedFile.file.name) || '未知文件',
-            type: uploadedFile.type || (uploadedFile.file && uploadedFile.file.type) || '未知类型',
-            size: uploadedFile.size || (uploadedFile.file && uploadedFile.file.size) || 0,
+            name:
+              uploadedFile.name ||
+              (uploadedFile.file && uploadedFile.file.name) ||
+              "未知文件",
+            type:
+              uploadedFile.type ||
+              (uploadedFile.file && uploadedFile.file.type) ||
+              "未知类型",
+            size:
+              uploadedFile.size ||
+              (uploadedFile.file && uploadedFile.file.size) ||
+              0,
           }
         : null,
     };
@@ -380,7 +427,10 @@ const ChatInterface = ({
     const apiConfig = getApiConfig();
     let modelToUse = conversation.model || apiConfig.model;
 
-    if (conversation.messages.length === 0 && conversation.model !== apiConfig.model) {
+    if (
+      conversation.messages.length === 0 &&
+      conversation.model !== apiConfig.model
+    ) {
       modelToUse = apiConfig.model;
       onUpdateConversation(currentConversationId, { model: apiConfig.model });
     }
@@ -392,16 +442,30 @@ const ChatInterface = ({
 
     await sendMessageWithStream(
       updatedMessages,
-      { ...options, model: modelToUse, systemPrompt, temperature: roleTemperature },
+      {
+        ...options,
+        model: modelToUse,
+        systemPrompt,
+        temperature: roleTemperature,
+      },
       currentConversationId
     );
   };
 
   // 流式消息发送
-  const sendMessageWithStream = async (messages, options, conversationId, customMessageId = null, messagesAfterAssistant = []) => {
+  const sendMessageWithStream = async (
+    messages,
+    options,
+    conversationId,
+    customMessageId = null,
+    messagesAfterAssistant = []
+  ) => {
     setIsStreaming(true);
     setStreamingState("unknown"); // 初始状态设为unknown，不显示动效
     setStreamingConversationId(conversationId);
+
+    // 开始流式传输，标记该对话为流式状态
+    startStreaming(conversationId);
 
     const controller = new AbortController();
     setAbortController(controller);
@@ -419,7 +483,7 @@ const ChatInterface = ({
       };
 
       onUpdateConversation(conversationId, {
-        messages: [...messages, initialAssistantMessage]
+        messages: [...messages, initialAssistantMessage],
       });
     }
 
@@ -455,25 +519,29 @@ const ChatInterface = ({
 
           // 直接更新对话消息，保留后续消息
           onUpdateConversation(conversationId, {
-            messages: [...messages, updatedMessage, ...messagesAfterAssistant]
+            messages: [...messages, updatedMessage, ...messagesAfterAssistant],
           });
         },
         // onComplete
-        (result) => {
+        async (result) => {
           const finalMessage = {
             id: assistantMessageId,
             role: "assistant",
             content: result.content,
             reasoning: result.hasReasoning ? result.reasoning : undefined,
             hasReasoning: result.hasReasoning,
+            knowledgeReferences: result.knowledgeReferences || null,
             timestamp: new Date().toISOString(),
             isStreaming: false,
           };
 
           // 更新最终消息，保留后续消息
           onUpdateConversation(conversationId, {
-            messages: [...messages, finalMessage, ...messagesAfterAssistant]
+            messages: [...messages, finalMessage, ...messagesAfterAssistant],
           });
+
+          // 结束流式传输并保存对话
+          await endStreaming(conversationId);
 
           // 生成标题（如果是第一条消息）
           if (messages.length === 1) {
@@ -487,7 +555,7 @@ const ChatInterface = ({
           }
         },
         // onError
-        (error) => {
+        async (error) => {
           console.error("流式消息发送失败:", error);
 
           const errorMessage = {
@@ -506,8 +574,11 @@ const ChatInterface = ({
 
           // 更新错误消息，保留后续消息
           onUpdateConversation(conversationId, {
-            messages: [...messages, errorMessage, ...messagesAfterAssistant]
+            messages: [...messages, errorMessage, ...messagesAfterAssistant],
           });
+
+          // 结束流式传输并保存对话
+          await endStreaming(conversationId);
         },
         controller,
         conversationId
@@ -529,10 +600,13 @@ const ChatInterface = ({
         },
       };
 
-      // 更新错误消息（这个逻辑应该在onError中，而不是finally中）
-      // onUpdateConversation(conversationId, {
-      //   messages: [...messages, errorMessage]
-      // });
+      // 更新错误消息
+      onUpdateConversation(conversationId, {
+        messages: [...messages, errorMessage, ...messagesAfterAssistant],
+      });
+
+      // 结束流式传输并保存对话
+      await endStreaming(conversationId);
     } finally {
       setIsStreaming(false);
       setStreamingConversationId(null);
@@ -626,7 +700,13 @@ const ChatInterface = ({
 
     await sendMessageWithStream(
       messages,
-      { ...options, model: conversation.model, systemPrompt, temperature: roleTemperature, responseMode: responseMode },
+      {
+        ...options,
+        model: conversation.model,
+        systemPrompt,
+        temperature: roleTemperature,
+        responseMode: responseMode,
+      },
       conversationId
     );
   };
@@ -646,26 +726,33 @@ const ChatInterface = ({
 
     // 找到对应的用户消息
     const userMessageIndex = messageIndex - 1;
-    if (userMessageIndex < 0 || conversation.messages[userMessageIndex].role !== "user") {
+    if (
+      userMessageIndex < 0 ||
+      conversation.messages[userMessageIndex].role !== "user"
+    ) {
       console.error("找不到对应的用户消息");
       return;
     }
 
     const userMessage = conversation.messages[userMessageIndex];
-    
+
     // 获取到当前助手消息之前的所有消息（包括用户消息）
     const messagesUpToUser = conversation.messages.slice(0, messageIndex);
-    
+
     // 获取当前助手消息之后的所有消息，用于保留
-    const messagesAfterAssistant = conversation.messages.slice(messageIndex + 1);
+    const messagesAfterAssistant = conversation.messages.slice(
+      messageIndex + 1
+    );
 
     // 使用原来的消息ID，直接替换内容
     const originalMessageId = assistantMessage.id;
 
     // 先更新消息为流式状态，并保留后续消息
     const updatedMessages = [...conversation.messages];
-    const messageIndexToUpdate = updatedMessages.findIndex(msg => msg.id === originalMessageId);
-    
+    const messageIndexToUpdate = updatedMessages.findIndex(
+      (msg) => msg.id === originalMessageId
+    );
+
     if (messageIndexToUpdate >= 0) {
       updatedMessages[messageIndexToUpdate] = {
         ...updatedMessages[messageIndexToUpdate],
@@ -714,7 +801,10 @@ const ChatInterface = ({
           </div>
           <div className="header-actions"></div>
         </div>
-        <WelcomeScreen onSendMessage={handleSendMessage} disabled={isStreaming} />
+        <WelcomeScreen
+          onSendMessage={handleSendMessage}
+          disabled={isStreaming}
+        />
         <ConversationTimeline
           messages={conversation.messages}
           onJumpToMessage={handleJumpToMessage}
@@ -747,9 +837,11 @@ const ChatInterface = ({
                   style={{
                     color: getRoleById(conversation.role || currentRole).color,
                     borderColor:
-                      getRoleById(conversation.role || currentRole).color + "40",
+                      getRoleById(conversation.role || currentRole).color +
+                      "40",
                     backgroundColor:
-                      getRoleById(conversation.role || currentRole).color + "20",
+                      getRoleById(conversation.role || currentRole).color +
+                      "20",
                   }}
                 >
                   {getRoleById(conversation.role || currentRole).name}
@@ -767,17 +859,22 @@ const ChatInterface = ({
             onModelChange={(model) => {
               onUpdateConversation(conversation.id, { model });
             }}
-            disabled={isStreaming && streamingConversationId === conversation.id}
+            disabled={
+              isStreaming && streamingConversationId === conversation.id
+            }
             className="header-model-selector"
           />
 
           {/* 移动端时间线按钮 - 只在有2条以上用户消息时显示 */}
           {conversation.messages &&
-            conversation.messages.filter((msg) => msg.role === "user").length > 1 && (
+            conversation.messages.filter((msg) => msg.role === "user").length >
+              1 && (
               <button
                 className="timeline-toggle mobile-only"
                 onClick={() => {
-                  const timeline = document.querySelector(".conversation-timeline");
+                  const timeline = document.querySelector(
+                    ".conversation-timeline"
+                  );
                   if (timeline) {
                     timeline.classList.toggle("timeline-visible");
                   }
@@ -812,7 +909,9 @@ const ChatInterface = ({
           conversationRole={conversation.role}
           onRetryMessage={handleRetryMessage}
           onRegenerateMessage={handleRegenerateMessage}
-          isStreaming={isStreaming && streamingConversationId === conversation.id}
+          isStreaming={
+            isStreaming && streamingConversationId === conversation.id
+          }
           currentMessageId={currentMessageId}
         />
         <div ref={messagesEndRef} />

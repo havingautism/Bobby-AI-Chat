@@ -9,10 +9,12 @@ import "./WelcomeScreen.css";
 const WelcomeScreen = ({ onSendMessage, disabled }) => {
   const [selectedRole, setSelectedRole] = useState(loadSelectedRole());
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+  const [currentLanguage, setCurrentLanguage] = useState(() =>
+    getCurrentLanguage()
+  );
   const [responseMode, setResponseMode] = useState(() => {
     // 从 localStorage 读取保存的响应模式
-    return localStorage.getItem('lastResponseMode') || "normal";
+    return localStorage.getItem("lastResponseMode") || "normal";
   });
   const [defaultModel, setDefaultModel] = useState("");
   const [roles, setRoles] = useState(AI_ROLES);
@@ -27,7 +29,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
         // 从数据库加载角色
         const databaseRoles = await getAllRoles();
-        console.log('WelcomeScreen: 从数据库加载的角色:', databaseRoles);
+        console.log("WelcomeScreen: 从数据库加载的角色:", databaseRoles);
         if (databaseRoles && databaseRoles.length > 0) {
           setRoles(databaseRoles);
         }
@@ -74,39 +76,50 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
   // 监听角色更新事件
   useEffect(() => {
     const handleRolesUpdated = (event) => {
-      console.log('WelcomeScreen: 角色已更新', event.detail);
+      console.log("WelcomeScreen: 角色已更新", event.detail);
       setRoles([...event.detail]);
+      // 更新全局AI_ROLES引用
+      const { updateGlobalRoles } = require("../utils/roles");
+      updateGlobalRoles(event.detail);
     };
 
     const handleRolesReset = () => {
-      console.log('WelcomeScreen: 角色已重置');
+      console.log("WelcomeScreen: 角色已重置");
       setRoles([...AI_ROLES]);
     };
 
-    window.addEventListener('rolesUpdated', handleRolesUpdated);
-    window.addEventListener('rolesReset', handleRolesReset);
+    const handleRoleChanged = () => {
+      console.log("WelcomeScreen: 角色选择已变化");
+      // 重新加载选中的角色
+      const newSelectedRole = loadSelectedRole();
+      setSelectedRole(newSelectedRole);
+    };
+
+    window.addEventListener("rolesUpdated", handleRolesUpdated);
+    window.addEventListener("rolesReset", handleRolesReset);
+    window.addEventListener("roleChanged", handleRoleChanged);
 
     return () => {
-      window.removeEventListener('rolesUpdated', handleRolesUpdated);
-      window.removeEventListener('rolesReset', handleRolesReset);
+      window.removeEventListener("rolesUpdated", handleRolesUpdated);
+      window.removeEventListener("rolesReset", handleRolesReset);
+      window.removeEventListener("roleChanged", handleRoleChanged);
     };
   }, []);
 
-  const quickPrompts = currentLanguage === "zh" ? [
-    "🤔 解释一个复杂的概念",
-    "👨🏻‍💻 帮我写一段代码",
-    "📈 分析当前趋势",
-    "✨ 创意写作帮助",
-    "😸 和Bobby聊天",
-    "🎯 制定学习计划",
-  ] : [
-    "🤔 Explain a complex concept",
-    "👨🏻‍💻 Help me write some code",
-    "📈 Analyze current trends",
-    "✨ Creative writing help",
-    "😸 Chat with Bobby",
-    "🎯 Create a learning plan",
-  ];
+  const quickPrompts =
+    currentLanguage === "zh"
+      ? [
+          "🤔 解释一个复杂的概念",
+          "👨🏻‍💻 帮我写一段代码",
+          "✨ 创意写作帮助",
+          "🎯 制定学习计划",
+        ]
+      : [
+          "🤔 Explain a complex concept",
+          "👨🏻‍💻 Help me write some code",
+          "✨ Creative writing help",
+          "🎯 Create a learning plan",
+        ];
 
   const handleSubmit = (message, uploadedFile, options = {}) => {
     if ((message.trim() || uploadedFile) && !disabled) {
@@ -124,7 +137,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
   const handleResponseModeChange = (newMode) => {
     setResponseMode(newMode);
     // 保存到 localStorage
-    localStorage.setItem('lastResponseMode', newMode);
+    localStorage.setItem("lastResponseMode", newMode);
   };
 
   const handleRoleChange = (roleId) => {
@@ -167,7 +180,9 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
         {/* 角色扮演选择 */}
         <div className="role-selection">
-          <h3 className="section-title">{currentLanguage === "zh" ? "选择AI角色" : "Choose AI Role"}</h3>
+          <h3 className="section-title">
+            {currentLanguage === "zh" ? "选择AI角色" : "Choose AI Role"}
+          </h3>
           <div className="role-dropdown-container" ref={dropdownRef}>
             <button
               className="role-dropdown-trigger"
@@ -210,38 +225,45 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
                 {isLoading ? (
                   <div className="loading-roles">
                     <div className="loading-spinner"></div>
-                    <span>{currentLanguage === "zh" ? "加载角色..." : "Loading roles..."}</span>
+                    <span>
+                      {currentLanguage === "zh"
+                        ? "加载角色..."
+                        : "Loading roles..."}
+                    </span>
                   </div>
                 ) : (
-                  roles.map((role) => (<button
-                    key={role.id}
-                    className={`role-option ${
-                      selectedRole === role.id ? "selected" : ""
-                    }`}
-                    onClick={() => handleRoleChange(role.id)}
-                  >
-                    <span className="role-icon">{role.icon}</span>
-                    <div className="role-info">
-                      <div className="role-name">{role.name}</div>
-                      <div className="role-description">{role.description}</div>
-                    </div>
-                    {selectedRole === role.id && (
-                      <svg
-                        className="check-icon"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="m9 12 2 2 4-4" />
-                      </svg>
-                    )}
-                  </button>)
-                  )
+                  roles.map((role) => (
+                    <button
+                      key={role.id}
+                      className={`role-option ${
+                        selectedRole === role.id ? "selected" : ""
+                      }`}
+                      onClick={() => handleRoleChange(role.id)}
+                    >
+                      <span className="role-icon">{role.icon}</span>
+                      <div className="role-info">
+                        <div className="role-name">{role.name}</div>
+                        <div className="role-description">
+                          {role.description}
+                        </div>
+                      </div>
+                      {selectedRole === role.id && (
+                        <svg
+                          className="check-icon"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="m9 12 2 2 4-4" />
+                        </svg>
+                      )}
+                    </button>
+                  ))
                 )}
               </div>
             )}
@@ -256,9 +278,13 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
             showBottomToolbar={true}
             showFileUpload={true}
             placeholder={
-              currentLanguage === "zh" 
-                ? `和${roles.find((role) => role.id === selectedRole)?.name}开始对话...`
-                : `Start chatting with ${roles.find((role) => role.id === selectedRole)?.name}...`
+              currentLanguage === "zh"
+                ? `和${
+                    roles.find((role) => role.id === selectedRole)?.name
+                  }开始对话...`
+                : `Start chatting with ${
+                    roles.find((role) => role.id === selectedRole)?.name
+                  }...`
             }
             expandDirection="down"
             className="welcome-chat-input"
@@ -270,7 +296,9 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
 
         {/* 快速提示 */}
         <div className="quick-prompts">
-          <h3 className="section-title">{currentLanguage === "zh" ? "快速开始" : "Quick Start"}</h3>
+          <h3 className="section-title">
+            {currentLanguage === "zh" ? "快速开始" : "Quick Start"}
+          </h3>
           <div className="prompt-grid">
             {quickPrompts.map((prompt, index) => (
               <button

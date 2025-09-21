@@ -13,10 +13,10 @@
     "windows": [
       {
         "title": "AI Chat",
-        "width": 1200,
-        "height": 800,
-        "minWidth": 800,
-        "minHeight": 600,
+        "width": 1800,
+        "height": 1000,
+        "minWidth": 1800,
+        "minHeight": 1000,
         "resizable": true,
         "maximizable": true,
         "minimizable": true,

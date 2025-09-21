@@ -127,6 +127,7 @@
 /* 用户消息气泡右对齐 */
 .message.user .message-container {
   justify-content: flex-end;
+  align-items: flex-end;
 }
 
 .message.user .message-content {
@@ -586,9 +587,14 @@
     word-wrap: break-word;
     overflow-wrap: break-word;
     flex: none !important;
-    margin-left: 0;
-    margin-right: 0; /* 移动端不需要右边距 */
+    /* margin-left: 0;
+    margin-right: 0; */
     margin-bottom: 0 !important;
+    /* 允许文字选中 */
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
   }
   
   .message-content {
@@ -734,9 +740,9 @@
 
 /* 桌面端用户消息容器布局 */
 .message.user .message-container {
-  flex-direction: row;
+  flex-direction: column;
   justify-content: flex-start;
-  align-items: flex-start;
+  align-items: flex-end;
 }
 
 /* 移动端覆盖：用户消息也使用垂直布局 */
@@ -756,8 +762,8 @@
   padding: 14px 20px;
   border-radius: 20px;
   width: fit-content !important;
-  margin-left: 0;
-  margin-right: auto;
+  /* margin-left: 0;
+  margin-right: auto; */
   font-weight: 500;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   text-align: left;
@@ -773,6 +779,11 @@
   overflow: hidden;
   transition: var(--transition-smooth);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  /* 允许文字选中 */
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
 }
 
 /* 确保悬停时文字颜色不变 */
@@ -780,27 +791,7 @@
   color: var(--text-primary);
 }
 
-/* 用户消息液态效果 */
-.message.user .message-content::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 255, 255, 0.4) 0%,
-    transparent 70%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.message.user .message-content:hover::before {
-  opacity: 1;
-}
-
+/* 用户消息hover效果 - 简化版，无反光 */
 .message.user .message-content:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -1241,6 +1232,37 @@
 
 [data-theme="dark"] .message-content li {
   color: var(--message-text-dark);
+}
+
+/* 消息时间戳样式 - 放在message container内部 */
+.message-timestamp-above {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+  text-align: right;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  padding: 0;
+  width: 100%;
+  align-self: flex-end;
+}
+
+/* 悬停时显示时间戳 */
+.message:hover .message-timestamp-above {
+  opacity: 1;
+}
+
+/* 移动端时间戳样式 */
+@media (max-width: 768px) {
+  .message-timestamp-above {
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+}
+
+/* 暗色模式下的时间戳 */
+[data-theme="dark"] .message-timestamp-above {
+  color: var(--text-quaternary);
 }
 
 /* 跳转消息高亮效果 */

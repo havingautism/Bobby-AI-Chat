@@ -5,6 +5,7 @@ import { getCurrentLanguage, t } from "../utils/language";
 import StreamdownRenderer from "./StreamdownRenderer";
 import ReasoningDisplay from "./ReasoningDisplay";
 import ImagePreviewModal from "./ImagePreviewModal";
+import KnowledgeReferences from "./KnowledgeReferences";
 import "./MessageList.css";
 import bobbyLogo from "../imgs/bobby_logo.png";
 
@@ -17,12 +18,21 @@ const MessageList = ({
   isStreaming = false,
   currentMessageId = null,
 }) => {
-  // const formatTime = (timestamp) => {
-  //   return new Date(timestamp).toLocaleTimeString("zh-CN", {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //   });
-  // };
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+
+    const date = new Date(timestamp);
+
+    // 显示完整的年月日时间
+    return date.toLocaleString("zh-CN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
 
   const apiConfigured = isApiConfigured();
 
@@ -30,7 +40,9 @@ const MessageList = ({
   const role = conversationRole ? getRoleById(conversationRole) : null;
 
   // 语言状态管理
-  const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+  const [currentLanguage, setCurrentLanguage] = useState(() =>
+    getCurrentLanguage()
+  );
 
   // 复制状态管理
   const [copiedMessageId, setCopiedMessageId] = useState(null);
@@ -55,11 +67,11 @@ const MessageList = ({
       setTimeout(() => setCopiedMessageId(null), 2000);
     } catch (err) {
       // 降级方案
-      const textArea = document.createElement('textarea');
+      const textArea = document.createElement("textarea");
       textArea.value = text;
       document.body.appendChild(textArea);
       textArea.select();
-      document.execCommand('copy');
+      document.execCommand("copy");
       document.body.removeChild(textArea);
       setCopiedMessageId(messageId);
       setTimeout(() => setCopiedMessageId(null), 2000);
@@ -69,27 +81,27 @@ const MessageList = ({
   // 使用useRef来避免状态重置问题
   const previewStateRef = useRef({
     isOpen: false,
-    imageSrc: null
+    imageSrc: null,
   });
-  
+
   const [forceRender, setForceRender] = useState(0);
-  
+
   const handleImageClick = (imageSrc) => {
     if (imageSrc) {
       previewStateRef.current = {
         isOpen: true,
-        imageSrc: imageSrc
+        imageSrc: imageSrc,
       };
-      setForceRender(prev => prev + 1);
+      setForceRender((prev) => prev + 1);
     }
   };
 
   const closePreview = () => {
     previewStateRef.current = {
       isOpen: false,
-      imageSrc: null
+      imageSrc: null,
     };
-    setForceRender(prev => prev + 1);
+    setForceRender((prev) => prev + 1);
   };
 
   const handleCopy = async (text, messageId) => {
@@ -98,7 +110,7 @@ const MessageList = ({
       setCopiedMessageId(messageId);
       setTimeout(() => setCopiedMessageId(null), 2000);
     } catch (err) {
-      console.error('复制失败:', err);
+      console.error("复制失败:", err);
     }
   };
 
@@ -127,17 +139,23 @@ const MessageList = ({
           </div>
         </div>
       ) : (
-        messages.map((message) => (
+        messages.map((message, index) => (
           <div
             key={message.id}
             id={`message-${message.id}`}
             className={`message ${message.role} ${
               message.isError ? "error" : ""
-            } ${
-              message.isStreaming ? "streaming" : ""
-            } ${currentMessageId === message.id ? "jump-highlight" : ""}`}
+            } ${message.isStreaming ? "streaming" : ""} ${
+              currentMessageId === message.id ? "jump-highlight" : ""
+            }`}
           >
             <div className="message-container">
+              {/* 只在用户消息上方显示时间戳 */}
+              {message.role === "user" && message.timestamp && (
+                <div className="message-timestamp-above">
+                  {formatTime(message.timestamp)}
+                </div>
+              )}
               <div className="message-content">
                 {message.role === "assistant" ? (
                   <>
@@ -158,12 +176,16 @@ const MessageList = ({
                       </div>
                     )} */}
                     {message.hasReasoning && message.reasoning && (
-                      <ReasoningDisplay 
-                        reasoning={message.reasoning} 
+                      <ReasoningDisplay
+                        reasoning={message.reasoning}
                         isStreaming={message.isStreaming || false}
                       />
                     )}
-                    <StreamdownRenderer isStreaming={message.isStreaming || false}>{message.content}</StreamdownRenderer>
+                    <StreamdownRenderer
+                      isStreaming={message.isStreaming || false}
+                    >
+                      {message.content}
+                    </StreamdownRenderer>
                     {message.isStreaming && (
                       <div className="streaming-indicator">
                         <span className="streaming-text">正在生成回复...</span>
@@ -173,9 +195,17 @@ const MessageList = ({
                     {!message.isStreaming && !message.isError && (
                       <div className="message-actions">
                         <button
-                          className={`action-button copy-button ${copiedMessageId === message.id ? 'copied' : ''}`}
-                          onClick={() => copyToClipboard(message.content, message.id)}
-                          title={copiedMessageId === message.id ? t("copied", currentLanguage) : t("copyReply", currentLanguage)}
+                          className={`action-button copy-button ${
+                            copiedMessageId === message.id ? "copied" : ""
+                          }`}
+                          onClick={() =>
+                            copyToClipboard(message.content, message.id)
+                          }
+                          title={
+                            copiedMessageId === message.id
+                              ? t("copied", currentLanguage)
+                              : t("copyReply", currentLanguage)
+                          }
                         >
                           <svg
                             width="14"
@@ -189,7 +219,14 @@ const MessageList = ({
                               <path d="M20 6L9 17l-5-5" strokeWidth="2.5" />
                             ) : (
                               <>
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                <rect
+                                  x="9"
+                                  y="9"
+                                  width="13"
+                                  height="13"
+                                  rx="2"
+                                  ry="2"
+                                />
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                               </>
                             )}
@@ -197,7 +234,9 @@ const MessageList = ({
                         </button>
                         <button
                           className="action-button regenerate-button"
-                          onClick={() => onRegenerateMessage && onRegenerateMessage(message)}
+                          onClick={() =>
+                            onRegenerateMessage && onRegenerateMessage(message)
+                          }
                           title={t("regenerate", currentLanguage)}
                           disabled={isStreaming}
                         >
@@ -217,37 +256,67 @@ const MessageList = ({
                         </button>
                       </div>
                     )}
+                    {/* 显示知识库引用 */}
+                    {message.role === "assistant" &&
+                      message.knowledgeReferences &&
+                      message.knowledgeReferences.length > 0 && (
+                        <KnowledgeReferences
+                          references={message.knowledgeReferences}
+                          onReferenceClick={(reference) => {
+                            console.log("点击了知识库引用:", reference);
+                            // 这里可以添加点击引用的处理逻辑，比如打开文档详情
+                          }}
+                        />
+                      )}
                   </>
                 ) : (
                   <>
                     {/* 显示上传的文件信息（仅非图片文件） */}
-                    {message.uploadedFile && message.uploadedFile.type && !message.uploadedFile.type.startsWith('image/') && (
-                      <div className="uploaded-file-info">
-                        <div className="file-info-display">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                          </svg>
-                          <span className="file-name-display">{message.uploadedFile.name}</span>
-                          <span className="file-size-display">({(message.uploadedFile.size / 1024).toFixed(1)} KB)</span>
+                    {message.uploadedFile &&
+                      message.uploadedFile.type &&
+                      !message.uploadedFile.type.startsWith("image/") && (
+                        <div className="uploaded-file-info">
+                          <div className="file-info-display">
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                            </svg>
+                            <span className="file-name-display">
+                              {message.uploadedFile.name}
+                            </span>
+                            <span className="file-size-display">
+                              ({(message.uploadedFile.size / 1024).toFixed(1)}{" "}
+                              KB)
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    
+                      )}
+
                     {/* 显示图片预览 */}
-                    {(message.uploadedFile && 
-                      ((message.uploadedFile.type && message.uploadedFile.type.startsWith('image/')) || 
-                       message.uploadedFile.type === 'image') || 
-                      (message.content && message.content.includes('data:image/'))) && (
+                    {((message.uploadedFile &&
+                      ((message.uploadedFile.type &&
+                        message.uploadedFile.type.startsWith("image/")) ||
+                        message.uploadedFile.type === "image")) ||
+                      (message.content &&
+                        message.content.includes("data:image/"))) && (
                       <div className="uploaded-image-preview">
                         {(() => {
-                          const imageMatch = message.content?.match(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/);
-                          const imageSrc = imageMatch ? imageMatch[0] : '';
-                          
+                          const imageMatch = message.content?.match(
+                            /data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/
+                          );
+                          const imageSrc = imageMatch ? imageMatch[0] : "";
+
                           return imageSrc ? (
-                            <div style={{ position: 'relative' }}>
-                              <img 
-                                src={imageSrc} 
-                                alt="上传的图片" 
+                            <div style={{ position: "relative" }}>
+                              <img
+                                src={imageSrc}
+                                alt="上传的图片"
                                 className="preview-image clickable-image"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -255,30 +324,30 @@ const MessageList = ({
                                   handleImageClick(imageSrc);
                                 }}
                                 onError={(e) => {
-                                  e.target.style.display = 'none';
+                                  e.target.style.display = "none";
                                 }}
                                 style={{
-                                  pointerEvents: 'auto',
-                                  cursor: 'pointer',
-                                  position: 'relative',
-                                  zIndex: 1
+                                  pointerEvents: "auto",
+                                  cursor: "pointer",
+                                  position: "relative",
+                                  zIndex: 1,
                                 }}
                               />
-                              <div 
+                              <div
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
                                   handleImageClick(imageSrc);
                                 }}
                                 style={{
-                                  position: 'absolute',
+                                  position: "absolute",
                                   top: 0,
                                   left: 0,
                                   right: 0,
                                   bottom: 0,
-                                  cursor: 'pointer',
+                                  cursor: "pointer",
                                   zIndex: 2,
-                                  background: 'transparent'
+                                  background: "transparent",
                                 }}
                               />
                             </div>
@@ -286,15 +355,18 @@ const MessageList = ({
                         })()}
                       </div>
                     )}
-                    
+
                     {/* 显示文本内容（排除base64数据） */}
                     <div className="message-text-content">
                       {(() => {
-                        if (!message.content) return '';
+                        if (!message.content) return "";
                         // 移除所有base64图片数据
-                        const textContent = message.content.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '');
+                        const textContent = message.content.replace(
+                          /data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g,
+                          ""
+                        );
                         // 清理多余的空行
-                        return textContent.replace(/\n\s*\n/g, '\n').trim();
+                        return textContent.replace(/\n\s*\n/g, "\n").trim();
                       })()}
                     </div>
                   </>
@@ -305,7 +377,9 @@ const MessageList = ({
                       className="retry-button"
                       onClick={() => onRetryMessage(message)}
                       disabled={isStreaming}
-                      title={isStreaming ? "请等待当前流式输出完成" : "重试发送消息"}
+                      title={
+                        isStreaming ? "请等待当前流式输出完成" : "重试发送消息"
+                      }
                     >
                       <svg
                         width="16"
@@ -326,13 +400,12 @@ const MessageList = ({
                 )}
               </div>
             </div>
-
           </div>
         ))
       )}
-      
+
       {/* 图片预览模态框 */}
-      <ImagePreviewModal 
+      <ImagePreviewModal
         isOpen={previewStateRef.current.isOpen}
         imageSrc={previewStateRef.current.imageSrc}
         onClose={closePreview}

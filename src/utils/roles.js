@@ -82,7 +82,28 @@ export let AI_ROLES = currentRoles;
 
 // 获取角色信息
 export const getRoleById = (roleId) => {
-  return AI_ROLES.find((role) => role.id === roleId) || AI_ROLES[0];
+  const foundRole = AI_ROLES.find((role) => role.id === roleId);
+  if (foundRole) {
+    return foundRole;
+  }
+
+  // 如果找不到角色，尝试从localStorage获取最新的角色列表
+  try {
+    const savedRoles = localStorage.getItem("ai-roles-updated");
+    if (savedRoles) {
+      const parsedRoles = JSON.parse(savedRoles);
+      const foundInSaved = parsedRoles.find((role) => role.id === roleId);
+      if (foundInSaved) {
+        return foundInSaved;
+      }
+    }
+  } catch (error) {
+    console.error("从localStorage获取角色失败:", error);
+  }
+
+  // 最后fallback到第一个默认角色
+  console.warn(`角色ID ${roleId} 未找到，使用默认角色`);
+  return AI_ROLES[0];
 };
 
 // 更新角色列表
@@ -98,30 +119,30 @@ export const resetRolesToDefault = () => {
 };
 
 // 监听角色更新事件
-if (typeof window !== 'undefined') {
-  window.addEventListener('rolesUpdated', (event) => {
+if (typeof window !== "undefined") {
+  window.addEventListener("rolesUpdated", (event) => {
     updateRolesList(event.detail);
   });
 
-  window.addEventListener('rolesReset', () => {
+  window.addEventListener("rolesReset", () => {
     resetRolesToDefault();
   });
 
   // 页面加载时检查是否有自定义角色
   try {
-    const savedRoles = localStorage.getItem('ai-roles-updated');
+    const savedRoles = localStorage.getItem("ai-roles-updated");
     if (savedRoles) {
       const parsedRoles = JSON.parse(savedRoles);
       updateRolesList(parsedRoles);
     }
 
-    const customRoles = localStorage.getItem('custom-roles');
+    const customRoles = localStorage.getItem("custom-roles");
     if (customRoles) {
       const parsedRoles = JSON.parse(customRoles);
       updateRolesList(parsedRoles);
     }
   } catch (error) {
-    console.error('加载自定义角色失败:', error);
+    console.error("加载自定义角色失败:", error);
   }
 }
 
@@ -155,4 +176,22 @@ export const getRoleAvatar = (roleId) => {
 export const getRoleColor = (roleId) => {
   const role = getRoleById(roleId);
   return role.color;
+};
+
+// 更新全局角色列表（供RoleModelManager使用）
+export const updateGlobalRoles = (updatedRoles) => {
+  try {
+    console.log("updateGlobalRoles被调用，角色数量:", updatedRoles.length);
+    // 更新当前角色列表
+    updateRolesList(updatedRoles);
+    // 将更新后的角色信息保存到localStorage，供其他组件使用
+    localStorage.setItem("ai-roles-updated", JSON.stringify(updatedRoles));
+    // 触发自定义事件通知其他组件角色已更新
+    console.log("触发rolesUpdated事件，详情:", updatedRoles);
+    window.dispatchEvent(
+      new CustomEvent("rolesUpdated", { detail: updatedRoles })
+    );
+  } catch (error) {
+    console.error("更新全局角色列表失败:", error);
+  }
 };
