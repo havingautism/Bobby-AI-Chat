@@ -125,6 +125,19 @@ const ChatInterface = ({
     conversation.responseMode || "normal"
   );
   const [currentRole, setCurrentRole] = useState(() => loadSelectedRole());
+
+  // 监听角色变化事件
+  useEffect(() => {
+    const handleRoleChanged = () => {
+      const newRole = loadSelectedRole();
+      setCurrentRole(newRole);
+    };
+
+    window.addEventListener("roleChanged", handleRoleChanged);
+    return () => {
+      window.removeEventListener("roleChanged", handleRoleChanged);
+    };
+  }, []);
   const [currentLanguage, setCurrentLanguage] = useState(() =>
     getCurrentLanguage()
   );
