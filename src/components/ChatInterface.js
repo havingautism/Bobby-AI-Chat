@@ -530,6 +530,7 @@ const ChatInterface = ({
             content: result.content,
             reasoning: result.hasReasoning ? result.reasoning : undefined,
             hasReasoning: result.hasReasoning,
+            knowledgeReferences: result.knowledgeReferences || null,
             timestamp: new Date().toISOString(),
             isStreaming: false,
           };

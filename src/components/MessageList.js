@@ -5,6 +5,7 @@ import { getCurrentLanguage, t } from "../utils/language";
 import StreamdownRenderer from "./StreamdownRenderer";
 import ReasoningDisplay from "./ReasoningDisplay";
 import ImagePreviewModal from "./ImagePreviewModal";
+import KnowledgeReferences from "./KnowledgeReferences";
 import "./MessageList.css";
 import bobbyLogo from "../imgs/bobby_logo.png";
 
@@ -255,6 +256,18 @@ const MessageList = ({
                         </button>
                       </div>
                     )}
+                    {/* 显示知识库引用 */}
+                    {message.role === "assistant" &&
+                      message.knowledgeReferences &&
+                      message.knowledgeReferences.length > 0 && (
+                        <KnowledgeReferences
+                          references={message.knowledgeReferences}
+                          onReferenceClick={(reference) => {
+                            console.log("点击了知识库引用:", reference);
+                            // 这里可以添加点击引用的处理逻辑，比如打开文档详情
+                          }}
+                        />
+                      )}
                   </>
                 ) : (
                   <>

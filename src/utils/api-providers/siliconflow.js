@@ -1,5 +1,5 @@
-import { BaseApiProvider } from './base.js';
-import axios from 'axios';
+import { BaseApiProvider } from "./base.js";
+import axios from "axios";
 import { knowledgeBaseManager } from "../knowledgeBaseManager.js";
 
 export class SiliconFlowProvider extends BaseApiProvider {
@@ -7,7 +7,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
     super({
       baseURL: "https://api.siliconflow.cn/v1/chat/completions",
       model: "deepseek-ai/DeepSeek-V3.1",
-      ...config
+      ...config,
     });
   }
 
@@ -18,7 +18,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
       "deepseek-ai/deepseek-vl",
       "qwen/Qwen-VL-Chat",
       "qwen/Qwen-VL-Plus",
-      "qwen/Qwen-VL-Max"
+      "qwen/Qwen-VL-Max",
     ];
   }
 
@@ -30,20 +30,22 @@ export class SiliconFlowProvider extends BaseApiProvider {
   // 硅基流动特定的推理模型检查
   isReasoningModel(modelName) {
     if (!modelName) return false;
-    return modelName.includes('R1') || 
-           modelName.includes('r1') ||
-           modelName.includes('QwQ') ||
-           modelName.includes('qwq');
+    return (
+      modelName.includes("R1") ||
+      modelName.includes("r1") ||
+      modelName.includes("QwQ") ||
+      modelName.includes("qwq")
+    );
   }
 
   // 硅基流动特定的模型参数处理
   processModelSpecificParams(requestBody, options = {}) {
     const modelToUse = requestBody.model;
-    
+
     // 检查是否为推理模型
     const isReasoningModel = this.isReasoningModel(modelToUse);
     const isMultimodalModel = this.isMultimodalModel(modelToUse);
-    
+
     if (isReasoningModel) {
       requestBody.max_tokens = Math.max(requestBody.max_tokens, 4000);
       if (requestBody.temperature > 0.3) {
@@ -59,7 +61,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
     if (isMultimodalModel) {
       requestBody.max_tokens = Math.max(requestBody.max_tokens, 1024);
     }
-    
+
     return requestBody;
   }
 
@@ -67,12 +69,18 @@ export class SiliconFlowProvider extends BaseApiProvider {
   handleApiError(error, modelName) {
     if (error.response) {
       const status = error.response.status;
-      const message = error.response.data?.error?.message || error.response.statusText;
+      const message =
+        error.response.data?.error?.message || error.response.statusText;
 
       // 特殊处理推理模型相关错误
       if (this.isReasoningModel(modelName)) {
-        if (status === 400 && (message?.includes('model') || message?.includes('不支持'))) {
-          throw new Error(`推理模型 ${modelName} 可能不被硅基流动平台支持，请尝试使用 Qwen/QwQ-32B 或 deepseek-ai/DeepSeek-R1`);
+        if (
+          status === 400 &&
+          (message?.includes("model") || message?.includes("不支持"))
+        ) {
+          throw new Error(
+            `推理模型 ${modelName} 可能不被硅基流动平台支持，请尝试使用 Qwen/QwQ-32B 或 deepseek-ai/DeepSeek-R1`
+          );
         }
       }
 
@@ -93,7 +101,9 @@ export class SiliconFlowProvider extends BaseApiProvider {
     } else if (error.request) {
       // 网络错误 - 特别处理推理模型
       if (this.isReasoningModel(modelName)) {
-        throw new Error("推理模型流式连接失败。可能原因：1)推理模型需要更长处理时间 2)模型参数不兼容 3)平台不支持该推理模型。建议尝试非推理模型或检查模型名称。");
+        throw new Error(
+          "推理模型流式连接失败。可能原因：1)推理模型需要更长处理时间 2)模型参数不兼容 3)平台不支持该推理模型。建议尝试非推理模型或检查模型名称。"
+        );
       } else {
         throw new Error("流式连接失败，请检查您的网络连接");
       }
@@ -103,7 +113,14 @@ export class SiliconFlowProvider extends BaseApiProvider {
   }
 
   // 硅基流动流式消息发送
-  async sendMessageStream(messages, options = {}, onChunk = null, onComplete = null, onError = null, abortController = null) {
+  async sendMessageStream(
+    messages,
+    options = {},
+    onChunk = null,
+    onComplete = null,
+    onError = null,
+    abortController = null
+  ) {
     try {
       this.validateConfig();
 
@@ -117,10 +134,10 @@ export class SiliconFlowProvider extends BaseApiProvider {
           // 使用知识库管理器进行搜索
           await knowledgeBaseManager.initialize();
           const userMessage = messages[messages.length - 1];
-          
+
           console.log(`🔍 搜索选中的文档:`, options.selectedDocuments);
           console.log(`🔍 用户问题:`, userMessage.content);
-          
+
           const searchResults = await knowledgeBaseManager.search(
             userMessage.content,
             {
@@ -129,32 +146,51 @@ export class SiliconFlowProvider extends BaseApiProvider {
               documentIds: options.selectedDocuments || null,
             }
           );
-          
+
           console.log(`🔍 搜索结果总数:`, searchResults.length);
-          console.log(`🔍 搜索结果详情:`, searchResults.map(r => ({ 
-            chunkId: r.id || r.chunk_id, 
-            documentId: r.documentId || r.document_id,
-            title: r.documentTitle || r.document_title, 
-            score: r.similarity || r.score,
-            contentLength: (r.content || r.chunk_text || '').length,
-            contentPreview: (r.content || r.chunk_text || '').substring(0, 100)
-          })));
-          
-                // 首先尝试过滤选中文档中的相关内容
-          const filteredResults = Array.isArray(options.selectedDocuments) && options.selectedDocuments.length > 0
-            ? searchResults.filter(r => options.selectedDocuments.includes(r.documentId || r.document_id))
-            : searchResults;
-          
+          console.log(
+            `🔍 搜索结果详情:`,
+            searchResults.map((r) => ({
+              chunkId: r.id || r.chunk_id,
+              documentId: r.documentId || r.document_id,
+              title: r.documentTitle || r.document_title,
+              score: r.similarity || r.score,
+              contentLength: (r.content || r.chunk_text || "").length,
+              contentPreview: (r.content || r.chunk_text || "").substring(
+                0,
+                100
+              ),
+            }))
+          );
+
+          // 首先尝试过滤选中文档中的相关内容
+          const filteredResults =
+            Array.isArray(options.selectedDocuments) &&
+            options.selectedDocuments.length > 0
+              ? searchResults.filter((r) =>
+                  options.selectedDocuments.includes(
+                    r.documentId || r.document_id
+                  )
+                )
+              : searchResults;
+
           console.log(`🔍 选中文档中的相关结果数量:`, filteredResults.length);
-          
+
           // 如果选中文档中有相关内容，优先使用这些内容
           if (filteredResults.length > 0) {
             // 按分数排序，取前5个
             const topResults = filteredResults
-              .sort((a, b) => (b.similarity || b.score || 0) - (a.similarity || a.score || 0))
+              .sort(
+                (a, b) =>
+                  (b.similarity || b.score || 0) -
+                  (a.similarity || a.score || 0)
+              )
               .slice(0, 5);
-            
-            console.log(`🔍 使用选中文档中分数最高的 ${topResults.length} 个结果:`, topResults.map(d => ({ title: d.title, score: d.score })));
+
+            console.log(
+              `🔍 使用选中文档中分数最高的 ${topResults.length} 个结果:`,
+              topResults.map((d) => ({ title: d.title, score: d.score }))
+            );
             knowledgeContext = "请根据以下多个知识库文档块来回答问题...\n\n";
             knowledgeContext += "<knowledge_base>\n";
             topResults.forEach((result, index) => {
@@ -162,23 +198,40 @@ export class SiliconFlowProvider extends BaseApiProvider {
                 title: result.title,
                 score: result.score,
                 contentLength: result.content?.length || 0,
-                contentPreview: result.content?.substring(0, 100) + (result.content?.length > 100 ? '...' : '')
+                contentPreview:
+                  result.content?.substring(0, 100) +
+                  (result.content?.length > 100 ? "..." : ""),
               });
-              knowledgeContext += `  <document index="${index + 1}" source="${result.documentTitle || result.title || 'Unknown'}">\n`;
+              knowledgeContext += `  <document index="${index + 1}" source="${
+                result.documentTitle || result.title || "Unknown"
+              }">\n`;
               knowledgeContext += `    <content>\n`;
-              knowledgeContext += `      ${(result.content || result.chunk_text || '').trim()}\n`;
+              knowledgeContext += `      ${(
+                result.content ||
+                result.chunk_text ||
+                ""
+              ).trim()}\n`;
               knowledgeContext += `    </content>\n`;
               knowledgeContext += `  </document>\n\n`;
             });
             knowledgeContext += "</knowledge_base>\n\n";
           } else {
             // 如果选中文档中没有相关内容，使用所有搜索结果中分数最高的前5个
-            console.log(`🔍 选中文档中未找到相关内容，使用全局搜索结果中分数最高的前5个`);
+            console.log(
+              `🔍 选中文档中未找到相关内容，使用全局搜索结果中分数最高的前5个`
+            );
             const topResults = searchResults
-              .sort((a, b) => (b.similarity || b.score || 0) - (a.similarity || a.score || 0))
+              .sort(
+                (a, b) =>
+                  (b.similarity || b.score || 0) -
+                  (a.similarity || a.score || 0)
+              )
               .slice(0, 5);
-            
-            console.log(`🔍 使用全局搜索结果中分数最高的 ${topResults.length} 个结果:`, topResults.map(d => ({ title: d.title, score: d.score })));
+
+            console.log(
+              `🔍 使用全局搜索结果中分数最高的 ${topResults.length} 个结果:`,
+              topResults.map((d) => ({ title: d.title, score: d.score }))
+            );
             knowledgeContext = "请根据以下多个知识库文档块来回答问题...\n\n";
             knowledgeContext += "<knowledge_base>\n";
             topResults.forEach((result, index) => {
@@ -186,18 +239,26 @@ export class SiliconFlowProvider extends BaseApiProvider {
                 title: result.title,
                 score: result.score,
                 contentLength: result.content?.length || 0,
-                contentPreview: result.content?.substring(0, 100) + (result.content?.length > 100 ? '...' : '')
+                contentPreview:
+                  result.content?.substring(0, 100) +
+                  (result.content?.length > 100 ? "..." : ""),
               });
-              knowledgeContext += `  <document index="${index + 1}" source="${result.documentTitle || result.title || 'Unknown'}">\n`;
+              knowledgeContext += `  <document index="${index + 1}" source="${
+                result.documentTitle || result.title || "Unknown"
+              }">\n`;
               knowledgeContext += `    <content>\n`;
-              knowledgeContext += `      ${(result.content || result.chunk_text || '').trim()}\n`;
+              knowledgeContext += `      ${(
+                result.content ||
+                result.chunk_text ||
+                ""
+              ).trim()}\n`;
               knowledgeContext += `    </content>\n`;
               knowledgeContext += `  </document>\n\n`;
             });
             knowledgeContext += "</knowledge_base>\n\n";
           }
         } catch (error) {
-          console.warn('知识库搜索失败:', error);
+          console.warn("知识库搜索失败:", error);
         }
       }
 
@@ -211,9 +272,13 @@ export class SiliconFlowProvider extends BaseApiProvider {
 
       // 如果有知识库上下文，添加到系统消息中
       if (knowledgeContext) {
-        console.log(`🔍 添加知识库上下文到系统消息:`, knowledgeContext.substring(0, 200) + '...');
+        console.log(
+          `🔍 添加知识库上下文到系统消息:`,
+          knowledgeContext.substring(0, 200) + "..."
+        );
         if (apiMessages[0]?.role === "system") {
-          apiMessages[0].content = knowledgeContext + "\n\n" + apiMessages[0].content;
+          apiMessages[0].content =
+            knowledgeContext + "\n\n" + apiMessages[0].content;
         } else {
           apiMessages.unshift({
             role: "system",
@@ -225,10 +290,13 @@ export class SiliconFlowProvider extends BaseApiProvider {
       }
 
       // 构建请求体
-      let requestBody = this.buildRequestBody(apiMessages, { ...options, stream: true });
+      let requestBody = this.buildRequestBody(apiMessages, {
+        ...options,
+        stream: true,
+      });
       requestBody = this.processModelSpecificParams(requestBody, options);
 
-      console.log('硅基流动API请求 (Stream):', {
+      console.log("硅基流动API请求 (Stream):", {
         model: requestBody.model,
         isReasoningModel: this.isReasoningModel(requestBody.model),
         isMultimodalModel: this.isMultimodalModel(requestBody.model),
@@ -237,12 +305,12 @@ export class SiliconFlowProvider extends BaseApiProvider {
         stream: true,
         messagesCount: requestBody.messages?.length || 0,
         hasKnowledgeContext: !!knowledgeContext,
-        systemMessageLength: requestBody.messages?.[0]?.content?.length || 0
+        systemMessageLength: requestBody.messages?.[0]?.content?.length || 0,
       });
 
       // 发送流式请求
       const response = await fetch(this.config.baseURL, {
-        method: 'POST',
+        method: "POST",
         headers: this.buildHeaders(),
         body: JSON.stringify(requestBody),
         signal: abortController?.signal,
@@ -254,37 +322,37 @@ export class SiliconFlowProvider extends BaseApiProvider {
           response: {
             status: response.status,
             data: errorData,
-            statusText: response.statusText
-          }
+            statusText: response.statusText,
+          },
         };
         this.handleApiError(error, requestBody.model);
       }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      
-      let buffer = '';
-      let fullContent = '';
-      let fullReasoning = '';
+
+      let buffer = "";
+      let fullContent = "";
+      let fullReasoning = "";
       let hasReasoning = false;
 
       try {
         while (true) {
           const { done, value } = await reader.read();
-          
+
           if (done) {
             break;
           }
 
           buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
+          const lines = buffer.split("\n");
           buffer = lines.pop(); // 保留最后一行（可能不完整）
 
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
+            if (line.startsWith("data: ")) {
               const data = line.slice(6).trim();
-              
-              if (data === '[DONE]') {
+
+              if (data === "[DONE]") {
                 // 流结束
                 if (onComplete) {
                   const result = {
@@ -309,19 +377,19 @@ export class SiliconFlowProvider extends BaseApiProvider {
                   fullContent += parsed.content;
                   if (onChunk) {
                     onChunk({
-                      type: 'content',
+                      type: "content",
                       content: parsed.content,
                       fullContent,
                     });
                   }
                 }
-                
+
                 if (parsed.reasoning) {
                   fullReasoning += parsed.reasoning;
                   hasReasoning = true;
                   if (onChunk) {
                     onChunk({
-                      type: 'reasoning',
+                      type: "reasoning",
                       content: parsed.reasoning,
                       fullReasoning,
                     });
@@ -344,18 +412,17 @@ export class SiliconFlowProvider extends BaseApiProvider {
         result.reasoning = fullReasoning;
       }
       return result;
-      
     } catch (error) {
       console.error("硅基流动API流式调用失败:", error);
-      
+
       if (onError) {
         onError(error);
       }
-      
-      if (error.name === 'AbortError') {
-        throw new Error('请求已取消');
+
+      if (error.name === "AbortError") {
+        throw new Error("请求已取消");
       }
-      
+
       throw error;
     }
   }
@@ -370,50 +437,66 @@ export class SiliconFlowProvider extends BaseApiProvider {
 
       // 处理知识库搜索
       let knowledgeContext = "";
+      let searchResults = [];
       if (options.selectedDocuments && options.selectedDocuments.length > 0) {
         try {
           // 使用知识库管理器进行搜索
           await knowledgeBaseManager.initialize();
           const userMessage = messages[messages.length - 1];
-          
+
           console.log(`🔍 搜索选中的文档:`, options.selectedDocuments);
           console.log(`🔍 用户问题:`, userMessage.content);
-          
-          const searchResults = await knowledgeBaseManager.searchDocuments(
+
+          searchResults = await knowledgeBaseManager.search(
             userMessage.content,
-            20, // 增加搜索结果数量以获得更多选择
-            0.01,
-            true
+            {
+              limit: 20,
+              threshold: 0.01,
+              includeContent: true,
+            }
           );
-          
+
           console.log(`🔍 搜索结果总数:`, searchResults.length);
-          console.log(`🔍 搜索结果ID:`, searchResults.map(r => r.id));
-          console.log(`🔍 搜索结果详情:`, searchResults.map(r => ({ 
-            id: r.id, 
-            title: r.title, 
-            score: r.score,
-            contentLength: r.content?.length || 0,
-            contentPreview: r.content?.substring(0, 100) + (r.content?.length > 100 ? '...' : ''),
-            sourceType: r.sourceType
-          })));
-          
-                // 首先尝试过滤选中文档中的相关内容
-          const filteredResults = searchResults.filter(result => {
+          console.log(
+            `🔍 搜索结果ID:`,
+            searchResults.map((r) => r.id)
+          );
+          console.log(
+            `🔍 搜索结果详情:`,
+            searchResults.map((r) => ({
+              id: r.id,
+              title: r.title,
+              score: r.score,
+              contentLength: r.content?.length || 0,
+              contentPreview:
+                r.content?.substring(0, 100) +
+                (r.content?.length > 100 ? "..." : ""),
+              sourceType: r.sourceType,
+            }))
+          );
+
+          // 首先尝试过滤选中文档中的相关内容
+          const filteredResults = searchResults.filter((result) => {
             const isSelected = options.selectedDocuments.includes(result.id);
-            console.log(`🔍 文档 "${result.title}" (ID: ${result.id}) 是否被选中: ${isSelected}`);
+            console.log(
+              `🔍 文档 "${result.title}" (ID: ${result.id}) 是否被选中: ${isSelected}`
+            );
             return isSelected;
           });
-          
+
           console.log(`🔍 选中文档中的相关结果数量:`, filteredResults.length);
-          
+
           // 如果选中文档中有相关内容，优先使用这些内容
           if (filteredResults.length > 0) {
             // 按分数排序，取前5个
             const topResults = filteredResults
               .sort((a, b) => (b.score || 0) - (a.score || 0))
               .slice(0, 5);
-            
-            console.log(`🔍 使用选中文档中分数最高的 ${topResults.length} 个结果:`, topResults.map(d => ({ title: d.title, score: d.score })));
+
+            console.log(
+              `🔍 使用选中文档中分数最高的 ${topResults.length} 个结果:`,
+              topResults.map((d) => ({ title: d.title, score: d.score }))
+            );
             knowledgeContext = "请根据以下多个知识库文档块来回答问题...\n\n";
             knowledgeContext += "<knowledge_base>\n";
             topResults.forEach((result, index) => {
@@ -421,9 +504,13 @@ export class SiliconFlowProvider extends BaseApiProvider {
                 title: result.title,
                 score: result.score,
                 contentLength: result.content?.length || 0,
-                contentPreview: result.content?.substring(0, 100) + (result.content?.length > 100 ? '...' : '')
+                contentPreview:
+                  result.content?.substring(0, 100) +
+                  (result.content?.length > 100 ? "..." : ""),
               });
-              knowledgeContext += `  <document index="${index + 1}" source="${result.title || 'Unknown'}">\n`;
+              knowledgeContext += `  <document index="${index + 1}" source="${
+                result.title || "Unknown"
+              }">\n`;
               knowledgeContext += `    <content>\n`;
               knowledgeContext += `      ${result.content}\n`;
               knowledgeContext += `    </content>\n`;
@@ -432,12 +519,17 @@ export class SiliconFlowProvider extends BaseApiProvider {
             knowledgeContext += "</knowledge_base>\n\n";
           } else {
             // 如果选中文档中没有相关内容，使用所有搜索结果中分数最高的前5个
-            console.log(`🔍 选中文档中未找到相关内容，使用全局搜索结果中分数最高的前5个`);
+            console.log(
+              `🔍 选中文档中未找到相关内容，使用全局搜索结果中分数最高的前5个`
+            );
             const topResults = searchResults
               .sort((a, b) => (b.score || 0) - (a.score || 0))
               .slice(0, 5);
-            
-            console.log(`🔍 使用全局搜索结果中分数最高的 ${topResults.length} 个结果:`, topResults.map(d => ({ title: d.title, score: d.score })));
+
+            console.log(
+              `🔍 使用全局搜索结果中分数最高的 ${topResults.length} 个结果:`,
+              topResults.map((d) => ({ title: d.title, score: d.score }))
+            );
             knowledgeContext = "请根据以下多个知识库文档块来回答问题...\n\n";
             knowledgeContext += "<knowledge_base>\n";
             topResults.forEach((result, index) => {
@@ -445,9 +537,13 @@ export class SiliconFlowProvider extends BaseApiProvider {
                 title: result.title,
                 score: result.score,
                 contentLength: result.content?.length || 0,
-                contentPreview: result.content?.substring(0, 100) + (result.content?.length > 100 ? '...' : '')
+                contentPreview:
+                  result.content?.substring(0, 100) +
+                  (result.content?.length > 100 ? "..." : ""),
               });
-              knowledgeContext += `  <document index="${index + 1}" source="${result.title || 'Unknown'}">\n`;
+              knowledgeContext += `  <document index="${index + 1}" source="${
+                result.title || "Unknown"
+              }">\n`;
               knowledgeContext += `    <content>\n`;
               knowledgeContext += `      ${result.content}\n`;
               knowledgeContext += `    </content>\n`;
@@ -456,7 +552,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
             knowledgeContext += "</knowledge_base>\n\n";
           }
         } catch (error) {
-          console.warn('知识库搜索失败:', error);
+          console.warn("知识库搜索失败:", error);
         }
       }
 
@@ -470,9 +566,13 @@ export class SiliconFlowProvider extends BaseApiProvider {
 
       // 如果有知识库上下文，添加到系统消息中
       if (knowledgeContext) {
-        console.log(`🔍 添加知识库上下文到系统消息:`, knowledgeContext.substring(0, 200) + '...');
+        console.log(
+          `🔍 添加知识库上下文到系统消息:`,
+          knowledgeContext.substring(0, 200) + "..."
+        );
         if (apiMessages[0]?.role === "system") {
-          apiMessages[0].content = knowledgeContext + "\n\n" + apiMessages[0].content;
+          apiMessages[0].content =
+            knowledgeContext + "\n\n" + apiMessages[0].content;
         } else {
           apiMessages.unshift({
             role: "system",
@@ -484,10 +584,13 @@ export class SiliconFlowProvider extends BaseApiProvider {
       }
 
       // 构建请求体
-      let requestBody = this.buildRequestBody(apiMessages, { ...options, stream: false });
+      let requestBody = this.buildRequestBody(apiMessages, {
+        ...options,
+        stream: false,
+      });
       requestBody = this.processModelSpecificParams(requestBody, options);
 
-      console.log('硅基流动API请求 (Non-Stream):', {
+      console.log("硅基流动API请求 (Non-Stream):", {
         model: requestBody.model,
         isReasoningModel: this.isReasoningModel(requestBody.model),
         maxTokens: requestBody.max_tokens,
@@ -495,20 +598,36 @@ export class SiliconFlowProvider extends BaseApiProvider {
         timeout: this.isReasoningModel(requestBody.model) ? 60000 : 30000,
         messagesCount: requestBody.messages?.length || 0,
         hasKnowledgeContext: !!knowledgeContext,
-        systemMessageLength: requestBody.messages?.[0]?.content?.length || 0
+        systemMessageLength: requestBody.messages?.[0]?.content?.length || 0,
       });
 
-      const response = await axios.post(
-        this.config.baseURL,
-        requestBody,
-        {
-          headers: this.buildHeaders(),
-          timeout: this.isReasoningModel(requestBody.model) ? 60000 : 30000,
+      // 保存知识库引用信息，用于后续返回
+      const knowledgeReferences =
+        knowledgeContext && searchResults
+          ? this.extractKnowledgeReferences(searchResults)
+          : [];
+
+      const response = await axios.post(this.config.baseURL, requestBody, {
+        headers: this.buildHeaders(),
+        timeout: this.isReasoningModel(requestBody.model) ? 60000 : 30000,
+      });
+
+      const result = this.parseResponse(response);
+      // 如果有知识库引用，添加到结果中
+      if (knowledgeReferences && knowledgeReferences.length > 0) {
+        if (typeof result === "string") {
+          return {
+            content: result,
+            knowledgeReferences: knowledgeReferences,
+          };
+        } else if (typeof result === "object") {
+          return {
+            ...result,
+            knowledgeReferences: knowledgeReferences,
+          };
         }
-      );
-
-      return this.parseResponse(response);
-
+      }
+      return result;
     } catch (error) {
       console.error("硅基流动API调用失败:", error);
       this.handleApiError(error, options.model || this.config.model);
@@ -523,18 +642,22 @@ export class SiliconFlowProvider extends BaseApiProvider {
       // 获取前几条消息用于生成标题
       const relevantMessages = messages.slice(0, 2).map((msg) => ({
         role: msg.role,
-        content: msg.content.length > 100 ? msg.content.substring(0, 100) + "..." : msg.content,
+        content:
+          msg.content.length > 100
+            ? msg.content.substring(0, 100) + "..."
+            : msg.content,
       }));
 
       const titlePrompt = {
         role: "system",
-        content: "你是一个专业的标题生成助手。请根据用户的问题生成一个简洁明了的中文标题，要求：1.不超过15个字 2.概括核心内容 3.直接输出标题，不要引号或其他格式 4.不要说根据对话等多余的话",
+        content:
+          "你是一个专业的标题生成助手。请根据用户的问题生成一个简洁明了的中文标题，要求：1.不超过15个字 2.概括核心内容 3.直接输出标题，不要引号或其他格式 4.不要说根据对话等多余的话",
       };
 
       const titleMessages = [
         titlePrompt,
         ...relevantMessages,
-        { role: "user", content: "请为上面的对话生成一个简洁的标题" }
+        { role: "user", content: "请为上面的对话生成一个简洁的标题" },
       ];
 
       const requestBody = {
@@ -546,47 +669,53 @@ export class SiliconFlowProvider extends BaseApiProvider {
       };
 
       const response = await fetch(this.config.baseURL, {
-        method: 'POST',
+        method: "POST",
         headers: this.buildHeaders(),
         body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`API请求失败: ${response.status} ${response.statusText} - ${errorText}`);
+        throw new Error(
+          `API请求失败: ${response.status} ${response.statusText} - ${errorText}`
+        );
       }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      
-      let buffer = '';
-      let fullTitle = '';
+
+      let buffer = "";
+      let fullTitle = "";
 
       try {
         while (true) {
           const { done, value } = await reader.read();
-          
+
           if (done) {
             break;
           }
 
           buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
+          const lines = buffer.split("\n");
           buffer = lines.pop();
 
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
+            if (line.startsWith("data: ")) {
               const data = line.slice(6).trim();
-              
-              if (data === '[DONE]') {
+
+              if (data === "[DONE]") {
                 let finalTitle = this.cleanMarkdown(fullTitle.trim());
-                
+
                 // 如果API返回空标题，尝试从用户消息中提取关键词
                 if (!finalTitle) {
-                  const userMessage = relevantMessages.find(msg => msg.role === "user");
+                  const userMessage = relevantMessages.find(
+                    (msg) => msg.role === "user"
+                  );
                   if (userMessage) {
                     // 过滤掉base64图片数据，只保留纯文本内容
-                    const textContent = userMessage.content.replace(/data:image\/[^;]+;base64,[^\s]+/g, '').trim();
+                    const textContent = userMessage.content
+                      .replace(/data:image\/[^;]+;base64,[^\s]+/g, "")
+                      .trim();
                     if (textContent) {
                       finalTitle = textContent.slice(0, 20).trim();
                       if (textContent.length > 20) {
@@ -595,7 +724,7 @@ export class SiliconFlowProvider extends BaseApiProvider {
                     }
                   }
                 }
-                
+
                 return finalTitle || "新对话";
               }
 
@@ -611,13 +740,15 @@ export class SiliconFlowProvider extends BaseApiProvider {
       }
 
       let finalTitle = this.cleanMarkdown(fullTitle.trim());
-      
+
       // 如果没有收到有效标题，尝试从用户消息提取
       if (!finalTitle) {
-        const userMessage = relevantMessages.find(msg => msg.role === "user");
+        const userMessage = relevantMessages.find((msg) => msg.role === "user");
         if (userMessage) {
           // 过滤掉base64图片数据，只保留纯文本内容
-          const textContent = userMessage.content.replace(/data:image\/[^;]+;base64,[^\s]+/g, '').trim();
+          const textContent = userMessage.content
+            .replace(/data:image\/[^;]+;base64,[^\s]+/g, "")
+            .trim();
           if (textContent) {
             finalTitle = textContent.slice(0, 20).trim();
             if (textContent.length > 20) {
@@ -626,19 +757,22 @@ export class SiliconFlowProvider extends BaseApiProvider {
           }
         }
       }
-      
+
       return finalTitle || "新对话";
-      
     } catch (error) {
       console.error("硅基流动标题生成失败:", error);
       // 如果生成失败，返回基于第一条消息的简单标题，但过滤掉图片数据
       if (messages.length > 0) {
-        const firstMessage = messages.find(msg => msg.role === "user");
+        const firstMessage = messages.find((msg) => msg.role === "user");
         if (firstMessage) {
           // 过滤掉base64图片数据，只保留纯文本内容
-          const textContent = firstMessage.content.replace(/data:image\/[^;]+;base64,[^\s]+/g, '').trim();
+          const textContent = firstMessage.content
+            .replace(/data:image\/[^;]+;base64,[^\s]+/g, "")
+            .trim();
           if (textContent) {
-            return textContent.slice(0, 20) + (textContent.length > 20 ? "..." : "");
+            return (
+              textContent.slice(0, 20) + (textContent.length > 20 ? "..." : "")
+            );
           }
         }
       }
@@ -649,20 +783,59 @@ export class SiliconFlowProvider extends BaseApiProvider {
   // 清理markdown格式
   cleanMarkdown(text) {
     if (!text) return text;
-    
+
     return text
-      .replace(/^#{1,6}\s*/gm, '')
-      .replace(/\*\*(.*?)\*\*/g, '$1')
-      .replace(/__(.*?)__/g, '$1')
-      .replace(/\*(.*?)\*/g, '$1')
-      .replace(/_(.*?)_/g, '$1')
-      .replace(/`{1,3}(.*?)`{1,3}/g, '$1')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
-      .replace(/^>\s*/gm, '')
-      .replace(/^[\s]*[-*+]\s*/gm, '')
-      .replace(/^[\s]*\d+\.\s*/gm, '')
-      .replace(/\s+/g, ' ')
+      .replace(/^#{1,6}\s*/gm, "")
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/__(.*?)__/g, "$1")
+      .replace(/\*(.*?)\*/g, "$1")
+      .replace(/_(.*?)_/g, "$1")
+      .replace(/`{1,3}(.*?)`{1,3}/g, "$1")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+      .replace(/^>\s*/gm, "")
+      .replace(/^[\s]*[-*+]\s*/gm, "")
+      .replace(/^[\s]*\d+\.\s*/gm, "")
+      .replace(/\s+/g, " ")
       .trim();
+  }
+
+  // 提取知识库引用信息
+  extractKnowledgeReferences(searchResults) {
+    if (!searchResults || !Array.isArray(searchResults)) {
+      return [];
+    }
+
+    // 去重并提取引用信息
+    const uniqueReferences = new Map();
+
+    searchResults.forEach((result) => {
+      // 支持两种数据格式：knowledgeBaseManager返回的格式和原始格式
+      const documentId = result.documentId || result.document_id;
+      const documentTitle = result.documentTitle || result.document_title;
+      const fileName = result.fileName || result.file_name;
+      const chunkId = result.id || result.chunk_id;
+      const similarity = result.similarity || result.score || 0;
+      const content = result.content || result.chunk_text;
+
+      if (documentId && documentTitle) {
+        const key = documentId;
+        if (
+          !uniqueReferences.has(key) ||
+          uniqueReferences.get(key).similarity < similarity
+        ) {
+          uniqueReferences.set(key, {
+            document_id: documentId,
+            document_title: documentTitle,
+            file_name: fileName || null,
+            chunk_id: chunkId || null,
+            similarity: similarity,
+            content_preview: content ? content.substring(0, 200) + "..." : null,
+          });
+        }
+      }
+    });
+
+    return Array.from(uniqueReferences.values());
   }
 }

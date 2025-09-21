@@ -99,6 +99,7 @@ const compressConversation = (conversation) => {
       timestamp: msg.timestamp,
       hasReasoning: msg.hasReasoning || false,
       reasoning: msg.reasoning,
+      knowledgeReferences: msg.knowledgeReferences || null,
       uploadedFile: msg.uploadedFile
         ? {
             name: msg.uploadedFile.name,

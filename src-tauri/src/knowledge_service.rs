@@ -131,12 +131,12 @@ impl DocumentProcessor {
             chunk.document_id = document.id.clone();
         }
 
-        self.db.create_chunks(&chunks).await?;
+        let chunk_ids = self.db.create_chunks(&chunks).await?;
 
         // 创建向量记录
-        let vector_embeddings: Vec<VectorEmbedding> = chunks.iter().zip(embeddings.iter())
-            .map(|(chunk, embedding)| VectorEmbedding::new(
-                chunk.id.clone(),
+        let vector_embeddings: Vec<VectorEmbedding> = chunk_ids.iter().zip(embeddings.iter())
+            .map(|(chunk_id, embedding)| VectorEmbedding::new(
+                *chunk_id,
                 collection.id.clone(),
                 embedding.clone(),
             ))
@@ -262,12 +262,12 @@ impl DocumentProcessor {
             chunk.document_id = document.id.clone();
         }
 
-        self.db.create_chunks(&chunks).await?;
+        let chunk_ids = self.db.create_chunks(&chunks).await?;
 
         // 创建向量记录
-        let vector_embeddings: Vec<VectorEmbedding> = chunks.iter().zip(embeddings.iter())
-            .map(|(chunk, embedding)| VectorEmbedding::new(
-                chunk.id.clone(),
+        let vector_embeddings: Vec<VectorEmbedding> = chunk_ids.iter().zip(embeddings.iter())
+            .map(|(chunk_id, embedding)| VectorEmbedding::new(
+                *chunk_id,
                 collection.id.clone(),
                 embedding.clone(),
             ))
@@ -634,11 +634,17 @@ impl KnowledgeManagementService {
     pub async fn delete_collection(&self, collection_id: &str) -> Result<()> {
         let mut tx = self.db.knowledge_pool().begin().await?;
 
-        // 删除向量
-        sqlx::query("DELETE FROM knowledge_vectors WHERE collection_id = ?")
-            .bind(collection_id)
-            .execute(&mut *tx)
-            .await?;
+        // 删除向量（通过关联表删除）
+        sqlx::query(
+            "DELETE FROM knowledge_vectors WHERE rowid IN (
+                SELECT kc.id FROM knowledge_chunks kc
+                JOIN knowledge_documents kd ON kc.document_id = kd.id
+                WHERE kd.collection_id = ?
+            )"
+        )
+        .bind(collection_id)
+        .execute(&mut *tx)
+        .await?;
 
         // 删除文档（级联删除分块和向量）
         sqlx::query("DELETE FROM knowledge_documents WHERE collection_id = ?")
@@ -680,11 +686,16 @@ impl KnowledgeManagementService {
         .await?
         .get::<i64, _>(0) as usize;
 
-        let vectors_count = sqlx::query("SELECT COUNT(*) FROM knowledge_vectors WHERE collection_id = ?")
-            .bind(collection_id)
-            .fetch_one(self.db.knowledge_pool())
-            .await?
-            .get::<i64, _>(0) as usize;
+        let vectors_count = sqlx::query(
+            "SELECT COUNT(*) FROM knowledge_vectors kv
+             JOIN knowledge_chunks kc ON kv.rowid = kc.id
+             JOIN knowledge_documents kd ON kc.document_id = kd.id
+             WHERE kd.collection_id = ?"
+        )
+        .bind(collection_id)
+        .fetch_one(self.db.knowledge_pool())
+        .await?
+        .get::<i64, _>(0) as usize;
 
         let total_size_bytes = sqlx::query(
             "SELECT SUM(CAST(LENGTH(kd.content) AS INTEGER)) FROM knowledge_documents kd WHERE kd.collection_id = ?"

@@ -9,6 +9,17 @@ use lru::LruCache;
 use rayon::prelude::*;
 use sqlx::Row;
 
+// L2归一化函数
+fn normalize_vector(mut vector: Vec<f32>) -> Vec<f32> {
+    let magnitude: f32 = vector.iter().map(|&x| x * x).sum::<f32>().sqrt();
+    if magnitude > 0.0 {
+        for v in &mut vector {
+            *v /= magnitude;
+        }
+    }
+    vector
+}
+
 // 向量服务
 pub struct VectorService {
     db: Arc<DatabaseManager>,
@@ -147,7 +158,10 @@ impl VectorService {
         ).await;
 
         // 转换 Result<Vec<f32>, String> 为 Result<Vec<f32>, anyhow::Error>
-        result.map_err(|e| anyhow::anyhow!(e))
+        let embedding = result.map_err(|e| anyhow::anyhow!(e))?;
+        
+        // 应用L2归一化
+        Ok(normalize_vector(embedding))
     }
 
     // 批量调用实际的嵌入服务
@@ -162,7 +176,14 @@ impl VectorService {
                 texts.to_vec(),
                 model.model_id.clone()
             ).await;
-            return result.map_err(|e| anyhow::anyhow!(e));
+            let embeddings = result.map_err(|e| anyhow::anyhow!(e))?;
+            
+            // 应用L2归一化到每个向量
+            let normalized_embeddings: Vec<Vec<f32>> = embeddings.into_iter()
+                .map(normalize_vector)
+                .collect();
+            
+            return Ok(normalized_embeddings);
         }
 
         // 分批发送请求
@@ -181,7 +202,11 @@ impl VectorService {
             match result {
                 Ok(batch_embeddings) => {
                     let count = batch_embeddings.len();
-                    all_embeddings.extend(batch_embeddings);
+                    // 应用L2归一化到每个向量
+                    let normalized_batch: Vec<Vec<f32>> = batch_embeddings.into_iter()
+                        .map(normalize_vector)
+                        .collect();
+                    all_embeddings.extend(normalized_batch);
                     println!("✅ 第 {} 批处理完成，获得 {} 个向量", batch_index + 1, count);
                 },
                 Err(e) => {

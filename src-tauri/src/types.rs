@@ -134,7 +134,7 @@ impl KnowledgeDocument {
 // 文档分块
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct KnowledgeChunk {
-    pub id: String,
+    pub id: i64,
     pub document_id: String,
     pub chunk_index: i32,
     pub chunk_text: String,
@@ -145,7 +145,7 @@ pub struct KnowledgeChunk {
 impl KnowledgeChunk {
     pub fn new(document_id: String, chunk_index: i32, chunk_text: String, token_count: i32) -> Self {
         Self {
-            id: Uuid::new_v4().to_string(),
+            id: 0, // 将在插入数据库时自动生成
             document_id,
             chunk_index,
             chunk_text,
@@ -158,14 +158,14 @@ impl KnowledgeChunk {
 // 向量嵌入
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VectorEmbedding {
-    pub chunk_id: String,
+    pub chunk_id: i64,
     pub collection_id: String,
     pub embedding: Vec<f32>,
     pub created_at: DateTime<Utc>,
 }
 
 impl VectorEmbedding {
-    pub fn new(chunk_id: String, collection_id: String, embedding: Vec<f32>) -> Self {
+    pub fn new(chunk_id: i64, collection_id: String, embedding: Vec<f32>) -> Self {
         Self {
             chunk_id,
             collection_id,
@@ -420,4 +420,27 @@ pub struct ImportResponse {
     pub failed_count: usize,
     pub errors: Vec<String>,
     pub import_time_ms: u64,
+}
+
+// 知识库引用信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KnowledgeReference {
+    pub document_id: String,
+    pub document_title: String,
+    pub file_name: Option<String>,
+    pub chunk_id: Option<String>,
+    pub similarity: f32,
+    pub content_preview: Option<String>,
+}
+
+// 消息结构
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Message {
+    pub id: String,
+    pub conversation_id: String,
+    pub role: String,
+    pub content: String,
+    pub timestamp: String,
+    pub metadata: Option<String>,
+    pub knowledge_references: Option<Vec<KnowledgeReference>>,
 }

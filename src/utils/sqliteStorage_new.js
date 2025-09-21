@@ -55,120 +55,19 @@ class SQLiteStorage {
   async loadChatHistory() {
     try {
       // 使用Tauri后端的get_conversations命令
-      const tauriConversations = await invoke("get_conversations");
-
-      // 将Tauri后端格式转换为前端期望的格式
-      const conversations = tauriConversations.map((conv) => {
-        try {
-          return {
-            id: conv.id,
-            title: conv.title,
-            role: conv.role_id,
-            responseMode: conv.response_mode,
-            messages: JSON.parse(conv.messages || "[]"),
-            settings: JSON.parse(conv.settings || "{}"),
-            isFavorite: conv.is_favorite,
-            pinnedAt: conv.pinned_at,
-            createdAt: conv.created_at,
-            updatedAt: conv.updated_at,
-          };
-        } catch (parseError) {
-          console.warn("解析对话数据失败:", parseError, conv);
-          return {
-            id: conv.id,
-            title: conv.title,
-            role: conv.role_id,
-            responseMode: conv.response_mode,
-            messages: [],
-            settings: {},
-            isFavorite: conv.is_favorite,
-            pinnedAt: conv.pinned_at,
-            createdAt: conv.created_at,
-            updatedAt: conv.updated_at,
-          };
-        }
-      });
-
+      const conversations = await invoke("get_conversations");
       console.log("加载聊天历史成功，共", conversations.length, "个对话");
       return conversations;
     } catch (error) {
       console.error("加载聊天历史失败:", error);
-
-      // 如果是表结构不匹配的错误，提供解决方案
-      if (error.message && error.message.includes("no such column")) {
-        console.error("❌ 数据库表结构不匹配！");
-        console.error("🔧 解决方案：");
-        console.error("1. 关闭应用");
-        console.error("2. 删除数据库文件：");
-        console.error(
-          "   - Windows: %APPDATA%\\com.bobby-ai-chat.dev\\bobby_chat.db"
-        );
-        console.error(
-          "   - 或者删除整个目录：%APPDATA%\\com.bobby-ai-chat.dev"
-        );
-        console.error("3. 重新启动应用");
-        console.error("💡 这将创建新的数据库结构，但会丢失所有现有数据");
-
-        // 尝试重置数据库（虽然可能不会完全解决问题）
-        try {
-          console.log("🔄 尝试重置数据库...");
-          await this.resetAllDatabases();
-          console.log(
-            "⚠️ 数据库重置完成，但如果问题仍然存在，请手动删除数据库文件"
-          );
-        } catch (resetError) {
-          console.error("❌ 重置数据库失败:", resetError);
-        }
-      }
-
-      // 如果是sqlite-vec扩展的错误，提供解决方案
-      if (error.message && error.message.includes("vec0 constructor error")) {
-        console.error("❌ sqlite-vec扩展错误！");
-        console.error("🔧 解决方案：");
-        console.error("1. 关闭应用");
-        console.error("2. 删除数据库文件：");
-        console.error("   - 项目目录: src-tauri\\data\\bobby_chat.db");
-        console.error("   - 项目目录: src-tauri\\data\\knowledge_base.db");
-        console.error("   - 或者删除整个目录: src-tauri\\data");
-        console.error("3. 重新启动应用");
-        console.error("💡 这是sqlite-vec扩展语法问题，需要重新创建数据库");
-
-        // 尝试重置数据库
-        try {
-          console.log("🔄 尝试重置数据库...");
-          await this.resetAllDatabases();
-          console.log(
-            "⚠️ 数据库重置完成，但如果问题仍然存在，请手动删除数据库文件"
-          );
-        } catch (resetError) {
-          console.error("❌ 重置数据库失败:", resetError);
-        }
-      }
-
       return [];
     }
   }
 
   async saveConversation(conversation) {
     try {
-      // 将JavaScript对象转换为Tauri后端期望的格式
-      const tauriConversation = {
-        id: conversation.id,
-        title: conversation.title || null,
-        role_id: conversation.role || null,
-        response_mode: conversation.responseMode || "stream",
-        messages: JSON.stringify(conversation.messages || []),
-        settings: JSON.stringify(conversation.settings || {}),
-        is_favorite: conversation.isFavorite || false,
-        pinned_at: conversation.pinnedAt || null,
-        created_at: conversation.createdAt || new Date().toISOString(),
-        updated_at: conversation.updatedAt || new Date().toISOString(),
-      };
-
       // 使用Tauri后端的save_conversation命令
-      const result = await invoke("save_conversation", {
-        conversation: tauriConversation,
-      });
+      const result = await invoke("save_conversation", { conversation });
       console.log("对话保存成功:", conversation.id, result);
     } catch (error) {
       console.error("保存对话失败:", error);
@@ -201,12 +100,8 @@ class SQLiteStorage {
   // 设置相关操作
   async saveSetting(key, value) {
     try {
-      // 将值转换为JSON字符串（Tauri后端期望字符串类型）
-      const valueString =
-        typeof value === "string" ? value : JSON.stringify(value);
-
       // 使用Tauri后端的save_setting命令
-      const result = await invoke("save_setting", { key, value: valueString });
+      const result = await invoke("save_setting", { key, value });
       console.log("设置保存成功:", key, result);
     } catch (error) {
       console.error("保存设置失败:", error);
@@ -218,18 +113,7 @@ class SQLiteStorage {
     try {
       // 使用Tauri后端的get_setting命令
       const result = await invoke("get_setting", { key });
-
-      if (result === null || result === undefined) {
-        return defaultValue;
-      }
-
-      // 尝试解析JSON字符串，如果失败则返回原始字符串
-      try {
-        return JSON.parse(result);
-      } catch (parseError) {
-        // 如果不是有效的JSON，返回原始字符串
-        return result;
-      }
+      return result || defaultValue;
     } catch (error) {
       console.error("加载设置失败:", error);
       return defaultValue;
@@ -375,30 +259,6 @@ class SQLiteStorage {
       };
     }
   }
-
-  // 重置所有数据库
-  async resetAllDatabases() {
-    try {
-      const result = await invoke("reset_all_databases");
-      console.log("所有数据库重置完成:", result);
-      return result;
-    } catch (error) {
-      console.error("重置数据库失败:", error);
-      throw error;
-    }
-  }
-
-  // 重置知识库数据库
-  async resetKnowledgeDatabase() {
-    try {
-      const result = await invoke("reset_knowledge_database");
-      console.log("知识库数据库重置完成:", result);
-      return result;
-    } catch (error) {
-      console.error("重置知识库数据库失败:", error);
-      throw error;
-    }
-  }
 }
 
 // 创建单例实例
@@ -428,11 +288,6 @@ export const deleteModel = sqliteStorage.deleteModel.bind(sqliteStorage);
 export const migrateFromJson =
   sqliteStorage.migrateFromJson.bind(sqliteStorage);
 export const getStorageInfo = sqliteStorage.getStorageInfo.bind(sqliteStorage);
-export const initialize = sqliteStorage.initialize.bind(sqliteStorage);
-export const resetAllDatabases =
-  sqliteStorage.resetAllDatabases.bind(sqliteStorage);
-export const resetKnowledgeDatabase =
-  sqliteStorage.resetKnowledgeDatabase.bind(sqliteStorage);
 
 // 添加缺失的saveChatHistory方法
 export const saveChatHistory = async (conversations) => {

@@ -33,6 +33,17 @@ pub struct DatabaseManager {
 }
 
 impl DatabaseManager {
+    // L2归一化函数
+    fn normalize_vector(&self, mut vector: Vec<f32>) -> Vec<f32> {
+        let magnitude: f32 = vector.iter().map(|&x| x * x).sum::<f32>().sqrt();
+        if magnitude > 0.0 {
+            for v in &mut vector {
+                *v /= magnitude;
+            }
+        }
+        vector
+    }
+
     pub async fn new() -> Result<Self> {
         // Initialize sqlite-vec extension
         let _ = &*SQLITE_VEC_INIT;
@@ -180,29 +191,29 @@ impl DatabaseManager {
             return Ok(());
         }
         
-        // 检查是否支持余弦距离函数
-        match sqlx::query("SELECT vec_distance_cosine(embedding, embedding) FROM knowledge_vectors LIMIT 1")
+        // 检查向量表结构是否正确
+        match sqlx::query("SELECT vec_version()")
             .fetch_optional(knowledge_pool)
             .await
         {
             Ok(Some(_)) => {
-                println!("✅ 向量表已支持余弦距离，无需迁移");
+                println!("✅ 向量表结构正确，无需迁移");
                 Ok(())
             }
             Ok(None) => {
-                println!("⚠️ 向量表为空，但支持余弦距离，无需迁移");
+                println!("⚠️ 向量表为空，但结构正确，无需迁移");
                 Ok(())
             }
             Err(_) => {
-                println!("🔄 向量表需要迁移以支持余弦距离");
+                println!("🔄 向量表需要迁移以支持正确的sqlite-vec语法");
                 Self::migrate_vector_table(knowledge_pool).await
             }
         }
     }
 
-    // 迁移向量表以支持余弦距离
+    // 迁移向量表以支持正确的sqlite-vec语法
     async fn migrate_vector_table(pool: &Pool<Sqlite>) -> Result<()> {
-        println!("🔄 开始迁移向量表以支持正确的余弦距离...");
+        println!("🔄 开始迁移向量表以支持正确的sqlite-vec语法...");
         
         // 备份现有数据
         println!("💾 备份现有向量数据...");
@@ -218,67 +229,43 @@ impl DatabaseManager {
             .execute(pool)
             .await?;
         
-        // 创建新的向量表（使用正确的余弦距离配置）
-        println!("🏗️ 创建新的向量表（支持余弦距离）...");
+        // 创建新的向量表（使用正确的sqlite-vec语法）
+        println!("🏗️ 创建新的向量表（使用正确的sqlite-vec语法）...");
         sqlx::query(
-            "CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_vectors USING vec0(
-                embedding float[1024],
-                chunk_id TEXT,
-                collection_id TEXT,
-                created_at INTEGER,
-                distance=cosine
-            )"
+            "CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_vectors USING vec0(embedding FLOAT[1024])"
         )
         .execute(pool)
         .await?;
         
-        // 恢复数据
+        // 恢复数据（注意：新表结构只包含向量，元数据需要单独处理）
         if !backup_data.is_empty() {
             println!("🔄 恢复向量数据...");
+            println!("⚠️ 注意：由于表结构变更，需要重新处理向量数据");
+            println!("💡 建议：删除现有数据库文件，重新创建知识库");
             
-            for (i, row) in backup_data.iter().enumerate() {
-                let embedding: Vec<u8> = row.get(0);
-                let chunk_id: String = row.get(1);
-                let collection_id: String = row.get(2);
-                let created_at: i64 = row.get(3);
-                
-                sqlx::query(
-                    "INSERT INTO knowledge_vectors (embedding, chunk_id, collection_id, created_at) 
-                     VALUES (?, ?, ?, ?)"
-                )
-                .bind(&embedding)
-                .bind(&chunk_id)
-                .bind(&collection_id)
-                .bind(created_at)
-                .execute(pool)
-                .await?;
-                
-                if (i + 1) % 100 == 0 {
-                    println!("   - 已恢复 {} / {} 条记录", i + 1, backup_data.len());
-                }
-            }
-            
-            println!("✅ 成功恢复 {} 条向量记录", backup_data.len());
+            // 由于表结构变更，我们无法直接恢复旧数据
+            // 用户需要重新创建知识库
+            println!("❌ 无法恢复旧数据，请重新创建知识库");
         }
         
-        // 测试余弦距离函数
-        println!("🧪 测试余弦距离函数...");
-        match sqlx::query("SELECT vec_distance_cosine(embedding, embedding) FROM knowledge_vectors LIMIT 1")
+        // 测试向量表功能
+        println!("🧪 测试向量表功能...");
+        match sqlx::query("SELECT vec_version()")
             .fetch_one(pool)
             .await
         {
             Ok(row) => {
-                let distance: f64 = row.get(0);
-                println!("✅ 余弦距离函数测试成功，距离: {:.6}", distance);
+                let version: String = row.get(0);
+                println!("✅ sqlite-vec 扩展版本: {}", version);
             }
             Err(e) => {
-                println!("❌ 余弦距离函数测试失败: {}", e);
-                return Err(anyhow::anyhow!("余弦距离函数不可用: {}", e));
+                println!("❌ sqlite-vec 扩展测试失败: {}", e);
+                return Err(anyhow::anyhow!("sqlite-vec 扩展不可用: {}", e));
             }
         }
         
         println!("🎉 向量表迁移完成！");
-        println!("💡 现在使用正确的余弦距离进行向量搜索");
+        println!("💡 现在使用正确的 sqlite-vec 语法进行向量搜索");
         
         Ok(())
     }
@@ -507,20 +494,16 @@ impl DatabaseManager {
                 updated_at INTEGER NOT NULL
             )",
             "CREATE TABLE IF NOT EXISTS knowledge_chunks (
-                id TEXT PRIMARY KEY,
+                id INTEGER PRIMARY KEY,
                 document_id TEXT NOT NULL,
+                collection_id TEXT NOT NULL,
                 chunk_index INTEGER NOT NULL,
                 chunk_text TEXT NOT NULL,
-                token_count INTEGER NOT NULL,
-                created_at INTEGER NOT NULL
+                token_count INTEGER DEFAULT 0,
+                created_at INTEGER NOT NULL,
+                FOREIGN KEY (document_id) REFERENCES knowledge_documents(id) ON DELETE CASCADE
             )",
-            "CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_vectors USING vec0(
-                embedding float[1024],
-                chunk_id TEXT,
-                collection_id TEXT,
-                created_at INTEGER,
-                distance=cosine
-            )",
+            "CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_vectors USING vec0(embedding FLOAT[1024])",
             "CREATE TABLE IF NOT EXISTS system_config (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
@@ -764,35 +747,48 @@ impl DatabaseManager {
     }
 
     // 创建文档分块
-    pub async fn create_chunks(&self, chunks: &[KnowledgeChunk]) -> Result<()> {
+    pub async fn create_chunks(&self, chunks: &[KnowledgeChunk]) -> Result<Vec<i64>> {
         let mut tx = self.knowledge_pool().begin().await?;
+        let mut chunk_ids = Vec::new();
 
         for chunk in chunks {
-            sqlx::query(
+            // 获取文档的collection_id
+            let document = sqlx::query("SELECT collection_id FROM knowledge_documents WHERE id = ?")
+                .bind(&chunk.document_id)
+                .fetch_one(&mut *tx)
+                .await?;
+            let collection_id: String = document.get("collection_id");
+            
+            // 插入分块，使用自增ID
+            let result = sqlx::query(
                 r#"
-                INSERT INTO knowledge_chunks (id, document_id, chunk_index, chunk_text, token_count, created_at)
+                INSERT INTO knowledge_chunks (document_id, collection_id, chunk_index, chunk_text, token_count, created_at)
                 VALUES (?, ?, ?, ?, ?, ?)
                 "#
             )
-            .bind(&chunk.id)
             .bind(&chunk.document_id)
+            .bind(&collection_id)
             .bind(chunk.chunk_index)
             .bind(&chunk.chunk_text)
             .bind(chunk.token_count)
             .bind(chunk.created_at.timestamp())
             .execute(&mut *tx)
             .await?;
+            
+            // 获取插入的分块ID
+            let chunk_id = result.last_insert_rowid();
+            chunk_ids.push(chunk_id);
         }
 
         tx.commit().await?;
-        Ok(())
+        Ok(chunk_ids)
     }
 
     // 获取文档的所有chunks
     pub async fn get_chunks_by_document_id(&self, document_id: &str) -> Result<Vec<KnowledgeChunk>> {
-        let chunks = sqlx::query_as::<_, KnowledgeChunk>(
+        let rows = sqlx::query(
             r#"
-            SELECT id, document_id, chunk_index, chunk_text, token_count, created_at
+            SELECT id, document_id, collection_id, chunk_index, chunk_text, token_count, created_at
             FROM knowledge_chunks
             WHERE document_id = ?
             ORDER BY chunk_index
@@ -802,27 +798,40 @@ impl DatabaseManager {
         .fetch_all(self.knowledge_pool())
         .await?;
 
+        let mut chunks = Vec::new();
+        for row in rows {
+            let chunk = KnowledgeChunk {
+                id: row.get::<i64, _>("id"),
+                document_id: row.get("document_id"),
+                chunk_index: row.get("chunk_index"),
+                chunk_text: row.get("chunk_text"),
+                token_count: row.get("token_count"),
+                created_at: chrono::DateTime::from_timestamp(row.get::<i64, _>("created_at"), 0)
+                    .unwrap_or_default(),
+            };
+            chunks.push(chunk);
+        }
+
         Ok(chunks)
     }
 
-    // 批量插入向量
+    // 批量插入向量（使用新的分离式表结构）
     pub async fn insert_vectors(&self, vectors: &[VectorEmbedding]) -> Result<()> {
         let mut tx = self.knowledge_pool().begin().await?;
 
         for vector in vectors {
-            // 使用 zerocopy::AsBytes 高效地将 Vec<f32> 转换为字节数组
-            let embedding_bytes = vector.embedding.as_bytes();
+            // 将向量转换为JSON字符串
+            let embedding_json = serde_json::to_string(&vector.embedding)?;
 
+            // 直接使用chunk_id作为rowid（现在chunk_id已经是整数）
             sqlx::query(
                 r#"
-                INSERT INTO knowledge_vectors (embedding, chunk_id, collection_id, created_at)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO knowledge_vectors (rowid, embedding)
+                VALUES (?, ?)
                 "#
             )
-            .bind::<&[u8]>(embedding_bytes.as_ref())
-            .bind(&vector.chunk_id)
-            .bind(&vector.collection_id)
-            .bind(vector.created_at.timestamp())
+            .bind(vector.chunk_id)
+            .bind(&embedding_json)
             .execute(&mut *tx)
             .await?;
         }
@@ -839,9 +848,10 @@ impl DatabaseManager {
         limit: usize,
         threshold: f32,
     ) -> Result<Vec<SearchResult>> {
-        let cache_key = format!("search:{}:{}:{}",
+        let cache_key = format!("search:{}:{}:{}:{}",
             collection_id,
             limit,
+            threshold,
             query_embedding.iter().map(|x| x.to_bits() as u64).sum::<u64>()
         );
 
@@ -878,31 +888,33 @@ impl DatabaseManager {
         limit: usize,
         threshold: f32,
     ) -> Result<Vec<SearchResult>> {
-        // 使用 zerocopy::AsBytes 高效地将 Vec<f32> 转换为字节数组
-        let query_bytes = query_embedding.as_bytes();
+        // 确保查询向量是L2归一化的（双重保险）
+        let normalized_query = self.normalize_vector(query_embedding.to_vec());
+        let query_bytes = normalized_query.as_bytes();
 
         // 先获取更多结果，然后进行文档级别去重和质量筛选
         let fetch_limit = (limit * 3).min(100); // 最多获取100个结果
 
+        // 使用正确的sqlite-vec语法进行搜索
         let rows = sqlx::query(
             r#"
             SELECT
-                kc.id as chunk_id,
+                kv.rowid as chunk_id,
                 kc.chunk_text,
                 kc.document_id,
                 kd.title as document_title,
                 kd.file_name,
                 kc.chunk_index,
-                vec_distance_cosine(kv.embedding, ?) as distance
+                vec_distance_l2(kv.embedding, ?) as distance
             FROM knowledge_vectors kv
-            JOIN knowledge_chunks kc ON kv.chunk_id = kc.id
+            JOIN knowledge_chunks kc ON kv.rowid = kc.id
             JOIN knowledge_documents kd ON kc.document_id = kd.id
-            WHERE kv.collection_id = ?
+            WHERE kc.collection_id = ?
             ORDER BY distance
             LIMIT ?
             "#
         )
-        .bind::<&[u8]>(query_bytes.as_ref())
+        .bind(&query_bytes)
         .bind(collection_id)
         .bind(fetch_limit as i64)
         .fetch_all(self.knowledge_pool())
@@ -927,9 +939,10 @@ impl DatabaseManager {
             let distance: f64 = row.get(6); // distance现在是第7列（索引6）
             let _chunk_index: i32 = row.get(5); // chunk_index是第6列（索引5）
 
-            // 使用正确的余弦相似度计算
-            // sqlite-vec返回的是余弦距离(0-2)，转换为余弦相似度(0-1)
-            let similarity = 1.0 - (distance as f32);
+            // 使用正确的L2距离转余弦相似度公式
+            // sqlite-vec返回的是L2距离，转换为余弦相似度
+            // 公式: similarity = 1.0 - (distance^2 / 2.0)
+            let similarity = 1.0 - ((distance * distance) / 2.0) as f32;
 
             // 使用阈值过滤结果
             if similarity >= threshold {
@@ -954,7 +967,7 @@ impl DatabaseManager {
                 let chunk_len = chunk_text.chars().count();
                 if chunk_len >= 5 && chunk_len <= 5000 { // 放宽长度限制
                     let search_result = SearchResult {
-                        chunk_id: row.get(0),
+                        chunk_id: row.get::<i64, _>(0).to_string(),
                         chunk_text: chunk_text.clone(),
                         document_id: document_id.clone(),
                         document_title: row.get(3),
@@ -988,19 +1001,18 @@ impl DatabaseManager {
             best_score_b.partial_cmp(&best_score_a).unwrap_or(std::cmp::Ordering::Equal)
         });
 
-        // 选择前limit个文档的最佳结果
-        for (document_id, mut doc_results) in document_entries {
-            if results.len() >= limit {
-                break;
-            }
-
-            // 选择该文档中分数最高的结果
-            doc_results.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-            if let Some((best_score, best_result)) = doc_results.first() {
-                println!("🔍 [调试] 选择文档 {} 的最佳结果，分数: {:.3}, 内容: {:.30}...", document_id, best_score, best_result.chunk_text);
-                results.push(best_result.clone());
+        // 收集所有结果，不进行文档级别去重
+        let mut all_results = Vec::new();
+        for (document_id, doc_results) in document_entries {
+            for (score, result) in doc_results {
+                println!("🔍 [调试] 收集结果 - 文档: {}, 分数: {:.3}, 内容: {:.30}...", document_id, score, result.chunk_text);
+                all_results.push(result);
             }
         }
+
+        // 按相似度排序并选择前limit个结果
+        all_results.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap_or(std::cmp::Ordering::Equal));
+        results = all_results;
 
         // 重新按相似度排序并限制最终结果数量
         results.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap_or(std::cmp::Ordering::Equal));
@@ -1014,9 +1026,9 @@ impl DatabaseManager {
     pub async fn delete_document(&self, document_id: &str) -> Result<()> {
         let mut tx = self.knowledge_pool().begin().await?;
 
-        // 删除向量（级联删除）
+        // 删除向量（使用rowid关联）
         sqlx::query(
-            "DELETE FROM knowledge_vectors WHERE chunk_id IN (SELECT id FROM knowledge_chunks WHERE document_id = ?)"
+            "DELETE FROM knowledge_vectors WHERE rowid IN (SELECT id FROM knowledge_chunks WHERE document_id = ?)"
         )
         .bind(document_id)
         .execute(&mut *tx)

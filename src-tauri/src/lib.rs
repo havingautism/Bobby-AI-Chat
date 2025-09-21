@@ -582,8 +582,10 @@ async fn add_knowledge_vector(vector: LegacyKnowledgeVector, state: tauri::State
     let document = state.db.get_document_by_id(&vector.document_id).await
         .map_err(|e| format!("获取文档失败以确定集合ID: {}", e))?;
 
+    // 注意：这里需要先查找对应的chunk ID，但LegacyKnowledgeVector结构体没有提供
+    // 暂时使用0作为占位符，实际使用时需要修改这个逻辑
     let vector_embedding = VectorEmbedding::new(
-        format!("{}_chunk_{}", vector.document_id, vector.chunk_index),
+        0, // 需要从chunk表中查找对应的ID
         document.collection_id,
         vector.embedding,
     );

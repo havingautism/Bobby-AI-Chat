@@ -1,0 +1,230 @@
+/* 知识库引用组件样式 */
+.knowledge-references {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.knowledge-references-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.knowledge-references-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--accent-color);
+  flex-shrink: 0;
+}
+
+.knowledge-references-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.knowledge-references-count {
+  color: var(--text-secondary);
+  font-size: 12px;
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.knowledge-references-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.knowledge-reference-item {
+  padding: 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.knowledge-reference-item:hover {
+  border-color: var(--accent-color);
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.knowledge-reference-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.knowledge-reference-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.knowledge-reference-title {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.knowledge-reference-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.knowledge-reference-similarity {
+  color: var(--accent-color);
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(99, 102, 241, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.knowledge-reference-filename {
+  color: var(--text-secondary);
+  font-size: 11px;
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.knowledge-reference-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.knowledge-reference-toggle:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.knowledge-reference-preview {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.knowledge-reference-preview-content {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  background: var(--bg-tertiary);
+  padding: 8px;
+  border-radius: 4px;
+  border-left: 3px solid var(--accent-color);
+}
+
+/* 暗色模式适配 */
+[data-theme="dark"] .knowledge-references {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .knowledge-reference-item {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .knowledge-reference-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--accent-color);
+}
+
+[data-theme="dark"] .knowledge-reference-similarity {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .knowledge-reference-filename {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .knowledge-reference-preview-content {
+  background: rgba(255, 255, 255, 0.03);
+  border-left-color: var(--accent-color);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .knowledge-references {
+    margin-top: 12px;
+    padding: 10px;
+    font-size: 12px;
+  }
+  
+  .knowledge-references-header {
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+  }
+  
+  .knowledge-references-icon {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .knowledge-reference-item {
+    padding: 8px;
+  }
+  
+  .knowledge-reference-header {
+    gap: 8px;
+  }
+  
+  .knowledge-reference-meta {
+    gap: 6px;
+  }
+  
+  .knowledge-reference-filename {
+    max-width: 120px;
+  }
+  
+  .knowledge-reference-toggle {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .knowledge-reference-preview {
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+  
+  .knowledge-reference-preview-content {
+    padding: 6px;
+    font-size: 11px;
+  }
+}

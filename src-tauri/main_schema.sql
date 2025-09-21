@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS messages (
     content TEXT NOT NULL,
     timestamp TEXT,
     metadata TEXT,
+    knowledge_references TEXT, -- JSON格式的知识库引用信息
     FOREIGN KEY (conversation_id) REFERENCES conversations (id) ON DELETE CASCADE
 );
 
