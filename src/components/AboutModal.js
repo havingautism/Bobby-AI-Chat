@@ -1,5 +1,5 @@
-import React from 'react';
-import './AboutModal.css';
+import React from "react";
+import "./AboutModal.css";
 
 const AboutModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
@@ -16,7 +16,14 @@ const AboutModal = ({ isOpen, onClose }) => {
         <div className="about-header">
           <h2>Bobby AI Chat</h2>
           <button className="close-button" onClick={onClose}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -24,59 +31,86 @@ const AboutModal = ({ isOpen, onClose }) => {
 
         <div className="about-content">
           <div className="about-section">
-            <h3>项目简介</h3>
+            <h3>🚀 项目简介</h3>
             <p>
-              Bobby AI Chat 是一个现代化的AI聊天应用，支持多种AI模型和角色扮演功能。
-              采用React + Vite构建，提供流畅的用户体验和丰富的功能特性。
+              Bobby AI Chat 是一个现代化的AI聊天应用，基于 React + Tauri
+              构建，支持多种AI模型和知识库功能。 采用 SQLite + sqlite-vec
+              向量数据库，提供高性能的本地数据存储和智能语义搜索能力。
             </p>
           </div>
 
           <div className="about-section">
-            <h3>主要功能</h3>
+            <h3>✨ 核心功能</h3>
             <ul className="feature-list">
-              <li>🤖 支持多种AI模型（OpenAI、Claude、DeepSeek等）</li>
-              <li>🎭 丰富的角色扮演功能</li>
-              <li>💬 智能对话管理</li>
-              <li>🖼️ 图片上传和识别</li>
-              <li>🌙 深色/浅色主题切换</li>
-              <li>🌍 多语言支持</li>
-              <li>💾 本地数据存储</li>
-              <li>📱 响应式设计</li>
+              <li>🤖 多AI模型支持（DeepSeek-V3.1、Qwen3、DeepSeek-R1等）</li>
+              <li>🎭 智能角色系统（程序员、教师、创意助手等）</li>
+              <li>📚 知识库功能（文档上传、语义搜索、向量索引）</li>
+              <li>💬 流式对话和推理过程显示</li>
+              <li>💾 SQLite + sqlite-vec 本地向量数据库</li>
+              <li>🌓 明暗主题切换</li>
+              <li>🌍 多语言界面支持</li>
+              <li>📱 跨平台响应式设计</li>
             </ul>
           </div>
 
           <div className="about-section">
-            <h3>技术栈</h3>
+            <h3>🛠️ 技术栈</h3>
             <div className="tech-stack">
               <div className="tech-item">
                 <span className="tech-name">React</span>
-                <span className="tech-version">18.x</span>
+                <span className="tech-version">18.2</span>
               </div>
               <div className="tech-item">
-                <span className="tech-name">Vite</span>
-                <span className="tech-version">5.x</span>
+                <span className="tech-name">Tauri</span>
+                <span className="tech-version">2.x</span>
               </div>
               <div className="tech-item">
-                <span className="tech-name">CSS3</span>
-                <span className="tech-version">现代特性</span>
+                <span className="tech-name">TypeScript</span>
+                <span className="tech-version">类型安全</span>
               </div>
               <div className="tech-item">
-                <span className="tech-name">LocalStorage</span>
-                <span className="tech-version">数据持久化</span>
+                <span className="tech-name">SQLite</span>
+                <span className="tech-version">+ sqlite-vec</span>
+              </div>
+              <div className="tech-item">
+                <span className="tech-name">Rust</span>
+                <span className="tech-version">高性能后端</span>
+              </div>
+              <div className="tech-item">
+                <span className="tech-name">Tailwind CSS</span>
+                <span className="tech-version">实用优先</span>
               </div>
             </div>
           </div>
 
           <div className="about-section">
-            <h3>版本信息</h3>
+            <h3>🎯 特色亮点</h3>
+            <ul className="feature-list">
+              <li>🔒 完全本地数据存储，隐私保护</li>
+              <li>⚡ 高性能向量搜索和语义匹配</li>
+              <li>🌐 硅基流动API集成，云端AI能力</li>
+              <li>📊 智能统计和使用分析</li>
+              <li>🎨 现代化UI设计和流畅交互</li>
+              <li>🔄 跨平台支持（PC、Web、移动端）</li>
+            </ul>
+          </div>
+
+          <div className="about-section">
+            <h3>📋 版本信息</h3>
             <div className="version-info">
               <div className="version-item">
                 <span className="version-label">当前版本</span>
-                <span className="version-value">v1.0.0</span>
+                <span className="version-value">v0.1.2</span>
               </div>
               <div className="version-item">
                 <span className="version-label">构建时间</span>
-                <span className="version-value">{new Date().toLocaleDateString('zh-CN')}</span>
+                <span className="version-value">
+                  {new Date().toLocaleDateString("zh-CN")}
+                </span>
+              </div>
+              <div className="version-item">
+                <span className="version-label">数据库引擎</span>
+                <span className="version-value">SQLite + sqlite-vec</span>
               </div>
               <div className="version-item">
                 <span className="version-label">开发者</span>
@@ -84,18 +118,30 @@ const AboutModal = ({ isOpen, onClose }) => {
               </div>
             </div>
           </div>
-
         </div>
 
         <div className="about-footer">
           <div className="footer-links">
-            <a href="#" className="footer-link">GitHub</a>
-            <a href="#" className="footer-link">文档</a>
-            <a href="#" className="footer-link">反馈</a>
+            <a
+              href="https://github.com/havingautism/Bobby-AI-Chat"
+              className="footer-link"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://github.com/havingautism/Bobby-AI-Chat"
+              className="footer-link"
+            >
+              文档
+            </a>
+            <a
+              href="https://github.com/havingautism/Bobby-AI-Chat/issues"
+              className="footer-link"
+            >
+              反馈
+            </a>
           </div>
-          <div className="footer-text">
-            Made with ❤️ by havingautism
-          </div>
+          <div className="footer-text">Made with ❤️ by havingautism</div>
         </div>
       </div>
     </div>

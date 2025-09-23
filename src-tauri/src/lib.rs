@@ -1068,13 +1068,42 @@ async fn delete_model(model_id: String, state: tauri::State<'_, AppState>) -> Re
 async fn get_database_stats(state: tauri::State<'_, AppState>) -> Result<serde_json::Value, String> {
     match state.db.health_check().await {
         Ok(health) => {
+            // 获取对话数量
+            let conversation_count = state.db.get_conversation_count().await.unwrap_or(0);
+
+            // 获取消息数量
+            let message_count = state.db.get_message_count().await.unwrap_or(0);
+
+            // 获取API会话数量
+            let api_session_count = state.db.get_api_session_count().await.unwrap_or(0);
+
+            // 获取知识库文档数量
+            let knowledge_document_count = state.db.get_document_count().await.unwrap_or(0);
+
+            // 获取设置数量
+            let setting_count = state.db.get_setting_count().await.unwrap_or(0);
+
+            // 获取数据库文件大小
+            let db_size = state.db.get_database_size().await.unwrap_or(0);
+
             let stats = serde_json::json!({
                 "main_db": health.main_db,
                 "knowledge_db": health.knowledge_db,
                 "vec_extension": health.vec_extension,
                 "cache_stats": health.cache_stats,
                 "storage_type": "sqlite-vec",
-                "description": "Tauri SQLite + sqlite-vec 系统"
+                "description": "Tauri SQLite + sqlite-vec 系统",
+                "conversationCount": conversation_count,
+                "conversations": {
+                    "count": conversation_count
+                },
+                "messageCount": message_count,
+                "apiSessionCount": api_session_count,
+                "knowledgeDocumentCount": knowledge_document_count,
+                "settingCount": setting_count,
+                "totalSize": format!("{} MB", (db_size as f64 / 1024.0 / 1024.0).round()),
+                "dbSize": db_size,
+                "dbPath": "SQLite数据库"
             });
             Ok(stats)
         }
