@@ -1284,6 +1284,76 @@ impl DatabaseManager {
 
         Ok(health)
     }
+
+    // 获取对话数量
+    pub async fn get_conversation_count(&self) -> Result<i64> {
+        let result = sqlx::query("SELECT COUNT(*) as count FROM conversations")
+            .fetch_one(self.main_pool())
+            .await
+            .map_err(|e| anyhow!("获取对话数量失败: {}", e))?;
+
+        Ok(result.get("count"))
+    }
+
+    // 获取消息数量
+    pub async fn get_message_count(&self) -> Result<i64> {
+        let result = sqlx::query("SELECT COUNT(*) as count FROM messages")
+            .fetch_one(self.main_pool())
+            .await
+            .map_err(|e| anyhow!("获取消息数量失败: {}", e))?;
+
+        Ok(result.get("count"))
+    }
+
+    // 获取API会话数量
+    pub async fn get_api_session_count(&self) -> Result<i64> {
+        // 统计设置表中的API相关设置项数量作为替代
+        let result = sqlx::query("SELECT COUNT(*) as count FROM settings WHERE key LIKE 'api_%'")
+            .fetch_one(self.main_pool())
+            .await
+            .map_err(|e| anyhow!("获取API会话数量失败: {}", e))?;
+
+        Ok(result.get("count"))
+    }
+
+    // 获取知识库文档数量
+    pub async fn get_document_count(&self) -> Result<i64> {
+        let result = sqlx::query("SELECT COUNT(*) as count FROM documents")
+            .fetch_one(self.knowledge_pool())
+            .await
+            .map_err(|e| anyhow!("获取文档数量失败: {}", e))?;
+
+        Ok(result.get("count"))
+    }
+
+    // 获取设置数量
+    pub async fn get_setting_count(&self) -> Result<i64> {
+        let result = sqlx::query("SELECT COUNT(*) as count FROM settings")
+            .fetch_one(self.main_pool())
+            .await
+            .map_err(|e| anyhow!("获取设置数量失败: {}", e))?;
+
+        Ok(result.get("count"))
+    }
+
+    // 获取数据库文件大小（字节）
+    pub async fn get_database_size(&self) -> Result<i64> {
+        // 获取主数据库文件大小
+        let main_size = sqlx::query("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()")
+            .fetch_one(self.main_pool())
+            .await
+            .map(|row| row.get::<i64, _>("size"))
+            .unwrap_or(0);
+
+        // 获取知识库数据库文件大小
+        let knowledge_size = sqlx::query("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()")
+            .fetch_one(self.knowledge_pool())
+            .await
+            .map(|row| row.get::<i64, _>("size"))
+            .unwrap_or(0);
+
+        Ok(main_size + knowledge_size)
+    }
 }
 
 // 对话管理方法
