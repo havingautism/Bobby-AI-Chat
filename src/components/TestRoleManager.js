@@ -44,7 +44,7 @@ const TestRoleManager = ({ isOpen, onClose }) => {
       <div className="role-card">
         <div className="role-info">
           <div className="role-avatar" style={{ backgroundColor: role.color }}>
-            {role.avatar}
+            {role.icon}
           </div>
           <div className="role-details">
             <h4>{role.name}</h4>

@@ -806,6 +806,36 @@
   padding-right: 6px;
 }
 
+/* 关键词标签样式 */
+.message-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.tag-chip {
+  font-size: 12px;
+  padding: 4px 8px;
+  color: var(--text-secondary);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 999px;
+  backdrop-filter: var(--glass-blur);
+}
+
+.message-tags.generating .tag-chip.loading {
+  background: linear-gradient(90deg, rgba(99,102,241,0.08), rgba(99,102,241,0.2), rgba(99,102,241,0.08));
+  background-size: 200% 100%;
+  animation: tagShimmer 1.2s ease-in-out infinite;
+  color: var(--text-tertiary);
+}
+
+@keyframes tagShimmer {
+  0% { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
+}
+
 /* .message.assistant::before {
   content: '';
   position: absolute;

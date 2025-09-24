@@ -1,8 +1,9 @@
 import { openDB } from "idb";
 
 const DB_NAME = "ai-chat-db";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const CONVERSATIONS_STORE = "conversations";
+const TAGS_STORE = "tags";
 const SETTINGS_STORE = "settings";
 
 // 初始化数据库
@@ -36,6 +37,16 @@ const initDB = async () => {
         });
       }
 
+      // v3: 标签存储与索引
+      if (!db.objectStoreNames.contains(TAGS_STORE)) {
+        const tagsStore = db.createObjectStore(TAGS_STORE, { keyPath: "id" });
+        tagsStore.createIndex("by_tag", "tag", { unique: false });
+        tagsStore.createIndex("by_conversation", "conversationId", {
+          unique: false,
+        });
+        tagsStore.createIndex("by_message", "messageId", { unique: false });
+      }
+
       // 创建设置存储
       if (!db.objectStoreNames.contains(SETTINGS_STORE)) {
         db.createObjectStore(SETTINGS_STORE, { keyPath: "key" });
@@ -61,6 +72,8 @@ const compressConversation = (conversation) => {
       // 保存思考过程
       hasReasoning: msg.hasReasoning || false,
       reasoning: msg.reasoning,
+      // 保存标签
+      tags: Array.isArray(msg.tags) ? msg.tags.slice(0, 10) : undefined,
       // 移除大型文件数据，只保留基本信息
       uploadedFile: msg.uploadedFile
         ? {
@@ -134,11 +147,13 @@ export const saveChatHistory = async (conversations) => {
     const compressed = cleaned.map(compressConversation);
 
     const db = await getDB();
-    const tx = db.transaction(CONVERSATIONS_STORE, "readwrite");
+    const tx = db.transaction([CONVERSATIONS_STORE, TAGS_STORE], "readwrite");
     const store = tx.objectStore(CONVERSATIONS_STORE);
+    const tagStore = tx.objectStore(TAGS_STORE);
 
     // 清除所有现有数据
     await store.clear();
+    await tagStore.clear();
 
     // 添加新数据，同时更新最后更新时间
     const now = Date.now();
@@ -147,6 +162,20 @@ export const saveChatHistory = async (conversations) => {
         ...conversation,
         lastUpdated: now,
       });
+      // 写入标签索引
+      for (const msg of conversation.messages || []) {
+        const tags = Array.isArray(msg.tags) ? msg.tags : [];
+        for (const tag of tags) {
+          const id = `${conversation.id}:${msg.id}:${tag}`;
+          await tagStore.put({
+            id,
+            conversationId: conversation.id,
+            messageId: msg.id,
+            tag,
+            createdAt: now,
+          });
+        }
+      }
     }
 
     await tx.done;
@@ -160,17 +189,62 @@ export const saveConversation = async (conversation) => {
   try {
     const compressed = compressConversation(conversation);
     const db = await getDB();
-    const tx = db.transaction(CONVERSATIONS_STORE, "readwrite");
+    const tx = db.transaction([CONVERSATIONS_STORE, TAGS_STORE], "readwrite");
     const store = tx.objectStore(CONVERSATIONS_STORE);
+    const tagStore = tx.objectStore(TAGS_STORE);
 
     await store.put({
       ...compressed,
       lastUpdated: Date.now(),
     });
 
+    // 同步标签索引：清旧写新
+    try {
+      const index = tagStore.index("by_conversation");
+      let cursor = await index.openCursor(conversation.id);
+      while (cursor) {
+        // eslint-disable-next-line no-await-in-loop
+        await tagStore.delete(cursor.primaryKey);
+        // eslint-disable-next-line no-await-in-loop
+        cursor = await cursor.continue();
+      }
+    } catch (_) {
+      // 忽略
+    }
+    const now = Date.now();
+    for (const msg of compressed.messages || []) {
+      const tags = Array.isArray(msg.tags) ? msg.tags : [];
+      for (const tag of tags) {
+        const id = `${compressed.id}:${msg.id}:${tag}`;
+        await tagStore.put({
+          id,
+          conversationId: compressed.id,
+          messageId: msg.id,
+          tag,
+          createdAt: now,
+        });
+      }
+    }
+
     await tx.done;
   } catch (error) {
     console.error("保存单个对话失败:", error);
+  }
+};
+
+// 通过标签检索消息（返回 {conversationId, messageId} 列表）
+export const findByTag = async (tag) => {
+  try {
+    const db = await getDB();
+    const tx = db.transaction(TAGS_STORE, "readonly");
+    const store = tx.objectStore(TAGS_STORE);
+    const index = store.index("by_tag");
+    const results = await index.getAll(tag);
+    await tx.done;
+    return results;
+  } catch (error) {
+    console.error("按标签检索失败:", error);
+    return [];
   }
 };
 

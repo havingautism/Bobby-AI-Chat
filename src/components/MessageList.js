@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { isApiConfigured } from "../utils/api";
-import { getRoleById } from "../utils/roles";
+// import { getRoleById } from "../utils/roles";
 import { getCurrentLanguage, t } from "../utils/language";
 import StreamdownRenderer from "./StreamdownRenderer";
 import ReasoningDisplay from "./ReasoningDisplay";
 import ImagePreviewModal from "./ImagePreviewModal";
 import KnowledgeReferences from "./KnowledgeReferences";
 import "./MessageList.css";
-import bobbyLogo from "../imgs/bobby_logo.png";
 
 const MessageList = ({
   messages,
@@ -36,8 +35,8 @@ const MessageList = ({
 
   const apiConfigured = isApiConfigured();
 
-  // 获取对话的角色信息
-  const role = conversationRole ? getRoleById(conversationRole) : null;
+  // 获取对话的角色信息（如需显示可启用）
+  // const role = conversationRole ? getRoleById(conversationRole) : null;
 
   // 语言状态管理
   const [currentLanguage, setCurrentLanguage] = useState(() =>
@@ -84,7 +83,7 @@ const MessageList = ({
     imageSrc: null,
   });
 
-  const [forceRender, setForceRender] = useState(0);
+  const [, triggerRender] = useState(0);
 
   const handleImageClick = (imageSrc) => {
     if (imageSrc) {
@@ -92,7 +91,7 @@ const MessageList = ({
         isOpen: true,
         imageSrc: imageSrc,
       };
-      setForceRender((prev) => prev + 1);
+      triggerRender((prev) => prev + 1);
     }
   };
 
@@ -101,17 +100,7 @@ const MessageList = ({
       isOpen: false,
       imageSrc: null,
     };
-    setForceRender((prev) => prev + 1);
-  };
-
-  const handleCopy = async (text, messageId) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedMessageId(messageId);
-      setTimeout(() => setCopiedMessageId(null), 2000);
-    } catch (err) {
-      console.error("复制失败:", err);
-    }
+    triggerRender((prev) => prev + 1);
   };
 
   return (
@@ -159,22 +148,6 @@ const MessageList = ({
               <div className="message-content">
                 {message.role === "assistant" ? (
                   <>
-                    {/* {message.hasReasoning && (
-                      <div className="reasoning-badge">
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M9 12l2 2 4-4" />
-                          <path d="M21 12c0 1.66-.5 3.22-1.4 4.51a9 9 0 1 1 0-9.02C20.5 8.78 21 10.34 21 12z" />
-                        </svg>
-                        推理模型
-                      </div>
-                    )} */}
                     {message.hasReasoning && message.reasoning && (
                       <ReasoningDisplay
                         reasoning={message.reasoning}
@@ -186,6 +159,28 @@ const MessageList = ({
                     >
                       {message.content}
                     </StreamdownRenderer>
+                    {/* 关键词标签展示 */}
+                    {message.role === "assistant" &&
+                      (message.tagsGenerating ||
+                        (message.tags && message.tags.length > 0)) && (
+                        <div
+                          className={`message-tags ${
+                            message.tagsGenerating ? "generating" : ""
+                          }`}
+                        >
+                          {message.tagsGenerating && (
+                            <span className="tag-chip loading">
+                              正在生成标签…
+                            </span>
+                          )}
+                          {Array.isArray(message.tags) &&
+                            message.tags.map((tag, i) => (
+                              <span className="tag-chip" key={i}>
+                                #{tag}
+                              </span>
+                            ))}
+                        </div>
+                      )}
                     {message.isStreaming && (
                       <div className="streaming-indicator">
                         <span className="streaming-text">正在生成回复...</span>

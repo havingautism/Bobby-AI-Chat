@@ -89,6 +89,21 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation
 CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
 CREATE INDEX IF NOT EXISTS idx_settings_updated_at ON settings(updated_at);
 
+-- 消息标签表（用于基于标签检索会话与消息）
+CREATE TABLE IF NOT EXISTS message_tags (
+    id TEXT PRIMARY KEY,
+    conversation_id TEXT NOT NULL,
+    message_id TEXT NOT NULL,
+    tag TEXT NOT NULL,
+    created_at TEXT,
+    FOREIGN KEY (conversation_id) REFERENCES conversations (id) ON DELETE CASCADE
+);
+
+-- 标签检索索引
+CREATE INDEX IF NOT EXISTS idx_message_tags_tag ON message_tags(tag);
+CREATE INDEX IF NOT EXISTS idx_message_tags_conversation ON message_tags(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_message_tags_message ON message_tags(message_id);
+
 -- 触发器：更新更新时间
 CREATE TRIGGER IF NOT EXISTS update_roles_timestamp
 AFTER UPDATE ON roles

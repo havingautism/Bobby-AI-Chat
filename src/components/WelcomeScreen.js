@@ -78,9 +78,6 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
     const handleRolesUpdated = (event) => {
       console.log("WelcomeScreen: 角色已更新", event.detail);
       setRoles([...event.detail]);
-      // 更新全局AI_ROLES引用
-      const { updateGlobalRoles } = require("../utils/roles");
-      updateGlobalRoles(event.detail);
     };
 
     const handleRolesReset = () => {

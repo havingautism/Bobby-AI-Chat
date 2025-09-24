@@ -3,7 +3,6 @@ import { getRoleById } from "../utils/roles";
 import { getCurrentTheme, toggleTheme } from "../utils/theme";
 import { getCurrentLanguage, t } from "../utils/language";
 import { isTauriEnvironment } from "../utils/tauriDetector";
-import { apiSessionManager } from "../utils/apiSessionManager";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import LanguageToggle from "./LanguageToggle";
 import RoleModelManager from "./RoleModelManager";
@@ -188,12 +187,6 @@ const Sidebar = ({
     }
   };
 
-  // 取消删除
-  const cancelDelete = () => {
-    setDeleteModalOpen(false);
-    setConversationToDelete(null);
-  };
-
   // 过滤对话
   const filteredConversations = useMemo(() => {
     let filtered = conversations;
@@ -290,18 +283,7 @@ const Sidebar = ({
           {!isCollapsed && (
             <div className="search-container">
               <div className="search-input-wrapper">
-                {/* <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="search-icon"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="M21 21l-4.35-4.35" />
-                </svg> */}
+                {/* 搜索输入框 */}
                 <input
                   type="text"
                   placeholder="搜索Bobby的记忆... 🔮"
@@ -546,7 +528,7 @@ const Sidebar = ({
                           }}
                         >
                           {conversation.role
-                            ? getRoleById(conversation.role)?.avatar
+                            ? getRoleById(conversation.role)?.icon
                             : "💬"}
                         </div>
                       </div>
@@ -586,7 +568,7 @@ const Sidebar = ({
                           }}
                         >
                           {conversation.role
-                            ? getRoleById(conversation.role)?.avatar
+                            ? getRoleById(conversation.role)?.icon
                             : "💬"}
                         </div>
                       </div>
@@ -628,7 +610,7 @@ const Sidebar = ({
                           }}
                         >
                           {conversation.role
-                            ? getRoleById(conversation.role)?.avatar
+                            ? getRoleById(conversation.role)?.icon
                             : "💬"}
                         </div>
                       </div>
@@ -875,7 +857,7 @@ const Sidebar = ({
       <DeleteConfirmModal
         isOpen={deleteModalOpen}
         onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        onCancel={() => setDeleteModalOpen(false)}
         title={conversationToDelete?.title}
         currentLanguage={currentLanguage}
       />
@@ -931,11 +913,6 @@ const ConversationItem = ({
   const handleDeleteClick = (e) => {
     e.stopPropagation();
     onDelete(conversation);
-  };
-
-  // 取消删除确认
-  const cancelDelete = (e) => {
-    e.stopPropagation();
   };
 
   // 处理菜单点击
@@ -1026,7 +1003,7 @@ const ConversationItem = ({
             className="role-avatar"
             style={{ color: getRoleById(conversation.role).color }}
           >
-            {getRoleById(conversation.role).avatar}
+            {getRoleById(conversation.role).icon}
           </span>
         ) : (
           <span className="cat-chat-icon">💬</span>

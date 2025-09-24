@@ -10,6 +10,7 @@ import {
   isApiConfigured,
   generateChatTitleStream,
   getApiConfig,
+  generateMessageTags,
 } from "../utils/api";
 import { getRoleById, loadSelectedRole } from "../utils/roles";
 import { getCurrentLanguage, t } from "../utils/language";
@@ -145,8 +146,8 @@ const ChatInterface = ({
   const [streamingState, setStreamingState] = useState("content"); // "thinking" | "content"
   const [streamingConversationId, setStreamingConversationId] = useState(null);
   const [abortController, setAbortController] = useState(null);
-  const [isTitleGenerating, setIsTitleGenerating] = useState(false);
-  const [titleGeneratingId, setTitleGeneratingId] = useState(null);
+  const [, setIsTitleGenerating] = useState(false);
+  const [, setTitleGeneratingId] = useState(null);
   const [currentMessageId, setCurrentMessageId] = useState(null);
 
   const messagesEndRef = useRef(null);
@@ -487,7 +488,6 @@ const ChatInterface = ({
       });
     }
 
-    let finalMessages = [];
     try {
       let fullContent = "";
       let fullReasoning = "";
@@ -533,6 +533,8 @@ const ChatInterface = ({
             knowledgeReferences: result.knowledgeReferences || null,
             timestamp: new Date().toISOString(),
             isStreaming: false,
+            // 标签占位，先标记为生成中
+            tagsGenerating: true,
           };
 
           // 更新最终消息，保留后续消息
@@ -542,6 +544,30 @@ const ChatInterface = ({
 
           // 结束流式传输并保存对话
           await endStreaming(conversationId);
+
+          // 在后台为该条AI消息生成关键词标签
+          try {
+            const tags = await generateMessageTags(
+              result.content,
+              { temperature: 0.2 },
+              conversationId
+            );
+            // 写回标签到对应消息
+            const withTags = [
+              ...messages,
+              { ...finalMessage, tagsGenerating: false, tags },
+              ...messagesAfterAssistant,
+            ];
+            onUpdateConversation(conversationId, { messages: withTags });
+          } catch (_) {
+            // 出错则仅移除生成中标记
+            const withFlagRemoved = [
+              ...messages,
+              { ...finalMessage, tagsGenerating: false },
+              ...messagesAfterAssistant,
+            ];
+            onUpdateConversation(conversationId, { messages: withFlagRemoved });
+          }
 
           // 生成标题（如果是第一条消息）
           if (messages.length === 1) {
@@ -829,7 +855,7 @@ const ChatInterface = ({
                   color: getRoleById(conversation.role || currentRole).color,
                 }}
               >
-                {getRoleById(conversation.role || currentRole).avatar}
+                {getRoleById(conversation.role || currentRole).icon}
               </div>
               <div className="conversation-details">
                 <div
