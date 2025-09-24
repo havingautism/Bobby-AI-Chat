@@ -370,17 +370,7 @@ const Sidebar = ({
                         {currentLanguage === "zh" ? "所有角色" : "All Roles"}
                       </span>
                       {selectedRoleFilter === "all" && (
-                        <svg
-                          className="check-icon"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="m9 12 2 2 4-4" />
-                        </svg>
+                        <span className="check-mark">✓</span>
                       )}
                     </button>
                     {roles.map((role) => (
@@ -402,17 +392,7 @@ const Sidebar = ({
                         </span>
                         <span className="option-text">{role.name}</span>
                         {selectedRoleFilter === role.id && (
-                          <svg
-                            className="check-icon"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <path d="m9 12 2 2 4-4" />
-                          </svg>
+                          <span className="check-mark">✓</span>
                         )}
                       </button>
                     ))}

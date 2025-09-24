@@ -68,17 +68,7 @@ const LanguageToggle = () => {
               <span className="language-flag">{lang.flag}</span>
               <span className="language-name">{lang.name}</span>
               {lang.code === currentLang && (
-                <svg
-                  className="check-icon"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
+                <span className="check-mark">✓</span>
               )}
             </button>
           ))}

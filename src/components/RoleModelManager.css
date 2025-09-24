@@ -80,25 +80,30 @@
 
 .manager-tabs {
   display: flex;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 6px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.12);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
 .tab-button {
   flex: 1;
-  padding: 14px 20px;
-  background: none;
-  border: none;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid transparent;
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 0.95rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  border-bottom: 2px solid transparent;
+  font-weight: 700;
+  transition: all 0.25s ease;
+  border-radius: 999px;
   position: relative;
   overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tab-button::before {
@@ -123,9 +128,12 @@
 
 .tab-button.active {
   color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
-  background: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, rgba(59,130,246,0.18) 0%, rgba(139,92,246,0.18) 100%);
+  border-color: rgba(59,130,246,0.35);
+  box-shadow: 0 6px 16px rgba(59,130,246,0.18);
 }
+
+/* 去掉选中下边框指示条 */
 
 .tab-button.active::before {
   opacity: 1;

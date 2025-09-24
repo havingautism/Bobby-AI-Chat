@@ -2,14 +2,18 @@ import React, { useState, useEffect, useRef } from "react";
 import { getCurrentLanguage, t } from "../utils/language";
 import ModelIcon from "./ModelIcon";
 import { getAllModelGroups, getAllModels } from "../utils/database";
-import { DEFAULT_MODEL_GROUPS, DEFAULT_MODELS, mergeModelsWithDefaults } from "../utils/defaultModelConfig";
+import {
+  DEFAULT_MODEL_GROUPS,
+  DEFAULT_MODELS,
+  mergeModelsWithDefaults,
+} from "../utils/defaultModelConfig";
 import "./ModelSelector.css";
 
-const ModelSelector = ({ 
-  currentModel, 
-  onModelChange, 
+const ModelSelector = ({
+  currentModel,
+  onModelChange,
   disabled = false,
-  className = "" 
+  className = "",
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -18,17 +22,19 @@ const ModelSelector = ({
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
+    window.addEventListener("resize", checkMobile);
+
     return () => {
-      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener("resize", checkMobile);
     };
   }, []);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState('bottom');
-  const [currentLanguage, setCurrentLanguage] = useState(() => getCurrentLanguage());
+  const [dropdownPosition, setDropdownPosition] = useState("bottom");
+  const [currentLanguage, setCurrentLanguage] = useState(() =>
+    getCurrentLanguage()
+  );
   const dropdownRef = useRef(null);
 
   // 动态模型分类（来自模型管理：数据库合并默认值）
@@ -37,8 +43,8 @@ const ModelSelector = ({
   useEffect(() => {
     const loadModels = async () => {
       try {
-        const savedGroups = await getAllModelGroups() || [];
-        const savedModels = await getAllModels() || [];
+        const savedGroups = (await getAllModelGroups()) || [];
+        const savedModels = (await getAllModels()) || [];
         const { mergedGroups, mergedModels } = mergeModelsWithDefaults(
           DEFAULT_MODEL_GROUPS,
           DEFAULT_MODELS,
@@ -46,33 +52,35 @@ const ModelSelector = ({
           savedModels
         );
         const categories = {};
-        mergedGroups.forEach(group => {
+        mergedGroups.forEach((group) => {
           categories[group.id] = { name: group.name, models: [] };
         });
-        mergedModels.filter(m => m.enabled !== false).forEach(model => {
-          if (categories[model.groupId]) {
-            categories[model.groupId].models.push({
-              id: model.modelId,
-              name: model.name,
-              description: model.description || '',
-              isPro: !!model.isPro
-            });
-          }
-        });
+        mergedModels
+          .filter((m) => m.enabled !== false)
+          .forEach((model) => {
+            if (categories[model.groupId]) {
+              categories[model.groupId].models.push({
+                id: model.modelId,
+                name: model.name,
+                description: model.description || "",
+                isPro: !!model.isPro,
+              });
+            }
+          });
         setModelCategories(categories);
       } catch (e) {
-        console.error('加载模型列表失败，使用默认列表:', e);
+        console.error("加载模型列表失败，使用默认列表:", e);
         const categories = {};
-        DEFAULT_MODEL_GROUPS.forEach(group => {
+        DEFAULT_MODEL_GROUPS.forEach((group) => {
           categories[group.id] = { name: group.name, models: [] };
         });
-        DEFAULT_MODELS.forEach(model => {
+        DEFAULT_MODELS.forEach((model) => {
           if (categories[model.groupId]) {
             categories[model.groupId].models.push({
               id: model.modelId,
               name: model.name,
-              description: model.description || '',
-              isPro: !!model.isPro
+              description: model.description || "",
+              isPro: !!model.isPro,
             });
           }
         });
@@ -111,7 +119,7 @@ const ModelSelector = ({
   // 获取当前模型信息
   const getCurrentModelInfo = () => {
     for (const category of Object.values(modelCategories)) {
-      const model = category.models.find(m => m.id === currentModel);
+      const model = category.models.find((m) => m.id === currentModel);
       if (model) {
         return model;
       }
@@ -119,9 +127,9 @@ const ModelSelector = ({
     // 如果找不到，返回默认模型信息
     return {
       id: currentModel,
-      name: currentModel.split('/').pop() || currentModel,
+      name: currentModel.split("/").pop() || currentModel,
       description: "自定义模型",
-      isPro: false
+      isPro: false,
     };
   };
 
@@ -134,9 +142,9 @@ const ModelSelector = ({
 
   const toggleDropdown = () => {
     if (disabled) return;
-    
+
     const newShowDropdown = !showDropdown;
-    
+
     if (!showDropdown) {
       // 计算下拉菜单位置
       const container = dropdownRef.current;
@@ -145,21 +153,21 @@ const ModelSelector = ({
         const viewportHeight = window.innerHeight;
         const spaceBelow = viewportHeight - rect.bottom;
         const spaceAbove = rect.top;
-        
+
         // 如果下方空间不足，则向上显示
         if (spaceBelow < 300 && spaceAbove > 300) {
-          setDropdownPosition('top');
+          setDropdownPosition("top");
         } else {
-          setDropdownPosition('bottom');
+          setDropdownPosition("bottom");
         }
       }
     }
-    
+
     setShowDropdown(newShowDropdown);
-    
+
     // 通知其他组件下拉框状态变化
-    const event = new CustomEvent('modelDropdownToggle', {
-      detail: { isOpen: newShowDropdown }
+    const event = new CustomEvent("modelDropdownToggle", {
+      detail: { isOpen: newShowDropdown },
     });
     window.dispatchEvent(event);
   };
@@ -167,27 +175,37 @@ const ModelSelector = ({
   return (
     <div className={`model-selector ${className}`} ref={dropdownRef}>
       <button
-        className={`model-selector-trigger ${disabled ? 'disabled' : ''} ${isMobile ? 'mobile-mode' : ''}`}
+        className={`model-selector-trigger ${disabled ? "disabled" : ""} ${
+          isMobile ? "mobile-mode" : ""
+        }`}
         onClick={toggleDropdown}
         disabled={disabled}
         title={t("switchModel", currentLanguage)}
       >
-                 {isMobile ? (
-           // 移动端只显示图标
-           <div className="model-icon">
+        {isMobile ? (
+          // 移动端只显示图标
+          <div className="model-icon">
             <ModelIcon modelId={currentModel} size={20} />
-           </div>
-         ) : (
+          </div>
+        ) : (
           // PC端显示完整信息
           <div className="model-info">
             <div className="model-name-container">
-              <ModelIcon modelId={currentModel} size={18} className="model-selector-icon" />
+              <ModelIcon
+                modelId={currentModel}
+                size={18}
+                className="model-selector-icon"
+              />
               <span className="model-name">
                 {currentModelInfo.name}
-                {currentModelInfo.isPro && <span className="pro-badge">Pro</span>}
+                {currentModelInfo.isPro && (
+                  <span className="pro-badge">Pro</span>
+                )}
               </span>
             </div>
-            <span className="model-description">{currentModelInfo.description}</span>
+            <span className="model-description">
+              {currentModelInfo.description}
+            </span>
           </div>
         )}
         <span className="dropdown-arrow">▼</span>
@@ -202,19 +220,27 @@ const ModelSelector = ({
                 {category.models.map((model) => (
                   <button
                     key={model.id}
-                    className={`model-option ${model.id === currentModel ? 'selected' : ''}`}
+                    className={`model-option ${
+                      model.id === currentModel ? "selected" : ""
+                    }`}
                     onClick={() => handleModelSelect(model.id)}
                   >
-                    <ModelIcon modelId={model.id} size={16} className={model.isPro ? 'pro' : ''} />
+                    <ModelIcon
+                      modelId={model.id}
+                      size={16}
+                      className={model.isPro ? "pro" : ""}
+                    />
                     <div className="model-option-info">
                       <span className="model-option-name">
                         {model.name}
                         {model.isPro && <span className="pro-badge">Pro</span>}
                       </span>
-                      <span className="model-option-description">{model.description}</span>
+                      <span className="model-option-description">
+                        {model.description}
+                      </span>
                     </div>
                     {model.id === currentModel && (
-                      <span className="selected-indicator">✓</span>
+                      <span className="selected-checkmark">✓</span>
                     )}
                   </button>
                 ))}

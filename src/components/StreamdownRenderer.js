@@ -12,7 +12,7 @@ const CustomTable = ({ children, ...props }) => {
   const handleCopyTable = async () => {
     try {
       // 获取表格的文本内容
-      const tableElement = document.querySelector('.custom-table');
+      const tableElement = document.querySelector(".custom-table");
       if (tableElement) {
         const text = tableElement.innerText;
         await navigator.clipboard.writeText(text);
@@ -27,15 +27,17 @@ const CustomTable = ({ children, ...props }) => {
   const handleDownloadTable = () => {
     try {
       // 获取表格元素
-      const tableElement = document.querySelector('.custom-table');
+      const tableElement = document.querySelector(".custom-table");
       if (tableElement) {
         // 将表格转换为CSV格式
         const csvContent = tableToCSV(tableElement);
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csvContent], {
+          type: "text/csv;charset=utf-8;",
+        });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
-        a.download = 'table.csv';
+        a.download = "table.csv";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -49,17 +51,21 @@ const CustomTable = ({ children, ...props }) => {
   // 将表格转换为CSV格式的函数
   const tableToCSV = (table) => {
     const rows = [];
-    const tableRows = table.querySelectorAll('tr');
-    
-    tableRows.forEach(row => {
+    const tableRows = table.querySelectorAll("tr");
+
+    tableRows.forEach((row) => {
       const cells = [];
-      const tableCells = row.querySelectorAll('td, th');
-      
-      tableCells.forEach(cell => {
+      const tableCells = row.querySelectorAll("td, th");
+
+      tableCells.forEach((cell) => {
         // 获取单元格文本内容，去除HTML标签
-        let cellText = cell.textContent || cell.innerText || '';
+        let cellText = cell.textContent || cell.innerText || "";
         // 处理CSV中的特殊字符：如果包含逗号、引号或换行符，需要用引号包围
-        if (cellText.includes(',') || cellText.includes('"') || cellText.includes('\n')) {
+        if (
+          cellText.includes(",") ||
+          cellText.includes('"') ||
+          cellText.includes("\n")
+        ) {
           // 转义引号：将 " 替换为 ""
           cellText = cellText.replace(/"/g, '""');
           // 用引号包围
@@ -67,16 +73,16 @@ const CustomTable = ({ children, ...props }) => {
         }
         cells.push(cellText);
       });
-      
-      rows.push(cells.join(','));
+
+      rows.push(cells.join(","));
     });
-    
-    return rows.join('\n');
+
+    return rows.join("\n");
   };
 
   return (
     <div className="custom-table-wrapper">
-      <div className="table-actions">
+      {/* <div className="table-actions">
         <button
           className={`table-action-btn copy-btn ${copied ? 'copied' : ''}`}
           onClick={handleCopyTable}
@@ -104,7 +110,7 @@ const CustomTable = ({ children, ...props }) => {
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
         </button>
-      </div>
+      </div> */}
       <table className="custom-table" {...props}>
         {children}
       </table>
@@ -112,7 +118,12 @@ const CustomTable = ({ children, ...props }) => {
   );
 };
 
-const StreamdownRenderer = ({ children, className, isStreaming = false, conversationId }) => {
+const StreamdownRenderer = ({
+  children,
+  className,
+  isStreaming = false,
+  conversationId,
+}) => {
   const [showMermaidModal, setShowMermaidModal] = useState(false);
   const [currentCharts, setCurrentCharts] = useState([]);
 
@@ -132,32 +143,39 @@ const StreamdownRenderer = ({ children, className, isStreaming = false, conversa
             const content = String(children).replace(/\n$/, "");
 
             // 对于简单的文本内容（如单个单词、短语），使用span而不是div
-            const isSimpleText = content.length <= 50 && !content.includes('\n') && !content.includes(';') && !content.includes('{') && !content.includes('}');
-            
+            const isSimpleText =
+              content.length <= 50 &&
+              !content.includes("\n") &&
+              !content.includes(";") &&
+              !content.includes("{") &&
+              !content.includes("}");
+
             // 如果是 mermaid 语言，显示代码块和查看流程图按钮
-            if (language === 'mermaid' && !inline) {
+            if (language === "mermaid" && !inline) {
               // 检查Mermaid代码是否看起来完整（包含图表类型和基本结构）
-              const isMermaidComplete = content.trim() && (
-                content.includes('graph') || 
-                content.includes('flowchart') || 
-                content.includes('sequenceDiagram') || 
-                content.includes('classDiagram') || 
-                content.includes('stateDiagram') ||
-                content.includes('gantt') ||
-                content.includes('pie') ||
-                content.includes('gitgraph') ||
-                content.includes('journey')
-              );
-              
+              const isMermaidComplete =
+                content.trim() &&
+                (content.includes("graph") ||
+                  content.includes("flowchart") ||
+                  content.includes("sequenceDiagram") ||
+                  content.includes("classDiagram") ||
+                  content.includes("stateDiagram") ||
+                  content.includes("gantt") ||
+                  content.includes("pie") ||
+                  content.includes("gitgraph") ||
+                  content.includes("journey"));
+
               return (
                 <div className="mermaid-code-block">
-                  <CodeBlock language="mermaid">
-                    {content}
-                  </CodeBlock>
+                  <CodeBlock language="mermaid">{content}</CodeBlock>
                   {(!isStreaming || isMermaidComplete) && (
-                    <button 
+                    <button
                       className="view-mermaid-btn"
-                      onClick={() => handleViewMermaidCharts([{ id: `chart_${Date.now()}`, code: content }])}
+                      onClick={() =>
+                        handleViewMermaidCharts([
+                          { id: `chart_${Date.now()}`, code: content },
+                        ])
+                      }
                     >
                       查看流程图
                     </button>
@@ -165,16 +183,14 @@ const StreamdownRenderer = ({ children, className, isStreaming = false, conversa
                 </div>
               );
             }
-            
+
             return !inline ? (
               isSimpleText ? (
                 <span className="simple-text-block">
                   <span className="simple-text-content">{content}</span>
                 </span>
               ) : (
-                <CodeBlock language={language}>
-                  {content}
-                </CodeBlock>
+                <CodeBlock language={language}>{content}</CodeBlock>
               )
             ) : (
               <code className="inline-code" {...props}>
@@ -182,30 +198,28 @@ const StreamdownRenderer = ({ children, className, isStreaming = false, conversa
               </code>
             );
           },
-        // 自定义表格组件
-        table: ({ children, ...props }) => (
-          <CustomTable {...props}>
-            {children}
-          </CustomTable>
-        ),
-        // 确保段落内不会出现块级元素
-        p: ({ children, ...props }) => (
-          <p {...props}>
-            {React.Children.map(children, child => {
-              // 如果子元素是块级元素，将其包装在span中
-              if (React.isValidElement(child) && child.type === 'div') {
-                return <span key={child.key || Math.random()}>{child}</span>;
-              }
-              return child;
-            })}
-          </p>
-        ),
-      }}
-    >
-      {children}
-    </Streamdown>
-      
-      <MermaidModal 
+          // 自定义表格组件
+          table: ({ children, ...props }) => (
+            <CustomTable {...props}>{children}</CustomTable>
+          ),
+          // 确保段落内不会出现块级元素
+          p: ({ children, ...props }) => (
+            <p {...props}>
+              {React.Children.map(children, (child) => {
+                // 如果子元素是块级元素，将其包装在span中
+                if (React.isValidElement(child) && child.type === "div") {
+                  return <span key={child.key || Math.random()}>{child}</span>;
+                }
+                return child;
+              })}
+            </p>
+          ),
+        }}
+      >
+        {children}
+      </Streamdown>
+
+      <MermaidModal
         isOpen={showMermaidModal}
         onClose={() => setShowMermaidModal(false)}
         charts={currentCharts}
