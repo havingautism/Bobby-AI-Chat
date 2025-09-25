@@ -78,9 +78,6 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
     const handleRolesUpdated = (event) => {
       console.log("WelcomeScreen: 角色已更新", event.detail);
       setRoles([...event.detail]);
-      // 更新全局AI_ROLES引用
-      const { updateGlobalRoles } = require("../utils/roles");
-      updateGlobalRoles(event.detail);
     };
 
     const handleRolesReset = () => {
@@ -248,19 +245,7 @@ const WelcomeScreen = ({ onSendMessage, disabled }) => {
                         </div>
                       </div>
                       {selectedRole === role.id && (
-                        <svg
-                          className="check-icon"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="m9 12 2 2 4-4" />
-                        </svg>
+                        <span className="check-mark">✓</span>
                       )}
                     </button>
                   ))

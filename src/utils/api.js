@@ -11,33 +11,34 @@ import {
   getMultimodalModels,
   getRecommendedMultimodalModel,
   isMultimodalModel,
-      isReasoningModel,
+  isReasoningModel,
   getSupportedProviders,
   getProviderDefaultConfig,
   switchProvider,
   testApiConnection,
   getCurrentProviderInfo,
-  API_PROVIDERS
-} from './api-manager.js';
+  API_PROVIDERS,
+} from "./api-manager.js";
 
 // 为了保持向后兼容，重新导出所有函数
 export const sendMessageStream = managerSendMessageStream;
 export const sendMessage = managerSendMessage;
 export const generateChatTitle = managerGenerateChatTitle;
 export const generateChatTitleStream = managerGenerateChatTitleStream;
-export { 
-  getApiConfig, 
-  updateApiConfig, 
-  resetApiConfig, 
+export { generateMessageTags } from "./api-manager.js";
+export {
+  getApiConfig,
+  updateApiConfig,
+  resetApiConfig,
   isApiConfigured,
   getMultimodalModels,
   getRecommendedMultimodalModel,
   isMultimodalModel,
-      isReasoningModel,
+  isReasoningModel,
   getSupportedProviders,
   getProviderDefaultConfig,
   switchProvider,
   testApiConnection,
   getCurrentProviderInfo,
-  API_PROVIDERS
+  API_PROVIDERS,
 };

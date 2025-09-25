@@ -1376,6 +1376,42 @@ impl DatabaseManager {
         .bind(&conversation.updated_at);
 
         query.execute(self.main_pool()).await?;
+
+        // 同步标签索引：先清理旧标签，再写入新标签
+        // messages 字段为JSON字符串，包含每条消息的 tags 数组
+        // 出错不影响主流程
+        let _ = (|| async {
+            // 删除旧标签
+            sqlx::query("DELETE FROM message_tags WHERE conversation_id = ?")
+                .bind(&conversation.id)
+                .execute(self.main_pool())
+                .await?;
+
+            // 解析新标签
+            let msgs: serde_json::Value = serde_json::from_str(&conversation.messages).unwrap_or(serde_json::json!([]));
+            if let Some(arr) = msgs.as_array() {
+                for m in arr {
+                    let msg_id = m.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                    if msg_id.is_empty() { continue; }
+                    if let Some(tags) = m.get("tags").and_then(|v| v.as_array()) {
+                        for t in tags {
+                            if let Some(tag_str) = t.as_str() {
+                                let id = format!("{}:{}:{}", &conversation.id, msg_id, tag_str);
+                                sqlx::query("INSERT OR REPLACE INTO message_tags (id, conversation_id, message_id, tag, created_at) VALUES (?, ?, ?, ?, ?)")
+                                    .bind(&id)
+                                    .bind(&conversation.id)
+                                    .bind(&msg_id)
+                                    .bind(&tag_str)
+                                    .bind(&chrono::Utc::now().to_rfc3339())
+                                    .execute(self.main_pool())
+                                    .await?;
+                            }
+                        }
+                    }
+                }
+            }
+            anyhow::Ok(())
+        })().await;
         Ok(())
     }
 

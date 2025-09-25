@@ -438,9 +438,10 @@
   color: var(--text-primary-color);
 }
 
-.check-icon {
-  color: var(--accent-primary);
-  flex-shrink: 0;
+.check-mark {
+  margin-left: 8px;
+  color: #3b82f6; /* blue */
+  font-weight: 800;
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -1341,8 +1342,7 @@
   background: transparent;
 }
 
-.role-filter-option.selected .check-icon {
-  color: var(--accent-primary);
+.role-filter-option.selected .check-mark {
   opacity: 1;
 }
 

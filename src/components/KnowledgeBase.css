@@ -190,8 +190,12 @@
 /* 标签页导航样式 */
 .knowledge-tabs {
   display: flex;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--glass-bg-light);
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--glass-border-light);
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -203,32 +207,37 @@
 }
 
 .knowledge-tabs .tab-button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 12px 16px;
-  border: none;
-  background: transparent;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  background: rgba(255,255,255,0.06);
   color: var(--text-secondary);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   white-space: nowrap;
-  border-bottom: 2px solid transparent;
+  border-radius: 999px;
   position: relative;
 }
 
 .knowledge-tabs .tab-button:hover {
   color: var(--text-primary);
-  background: var(--glass-bg-hover);
+  background: rgba(255,255,255,0.1);
+  transform: translateY(-1px);
 }
 
 .knowledge-tabs .tab-button.active {
-  color: var(--accent-color);
-  border-bottom-color: var(--accent-color);
-  background: var(--glass-bg-active);
+  color: var(--accent-primary);
+  background: linear-gradient(135deg, rgba(59,130,246,0.18) 0%, rgba(139,92,246,0.18) 100%);
+  border-color: rgba(59,130,246,0.35);
+  box-shadow: 0 6px 16px rgba(59,130,246,0.18);
 }
+
+/* 去掉选中下边框指示条 */
 
 .knowledge-tabs .tab-button svg {
   width: 16px;

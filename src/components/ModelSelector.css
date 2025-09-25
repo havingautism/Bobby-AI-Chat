@@ -238,16 +238,32 @@
   max-width: 100%;
 }
 
-.selected-indicator {
-  margin-left: 8px;
-  font-weight: bold;
-  color: var(--accent-primary);
+/* 选中勾选 SVG，参考角色下拉的勾选风格 */
+/* 选中对勾（字符）样式 */
+.selected-checkmark {
+  margin-left: 10px;
+  font-weight: 700;
+  color: #3b82f6; /* blue check */
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transform: translateY(-1px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.model-option.selected .selected-indicator {
+.model-option.selected .selected-checkmark {
   opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .selected-checkmark {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 769px) {
+  .selected-checkmark {
+    font-size: 18px;
+  }
 }
 
 .pro-badge {

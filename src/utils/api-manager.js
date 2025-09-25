@@ -1,11 +1,11 @@
-import { SiliconFlowProvider } from './api-providers/siliconflow.js';
-import { OpenAIProvider } from './api-providers/openai.js';
-import { apiSessionManager } from './apiSessionManager.js';
+import { SiliconFlowProvider } from "./api-providers/siliconflow.js";
+import { OpenAIProvider } from "./api-providers/openai.js";
+import { apiSessionManager } from "./apiSessionManager.js";
 
 // 支持的API提供者类型
 export const API_PROVIDERS = {
-  SILICONFLOW: 'siliconflow',
-  OPENAI: 'openai'
+  SILICONFLOW: "siliconflow",
+  OPENAI: "openai",
 };
 
 // 默认配置
@@ -65,47 +65,50 @@ const getCurrentProvider = () => {
   return currentProvider;
 };
 
-// 获取提供者类名
-const getProviderClassName = (providerType) => {
-  switch (providerType) {
-    case API_PROVIDERS.SILICONFLOW:
-      return 'SiliconFlowProvider';
-    case API_PROVIDERS.OPENAI:
-      return 'OpenAIProvider';
-    default:
-      return 'BaseApiProvider';
-  }
-};
+// （保留说明）过去用于调试提供者类名的函数已移除以消除未使用告警
 
 // 流式输出支持
-export const sendMessageStream = async (messages, options = {}, onChunk = null, onComplete = null, onError = null, abortController = null, conversationId = null) => {
+export const sendMessageStream = async (
+  messages,
+  options = {},
+  onChunk = null,
+  onComplete = null,
+  onError = null,
+  abortController = null,
+  conversationId = null
+) => {
   const provider = getCurrentProvider();
-  apiSessionManager.startSession(conversationId, API_CONFIG.model, API_CONFIG.provider, options);
-  
+  apiSessionManager.startSession(
+    conversationId,
+    API_CONFIG.model,
+    API_CONFIG.provider,
+    options
+  );
+
   try {
     // 记录请求
     apiSessionManager.recordRequest({
       messages,
       model: API_CONFIG.model,
       provider: API_CONFIG.provider,
-      options
+      options,
     });
-    
+
     const startTime = Date.now();
     let tokenCount = 0;
     let hasReasoning = false;
-    
+
     const wrappedOnChunk = (chunk) => {
-      if (chunk.type === 'content' && chunk.content) {
+      if (chunk.type === "content" && chunk.content) {
         tokenCount += chunk.content.length / 4; // 粗略估算token数
       }
-      if (chunk.type === 'reasoning' && chunk.content) {
+      if (chunk.type === "reasoning" && chunk.content) {
         hasReasoning = true;
         tokenCount += chunk.content.length / 4;
       }
       if (onChunk) onChunk(chunk);
     };
-    
+
     const wrappedOnComplete = (result) => {
       const duration = Date.now() - startTime;
       apiSessionManager.recordResponse({
@@ -114,35 +117,42 @@ export const sendMessageStream = async (messages, options = {}, onChunk = null, 
         reasoning: result.reasoning,
         tokenCount: Math.round(tokenCount),
         duration,
-        success: true
+        success: true,
       });
-      
+
       apiSessionManager.endSession({
         tokenCount: Math.round(tokenCount),
-        finalContent: result.content
+        finalContent: result.content,
       });
-      
+
       if (onComplete) onComplete(result);
     };
-    
+
     const wrappedOnError = (error) => {
       const duration = Date.now() - startTime;
       apiSessionManager.recordError(error, {
         conversationId,
         duration,
         model: API_CONFIG.model,
-        provider: API_CONFIG.provider
+        provider: API_CONFIG.provider,
       });
-      
+
       apiSessionManager.endSession({
         tokenCount: Math.round(tokenCount),
-        success: false
+        success: false,
       });
-      
+
       if (onError) onError(error);
     };
-    
-    return provider.sendMessageStream(messages, options, wrappedOnChunk, wrappedOnComplete, wrappedOnError, abortController);
+
+    return provider.sendMessageStream(
+      messages,
+      options,
+      wrappedOnChunk,
+      wrappedOnComplete,
+      wrappedOnError,
+      abortController
+    );
   } catch (error) {
     apiSessionManager.recordError(error, { conversationId });
     apiSessionManager.endSession({ success: false });
@@ -151,29 +161,38 @@ export const sendMessageStream = async (messages, options = {}, onChunk = null, 
 };
 
 // 非流式消息发送
-export const sendMessage = async (messages, options = {}, conversationId = null) => {
+export const sendMessage = async (
+  messages,
+  options = {},
+  conversationId = null
+) => {
   const provider = getCurrentProvider();
-  apiSessionManager.startSession(conversationId, API_CONFIG.model, API_CONFIG.provider, options);
-  
+  apiSessionManager.startSession(
+    conversationId,
+    API_CONFIG.model,
+    API_CONFIG.provider,
+    options
+  );
+
   try {
     // 记录请求
     apiSessionManager.recordRequest({
       messages,
       model: API_CONFIG.model,
       provider: API_CONFIG.provider,
-      options: { ...options, stream: false }
+      options: { ...options, stream: false },
     });
-    
+
     const startTime = Date.now();
     const result = await provider.sendMessage(messages, options);
     const duration = Date.now() - startTime;
-    
+
     // 记录响应
     let tokenCount = 0;
     let hasReasoning = false;
-    let content = '';
-    
-    if (typeof result === 'string') {
+    let content = "";
+
+    if (typeof result === "string") {
       content = result;
       tokenCount = Math.round(content.length / 4);
     } else if (result && result.content) {
@@ -181,21 +200,21 @@ export const sendMessage = async (messages, options = {}, conversationId = null)
       hasReasoning = result.hasReasoning || false;
       tokenCount = Math.round(content.length / 4);
     }
-    
+
     apiSessionManager.recordResponse({
       content,
       hasReasoning,
       reasoning: result?.reasoning,
       tokenCount,
       duration,
-      success: true
+      success: true,
     });
-    
+
     apiSessionManager.endSession({
       tokenCount,
-      finalContent: content
+      finalContent: content,
     });
-    
+
     return result;
   } catch (error) {
     apiSessionManager.recordError(error, { conversationId });
@@ -205,57 +224,79 @@ export const sendMessage = async (messages, options = {}, conversationId = null)
 };
 
 // 生成对话标题
-export const generateChatTitle = async (messages, options = {}, conversationId = null) => {
+export const generateChatTitle = async (
+  messages,
+  options = {},
+  conversationId = null
+) => {
   const provider = getCurrentProvider();
-  apiSessionManager.startSession(conversationId, API_CONFIG.model, API_CONFIG.provider, { ...options, titleGeneration: true });
-  
+  apiSessionManager.startSession(
+    conversationId,
+    API_CONFIG.model,
+    API_CONFIG.provider,
+    { ...options, titleGeneration: true }
+  );
+
   try {
     // 记录请求
     apiSessionManager.recordRequest({
       messages,
       model: API_CONFIG.model,
       provider: API_CONFIG.provider,
-      options: { ...options, titleGeneration: true }
+      options: { ...options, titleGeneration: true },
     });
-    
+
     const startTime = Date.now();
     const result = await provider.generateChatTitle(messages, options);
     const duration = Date.now() - startTime;
-    
+
     // 记录响应
-    const content = typeof result === 'string' ? result : result?.content || '';
+    const content = typeof result === "string" ? result : result?.content || "";
     const tokenCount = Math.round(content.length / 4);
-    
+
     apiSessionManager.recordResponse({
       content,
       tokenCount,
       duration,
-      success: true
+      success: true,
     });
-    
+
     apiSessionManager.endSession({
       tokenCount,
-      finalContent: content
+      finalContent: content,
     });
-    
+
     return result;
   } catch (error) {
-    apiSessionManager.recordError(error, { conversationId, titleGeneration: true });
+    apiSessionManager.recordError(error, {
+      conversationId,
+      titleGeneration: true,
+    });
     apiSessionManager.endSession({ success: false });
     throw error;
   }
 };
 
 // 流式生成对话标题（向后兼容）
-export const generateChatTitleStream = async (messages, onChunk = null, onComplete = null, onError = null, conversationId = null) => {
+export const generateChatTitleStream = async (
+  messages,
+  onChunk = null,
+  onComplete = null,
+  onError = null,
+  conversationId = null
+) => {
   try {
-    const title = await generateChatTitle(messages, { stream: true }, conversationId);
-    
+    const title = await generateChatTitle(
+      messages,
+      { stream: true },
+      conversationId
+    );
+
     // 调用完成回调
     if (onComplete) {
       onComplete(title);
     }
-    
+
     return title;
   } catch (error) {
     // 调用错误回调
@@ -263,6 +304,96 @@ export const generateChatTitleStream = async (messages, onChunk = null, onComple
       onError(error);
     }
     throw error;
+  }
+};
+
+// 生成消息关键词标签（最多5个）
+export const generateMessageTags = async (
+  text,
+  options = {},
+  conversationId = null
+) => {
+  const provider = getCurrentProvider();
+  apiSessionManager.startSession(
+    conversationId,
+    API_CONFIG.model,
+    API_CONFIG.provider,
+    { ...options, tagGeneration: true }
+  );
+
+  try {
+    // 指令：严格输出JSON数组，便于解析
+    const systemPrompt =
+      options.systemPromptOverride ||
+      '你是一个标签助手。请基于用户提供的文本内容，提取不超过5个中文关键词标签：\n- 每个标签2-6个字为宜\n- 不要包含标点或编号\n- 不要解释\n- 只输出JSON数组，如：["标签1","标签2"]';
+
+    const messages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: (text || "").slice(0, 4000) },
+    ];
+
+    // 记录请求
+    apiSessionManager.recordRequest({
+      messages,
+      model: API_CONFIG.model,
+      provider: API_CONFIG.provider,
+      options: { ...options, tagGeneration: true },
+    });
+
+    const startTime = Date.now();
+    const result = await provider.sendMessage(messages, {
+      ...options,
+      max_tokens: Math.min(128, API_CONFIG.maxTokens || 128),
+      temperature: 0.2,
+    });
+    const duration = Date.now() - startTime;
+
+    let content = typeof result === "string" ? result : result?.content || "";
+
+    // 尝试解析为JSON数组
+    let tags = [];
+    try {
+      // 提前截取可能包含代码块或多余文本的内容
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      const jsonText = jsonMatch ? jsonMatch[0] : content;
+      const parsed = JSON.parse(jsonText);
+      if (Array.isArray(parsed)) {
+        tags = parsed
+          .map((t) => (typeof t === "string" ? t.trim() : ""))
+          .filter((t) => !!t)
+          .slice(0, 5);
+      }
+    } catch (_) {
+      // 回退：按常见分隔符切分
+      tags = content
+        .replace(/[`\n\r]/g, " ")
+        .split(/[,，;；\s]+/)
+        .map((t) => t.trim())
+        .filter((t) => t && t.length <= 12)
+        .slice(0, 5);
+    }
+
+    apiSessionManager.recordResponse({
+      content,
+      tokenCount: Math.round(content.length / 4),
+      duration,
+      success: true,
+    });
+
+    apiSessionManager.endSession({
+      tokenCount: Math.round(content.length / 4),
+      finalContent: content,
+    });
+
+    return tags;
+  } catch (error) {
+    apiSessionManager.recordError(error, {
+      conversationId,
+      tagGeneration: true,
+    });
+    apiSessionManager.endSession({ success: false });
+    // 出错返回空数组而不是抛出，避免影响主流程
+    return [];
   }
 };
 
@@ -276,12 +407,12 @@ export const updateApiConfig = (newConfig) => {
   const oldProvider = API_CONFIG.provider;
   const oldModel = API_CONFIG.model;
   API_CONFIG = { ...API_CONFIG, ...newConfig };
-  
+
   // 如果提供者类型或模型改变，重置当前提供者实例
   if (oldProvider !== API_CONFIG.provider || oldModel !== API_CONFIG.model) {
     currentProvider = null;
   }
-  
+
   saveConfigToStorage(API_CONFIG);
 };
 
@@ -326,18 +457,18 @@ export const getSupportedProviders = () => {
   return [
     {
       id: API_PROVIDERS.SILICONFLOW,
-      name: '硅基流动',
-      description: '国内AI平台，支持多种模型',
-      defaultModel: 'deepseek-ai/DeepSeek-V3.1',
-      defaultBaseURL: 'https://api.siliconflow.cn/v1/chat/completions'
+      name: "硅基流动",
+      description: "国内AI平台，支持多种模型",
+      defaultModel: "deepseek-ai/DeepSeek-V3.1",
+      defaultBaseURL: "https://api.siliconflow.cn/v1/chat/completions",
     },
     {
       id: API_PROVIDERS.OPENAI,
-      name: 'OpenAI',
-      description: 'OpenAI官方API',
-      defaultModel: 'gpt-4o',
-      defaultBaseURL: 'https://api.openai.com/v1/chat/completions'
-    }
+      name: "OpenAI",
+      description: "OpenAI官方API",
+      defaultModel: "gpt-4o",
+      defaultBaseURL: "https://api.openai.com/v1/chat/completions",
+    },
   ];
 };
 
@@ -369,7 +500,7 @@ export const switchProvider = (providerType) => {
   API_CONFIG = {
     ...API_CONFIG,
     provider: providerType,
-    ...providerConfig
+    ...providerConfig,
   };
   currentProvider = null;
   saveConfigToStorage(API_CONFIG);
@@ -379,11 +510,9 @@ export const switchProvider = (providerType) => {
 export const testApiConnection = async () => {
   try {
     const provider = getCurrentProvider();
-    const testMessages = [
-      { role: "user", content: "你好" }
-    ];
-    
-    const result = await provider.sendMessage(testMessages, { max_tokens: 10 });
+    const testMessages = [{ role: "user", content: "你好" }];
+
+    await provider.sendMessage(testMessages, { max_tokens: 10 });
     return { success: true, message: "API连接测试成功" };
   } catch (error) {
     return { success: false, message: error.message };
@@ -393,7 +522,7 @@ export const testApiConnection = async () => {
 // 获取当前提供者信息
 export const getCurrentProviderInfo = () => {
   const providers = getSupportedProviders();
-  return providers.find(p => p.id === API_CONFIG.provider) || providers[0];
+  return providers.find((p) => p.id === API_CONFIG.provider) || providers[0];
 };
 
 // API_PROVIDERS已经在文件开头导出，这里不需要重复导出

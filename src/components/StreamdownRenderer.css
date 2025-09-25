@@ -34,3 +34,66 @@
   content: "📊";
   font-size: 16px;
 }
+
+/* 表格横向滚动（移动端友好） */
+.custom-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* iOS 惯性滚动 */
+  margin: 12px 0;
+}
+
+.custom-table {
+  width: max-content; /* 根据内容展开，配合外层滚动 */
+  min-width: 100%; /* 窄内容时占满容器 */
+  border-collapse: collapse;
+}
+
+.custom-table th,
+.custom-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+  white-space: nowrap; /* 防止内容在狭窄屏幕被硬换行 */
+}
+
+/* 表格操作按钮区域在移动端不撑开宽度 */
+.table-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.table-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border: 1px solid var(--glass-border-light, rgba(255,255,255,0.3));
+  background: var(--glass-bg-light, rgba(255,255,255,0.6));
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.table-action-btn.copied {
+  color: var(--accent-color, #6366f1);
+  border-color: var(--accent-color, #6366f1);
+}
+
+/* 大屏幕：横向滚动条更细、更轻量 */
+@media (min-width: 1024px) {
+ 
+
+  .custom-table-wrapper::-webkit-scrollbar {
+    height: 6px; /* 横向滚动条高度 */
+  }
+  .custom-table-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-table-wrapper::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.35); /* slate-500 ~ */
+    border-radius: 999px;
+  }
+  .custom-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(100, 116, 139, 0.55);
+  }
+}
