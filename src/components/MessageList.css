@@ -1089,6 +1089,24 @@
   .message-container {
     gap: 10px;
   }
+
+  /* 超小屏幕关键词标签适配 */
+  .message-tags {
+    gap: 3px;
+    margin-top: 6px;
+  }
+
+  .tag-chip {
+    font-size: 10px;
+    padding: 2px 5px;
+  }
+
+  /* 超小屏幕移除加载动画 - 只显示静态状态 */
+  .message-tags.generating .tag-chip.loading {
+    background: rgba(99, 102, 241, 0.15) !important;
+    border: 1px solid rgba(99, 102, 241, 0.25) !important;
+    animation: none !important;
+  }
   
   .message-avatar {
     width: 28px !important; /* 超小屏幕更小 */
@@ -1460,9 +1478,27 @@
     padding: 6px;
     border-radius: 10px;
   }
-  
+
   .uploaded-image-preview .preview-image {
     max-height: 200px;
+  }
+
+  /* 移动端关键词标签适配 */
+  .message-tags {
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .tag-chip {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  /* 移动端移除加载动画 - 只显示静态状态 */
+  .message-tags.generating .tag-chip.loading {
+    background: rgba(99, 102, 241, 0.12) !important;
+    border: 1px solid rgba(99, 102, 241, 0.2) !important;
+    animation: none !important;
   }
 }
 
