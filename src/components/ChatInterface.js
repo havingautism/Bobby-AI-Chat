@@ -546,6 +546,7 @@ const ChatInterface = ({
           await endStreaming(conversationId);
 
           // 在后台为该条AI消息生成关键词标签
+          // 为新消息或重新生成的消息生成标签
           try {
             const tags = await generateMessageTags(
               result.content,
@@ -560,13 +561,8 @@ const ChatInterface = ({
             ];
             onUpdateConversation(conversationId, { messages: withTags });
           } catch (_) {
-            // 出错则仅移除生成中标记
-            const withFlagRemoved = [
-              ...messages,
-              { ...finalMessage, tagsGenerating: false },
-              ...messagesAfterAssistant,
-            ];
-            onUpdateConversation(conversationId, { messages: withFlagRemoved });
+            // 出错则不处理，保持原状
+            console.warn('Failed to generate message tags');
           }
 
           // 生成标题（如果是第一条消息）
@@ -788,6 +784,9 @@ const ChatInterface = ({
         isStreaming: true,
         isError: false,
         timestamp: new Date().toISOString(),
+        // 重新生成时清除标签，不显示生成状态
+        tags: undefined,
+        tagsGenerating: false,
       };
     }
 
