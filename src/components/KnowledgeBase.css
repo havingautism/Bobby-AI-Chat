@@ -2272,3 +2272,50 @@ background: var(--primary-color);
     font-size: 13px;
   }
 }
+/* --- UI polish overrides --- */
+.knowledge-base-modal {
+  border-radius: 14px;
+}
+
+.knowledge-base-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+
+.knowledge-base-header .header-actions button {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.knowledge-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-primary);
+  padding-bottom: 8px;
+}
+
+.knowledge-tabs .tab-button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-secondary);
+}
+
+.knowledge-tabs .tab-button.active {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.document-card {
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.document-card:hover {
+  border-color: var(--accent-color);
+}

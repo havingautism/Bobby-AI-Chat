@@ -1,35 +1,13 @@
 import React from "react";
+import Modal from "./Modal";
 import "./AboutModal.css";
 
 const AboutModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
-    <div className="about-overlay" onClick={handleOverlayClick}>
-      <div className="about-modal">
-        <div className="about-header">
-          <h2>Bobby AI Chat</h2>
-          <button className="close-button" onClick={onClose}>
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="about-content">
+    <Modal isOpen={isOpen} onClose={onClose} title="Bobby AI Chat" size="md">
+      <div className="about-content">
           <div className="about-section">
             <h3>🚀 项目简介</h3>
             <p>
@@ -118,9 +96,8 @@ const AboutModal = ({ isOpen, onClose }) => {
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="about-footer">
+      </div>
+      <div className="about-footer">
           <div className="footer-links">
             <a
               href="https://github.com/havingautism/Bobby-AI-Chat"
@@ -142,9 +119,8 @@ const AboutModal = ({ isOpen, onClose }) => {
             </a>
           </div>
           <div className="footer-text">Made with ❤️ by havingautism</div>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

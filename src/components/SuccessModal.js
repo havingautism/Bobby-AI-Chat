@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import Modal from './Modal';
 import './SuccessModal.css';
 
 const SuccessModal = ({ 
@@ -25,7 +26,7 @@ const SuccessModal = ({
   if (!open) return null;
 
   return (
-    <div className="success-modal-overlay">
+    <Modal isOpen={open} onClose={onClose} title={title} size="sm">
       <div className="success-modal">
         <div className={`success-icon ${type}`}>
           {type === 'success' && (
@@ -96,7 +97,7 @@ const SuccessModal = ({
           </div>
         )}
       </div>
-    </div>
+    </Modal>
   );
 };
 

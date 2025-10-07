@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import "./TextModal.css";
+import Modal from './Modal';
 
 const TextModal = ({ isOpen, onClose, onAddText, currentLanguage }) => {
   const [title, setTitle] = useState('');
@@ -43,7 +44,7 @@ const TextModal = ({ isOpen, onClose, onAddText, currentLanguage }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="text-modal-overlay">
+    <Modal isOpen={isOpen} onClose={onClose} title={currentLanguage === "zh" ? "添加文本内容" : "Add Text Content"} size="md">
       <div className="text-modal">
         <div className="text-modal-header">
           <h2>
@@ -114,7 +115,7 @@ const TextModal = ({ isOpen, onClose, onAddText, currentLanguage }) => {
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

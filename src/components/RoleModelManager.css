@@ -1743,3 +1743,82 @@
   background: rgba(99, 102, 241, 0.2);
   border-color: var(--primary-color);
 }
+/* --- UI polish overrides (Modal-based layout) --- */
+.role-model-manager {
+  padding: 8px 0 0 0;
+}
+
+.manager-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0 8px 8px 8px;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  background: var(--bg-primary);
+  z-index: 1;
+}
+
+.manager-tabs .tab-button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.manager-tabs .tab-button:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.manager-tabs .tab-button.active {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 12px 8px;
+}
+
+.section-actions .add-button, .section-actions .reset-button {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.section-actions .add-button:hover, .section-actions .reset-button:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
+}
+
+.role-card {
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-actions .save-button {
+  background: var(--accent-color);
+  color: #fff;
+  border: 1px solid var(--accent-color);
+}
+
+.modal-actions .cancel-button {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}

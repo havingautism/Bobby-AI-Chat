@@ -10,6 +10,7 @@ import "./KnowledgeBase.enhanced.css";
 import StatusModal from "./StatusModal";
 import LoadingModal from "./LoadingModal";
 import SuccessModal from "./SuccessModal";
+import Modal from "./Modal";
 import FileIcon from "./FileIcon";
 import TextModal from "./TextModal";
 import {
@@ -1554,12 +1555,10 @@ ${debugInfo.collections
 
   return (
     <>
-      <div className="knowledge-base-overlay">
+      <Modal isOpen={isOpen} onClose={onClose} title={currentLanguage === "zh" ? "知识库管理" : "Knowledge Base"} size="xl">
         <div className="knowledge-base-modal">
           <div className="knowledge-base-header">
-            <h2>
-              {currentLanguage === "zh" ? "知识库管理" : "Knowledge Base"}
-            </h2>
+            {/* title shown in Modal header */}
             <div className="header-actions">
               {/* <button
               className="debug-button"
@@ -1584,18 +1583,7 @@ ${debugInfo.collections
                 <polyline points="12 12 22 9"/>
               </svg>
             </button> */}
-              <button className="close-button" onClick={onClose}>
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
+              {/* close handled by Modal */}
             </div>
           </div>
 
@@ -2530,7 +2518,7 @@ ${debugInfo.collections
             )}
           </div>
         </div>
-      </div>
+      </Modal>
 
       {/* 成功完成模态框 */}
       <SuccessModal

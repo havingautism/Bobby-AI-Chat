@@ -1,4 +1,5 @@
 import React from 'react';
+import Modal from './Modal';
 import './LoadingModal.css';
 
 const LoadingModal = ({ 
@@ -16,18 +17,8 @@ const LoadingModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="loading-modal-overlay">
-      <div className="loading-modal">
-        <div className="loading-modal-header">
-          <h3>{title}</h3>
-          {showCancel && (
-            <button className="loading-modal-close" onClick={onClose}>
-              ×
-            </button>
-          )}
-        </div>
-        
-        <div className="loading-modal-content">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
+      <div className="loading-modal-content">
           {/* 主要消息 */}
           <div className="loading-modal-message">
             <div className="loading-spinner"></div>
@@ -87,9 +78,8 @@ const LoadingModal = ({
               </button>
             </div>
           )}
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

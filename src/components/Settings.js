@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { createPortal } from "react-dom";
+import Modal from "./Modal";
 import { getApiConfig, updateApiConfig } from "../utils/api";
 import { getCurrentLanguage, t } from "../utils/language";
 import { storageAdapter } from "../utils/storageAdapter";
@@ -361,24 +361,14 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
 
   if (!isOpen) return null;
 
-  return createPortal(
-    <div className="settings-overlay" onClick={onClose}>
-      <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="settings-header">
-          <h2>{t("settings", currentLanguage)}</h2>
-          <button className="close-button" onClick={onClose}>
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t("settings", currentLanguage)}
+      size="xl"
+      closeOnOverlay={true}
+    >
 
         {/* 标签页导航 */}
         <div className="settings-tabs">
@@ -934,9 +924,7 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
             </button>
           </div>
         </div>
-      </div>
-    </div>,
-    document.body
+    </Modal>
   );
 };
 
