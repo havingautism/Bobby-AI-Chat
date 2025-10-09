@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { AI_ROLES, updateGlobalRoles } from "../utils/roles";
 import { getCurrentLanguage } from "../utils/language";

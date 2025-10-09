@@ -36,9 +36,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border-color);
-  background: var(--bg-secondary);
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .modal-title {
@@ -70,8 +72,11 @@
 }
 
 .modal-body {
-  padding: 16px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* 自动高度，根据内容调整 */
+  height: auto;
+  /* 最大高度限制以防屏幕过小 */
   max-height: calc(90vh - 120px);
 }
 
@@ -79,9 +84,11 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border-top: 1px solid var(--border-color);
-  background: var(--bg-secondary);
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .modal-action-btn {
@@ -119,7 +126,87 @@
 
 @media (max-width: 768px) {
   .modal-container.modal-content { width: 95vw; max-height: 95vh; }
-  .modal-body { max-height: calc(95vh - 120px); padding: 14px; }
+  .modal-body { max-height: calc(95vh - 120px);  }
+}
+
+/* 优化滚动条样式 */
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* 确保Firefox下的滚动条样式 */
+.modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) var(--bg-secondary);
+}
+
+/* 针对不同尺寸的Modal调整body最大高度 */
+.modal-sm .modal-body {
+  height: auto;
+  max-height: calc(90vh - 120px);
+}
+
+.modal-md .modal-body {
+  height: auto;
+  max-height: calc(90vh - 120px);
+}
+
+.modal-lg .modal-body {
+  height: auto;
+  max-height: calc(85vh - 120px);
+}
+
+.modal-xl .modal-body {
+  height: auto;
+  max-height: calc(80vh - 120px);
+}
+
+.modal-full .modal-body {
+  height: auto;
+  max-height: calc(90vh - 120px);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .modal-body {
+    height: auto;
+    max-height: calc(95vh - 120px);
+  }
+
+  .modal-sm .modal-body {
+    height: auto;
+    max-height: calc(95vh - 120px);
+  }
+
+  .modal-md .modal-body {
+    height: auto;
+    max-height: calc(95vh - 120px);
+  }
+
+  .modal-lg .modal-body {
+    height: auto;
+    max-height: calc(95vh - 120px);
+  }
+
+  .modal-xl .modal-body {
+    height: auto;
+    max-height: calc(95vh - 120px);
+  }
 }
 
 /* Body scroll lock */

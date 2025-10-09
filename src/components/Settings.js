@@ -368,562 +368,532 @@ const Settings = ({ isOpen, onClose, onModelChange }) => {
       title={t("settings", currentLanguage)}
       size="xl"
       closeOnOverlay={true}
+      actions={[
+        {
+          label: "取消",
+          onClick: onClose,
+        },
+        {
+          label: isSaving ? "保存中..." : saveSuccess ? "保存成功 ✓" : "保存",
+          onClick: handleSave,
+          primary: true,
+          disabled:
+            isSaving ||
+            !config.baseURL ||
+            !config.apiKey ||
+            !config.model ||
+            saveSuccess,
+        },
+      ]}
     >
+      {/* 标签页导航 */}
+      <div className="settings-tabs">
+        <button
+          className={`tab-button ${
+            activeTab === "model-service" ? "active" : ""
+          }`}
+          onClick={() => setActiveTab("model-service")}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+          模型服务
+        </button>
+        <button
+          className={`tab-button ${
+            activeTab === "global-memory" ? "active" : ""
+          }`}
+          onClick={() => setActiveTab("global-memory")}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M9 12l2 2 4-4" />
+            <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3" />
+            <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3" />
+            <path d="M12 3c0 1-1 3-3 3s-3-2-3-3 1-3 3-3 3 2 3 3" />
+            <path d="M12 21c0-1 1-3 3-3s3 2 3 3-1 3-3 3-3-2-3-3" />
+          </svg>
+          全局记忆
+        </button>
+        <button
+          className={`tab-button ${activeTab === "web-search" ? "active" : ""}`}
+          onClick={() => setActiveTab("web-search")}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+          网络搜索
+        </button>
+      </div>
 
-        {/* 标签页导航 */}
-        <div className="settings-tabs">
-          <button
-            className={`tab-button ${
-              activeTab === "model-service" ? "active" : ""
-            }`}
-            onClick={() => setActiveTab("model-service")}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
-            模型服务
-          </button>
-          <button
-            className={`tab-button ${
-              activeTab === "global-memory" ? "active" : ""
-            }`}
-            onClick={() => setActiveTab("global-memory")}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M9 12l2 2 4-4" />
-              <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3" />
-              <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3" />
-              <path d="M12 3c0 1-1 3-3 3s-3-2-3-3 1-3 3-3 3 2 3 3" />
-              <path d="M12 21c0-1 1-3 3-3s3 2 3 3-1 3-3 3-3-2-3-3" />
-            </svg>
-            全局记忆
-          </button>
-          <button
-            className={`tab-button ${
-              activeTab === "web-search" ? "active" : ""
-            }`}
-            onClick={() => setActiveTab("web-search")}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            网络搜索
-          </button>
-        </div>
-
-        <div className="settings-content">
-          {/* 模型服务标签页 */}
-          {activeTab === "model-service" && (
-            <div className="tab-content">
-              {/* API服务商 */}
-              <div className="setting-group">
-                <label>API服务商</label>
-                <div className="provider-card">
-                  <div className="provider-logo">
-                    <svg
-                      height="1em"
-                      style={{ flex: "none", lineHeight: 1 }}
-                      viewBox="0 0 24 24"
-                      width="1em"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <title>SiliconCloud</title>
-                      <path
-                        clipRule="evenodd"
-                        d="M22.956 6.521H12.522c-.577 0-1.044.468-1.044 1.044v3.13c0 .577-.466 1.044-1.043 1.044H1.044c-.577 0-1.044.467-1.044 1.044v4.174C0 17.533.467 18 1.044 18h10.434c.577 0 1.044-.467 1.044-1.043v-3.13c0-.578.466-1.044 1.043-1.044h9.391c.577 0 1.044-.467 1.044-1.044V7.565c0-.576-.467-1.044-1.044-1.044z"
-                        fill="#6E29F6"
-                        fillRule="evenodd"
-                      ></path>
-                    </svg>
-                  </div>
-                  <div className="provider-info">
-                    <div className="provider-name">硅基流动</div>
-                    <div className="provider-english">SiliconFlow</div>
-                  </div>
+      <div className="settings-content">
+        {/* 模型服务标签页 */}
+        {activeTab === "model-service" && (
+          <div className="tab-content">
+            {/* API服务商 */}
+            <div className="setting-group">
+              <label>API服务商</label>
+              <div className="provider-card">
+                <div className="provider-logo">
+                  <svg
+                    height="1em"
+                    style={{ flex: "none", lineHeight: 1 }}
+                    viewBox="0 0 24 24"
+                    width="1em"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <title>SiliconCloud</title>
+                    <path
+                      clipRule="evenodd"
+                      d="M22.956 6.521H12.522c-.577 0-1.044.468-1.044 1.044v3.13c0 .577-.466 1.044-1.043 1.044H1.044c-.577 0-1.044.467-1.044 1.044v4.174C0 17.533.467 18 1.044 18h10.434c.577 0 1.044-.467 1.044-1.043v-3.13c0-.578.466-1.044 1.043-1.044h9.391c.577 0 1.044-.467 1.044-1.044V7.565c0-.576-.467-1.044-1.044-1.044z"
+                      fill="#6E29F6"
+                      fillRule="evenodd"
+                    ></path>
+                  </svg>
+                </div>
+                <div className="provider-info">
+                  <div className="provider-name">硅基流动</div>
+                  <div className="provider-english">SiliconFlow</div>
                 </div>
               </div>
+            </div>
 
-              {/* API密钥 */}
-              <div className="setting-group">
-                <label>API密钥 *</label>
-                <div className="api-key-container">
-                  <input
-                    type="password"
-                    value={config.apiKey}
-                    onChange={(e) =>
-                      handleInputChange("apiKey", e.target.value)
-                    }
-                    placeholder="请输入硅基流动API密钥"
-                    className="setting-input api-key-input"
-                  />
-                  <button
-                    className={`test-button ${testSuccess ? "success" : ""}`}
-                    onClick={handleTestConnection}
-                    disabled={
-                      isTesting ||
-                      !config.baseURL ||
-                      !config.apiKey ||
-                      !config.model ||
-                      testSuccess
-                    }
-                  >
-                    {isTesting
-                      ? "测试中..."
-                      : testSuccess
-                      ? "连接成功 ✓"
-                      : "测试连接"}
-                  </button>
-                </div>
+            {/* API密钥 */}
+            <div className="setting-group">
+              <label>API密钥 *</label>
+              <div className="api-key-container">
+                <input
+                  type="password"
+                  value={config.apiKey}
+                  onChange={(e) => handleInputChange("apiKey", e.target.value)}
+                  placeholder="请输入硅基流动API密钥"
+                  className="setting-input api-key-input"
+                />
+                <button
+                  className={`test-button ${testSuccess ? "success" : ""}`}
+                  onClick={handleTestConnection}
+                  disabled={
+                    isTesting ||
+                    !config.baseURL ||
+                    !config.apiKey ||
+                    !config.model ||
+                    testSuccess
+                  }
+                >
+                  {isTesting
+                    ? "测试中..."
+                    : testSuccess
+                    ? "连接成功 ✓"
+                    : "测试连接"}
+                </button>
               </div>
+            </div>
 
-              {/* 模型选择 */}
-              <div className="setting-group">
-                <label>默认模型选择 *</label>
-                <div className="simple-dropdown" ref={dropdownRef}>
-                  <button
-                    type="button"
-                    className="dropdown-trigger"
-                    onClick={toggleModelDropdown}
+            {/* 模型选择 */}
+            <div className="setting-group">
+              <label>默认模型选择 *</label>
+              <div className="simple-dropdown" ref={dropdownRef}>
+                <button
+                  type="button"
+                  className="dropdown-trigger"
+                  onClick={toggleModelDropdown}
+                >
+                  <div className="dropdown-display">
+                    {config.model ? (
+                      <>
+                        <div className="dropdown-info">
+                          <div className="dropdown-name">
+                            {(() => {
+                              const selectedModel = Object.values(
+                                modelCategories
+                              )
+                                .flatMap((category) => category.models)
+                                .find((model) => model.id === config.model);
+                              return selectedModel ? (
+                                <>
+                                  <ModelIcon
+                                    modelId={selectedModel.id}
+                                    size={16}
+                                    className="settings-model-icon"
+                                  />
+                                  {selectedModel.name}
+                                  {selectedModel.isPro && (
+                                    <span className="pro-badge">Pro</span>
+                                  )}
+                                </>
+                              ) : (
+                                "请选择模型"
+                              );
+                            })()}
+                          </div>
+                          <div className="dropdown-description">
+                            {(() => {
+                              const selectedModel = Object.values(
+                                modelCategories
+                              )
+                                .flatMap((category) => category.models)
+                                .find((model) => model.id === config.model);
+                              return selectedModel
+                                ? selectedModel.description
+                                : "";
+                            })()}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="dropdown-info">
+                          <div className="dropdown-name">请选择模型</div>
+                          <div className="dropdown-description">
+                            选择适合的AI模型
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <svg
+                    className={`dropdown-arrow ${
+                      showModelDropdown ? "open" : ""
+                    }`}
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <div className="dropdown-display">
-                      {config.model ? (
-                        <>
-                          <div className="dropdown-info">
-                            <div className="dropdown-name">
-                              {(() => {
-                                const selectedModel = Object.values(
-                                  modelCategories
-                                )
-                                  .flatMap((category) => category.models)
-                                  .find((model) => model.id === config.model);
-                                return selectedModel ? (
-                                  <>
-                                    <ModelIcon
-                                      modelId={selectedModel.id}
-                                      size={16}
-                                      className="settings-model-icon"
-                                    />
-                                    {selectedModel.name}
-                                    {selectedModel.isPro && (
-                                      <span className="pro-badge">Pro</span>
-                                    )}
-                                  </>
-                                ) : (
-                                  "请选择模型"
-                                );
-                              })()}
-                            </div>
-                            <div className="dropdown-description">
-                              {(() => {
-                                const selectedModel = Object.values(
-                                  modelCategories
-                                )
-                                  .flatMap((category) => category.models)
-                                  .find((model) => model.id === config.model);
-                                return selectedModel
-                                  ? selectedModel.description
-                                  : "";
-                              })()}
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="dropdown-info">
-                            <div className="dropdown-name">请选择模型</div>
-                            <div className="dropdown-description">
-                              选择适合的AI模型
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <svg
-                      className={`dropdown-arrow ${
-                        showModelDropdown ? "open" : ""
-                      }`}
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
-                  </button>
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
 
-                  {showModelDropdown && (
-                    <div
-                      className={`dropdown-menu ${dropdownPosition}`}
-                      style={{ width: dropdownWidth, right: "auto" }}
-                    >
-                      {Object.entries(modelCategories).map(
-                        ([categoryKey, category]) => (
-                          <div key={categoryKey} className="dropdown-category">
-                            <div className="dropdown-category-header">
-                              {category.name}
-                            </div>
-                            {category.models.map((model) => (
-                              <button
-                                key={model.id}
-                                className={`dropdown-option ${
-                                  config.model === model.id ? "selected" : ""
-                                }`}
-                                onClick={() => handleModelChange(model.id)}
-                              >
-                                <ModelIcon
-                                  modelId={model.id}
-                                  size={16}
-                                  className={model.isPro ? "pro" : ""}
-                                />
-                                <div className="dropdown-option-info">
-                                  <div className="dropdown-option-name">
-                                    {model.name}
-                                    {model.isPro && (
-                                      <span className="pro-badge">Pro</span>
-                                    )}
-                                  </div>
-                                  <div className="dropdown-option-description">
-                                    {model.description}
-                                  </div>
+                {showModelDropdown && (
+                  <div
+                    className={`dropdown-menu ${dropdownPosition}`}
+                    style={{ width: dropdownWidth, right: "auto" }}
+                  >
+                    {Object.entries(modelCategories).map(
+                      ([categoryKey, category]) => (
+                        <div key={categoryKey} className="dropdown-category">
+                          <div className="dropdown-category-header">
+                            {category.name}
+                          </div>
+                          {category.models.map((model) => (
+                            <button
+                              key={model.id}
+                              className={`dropdown-option ${
+                                config.model === model.id ? "selected" : ""
+                              }`}
+                              onClick={() => handleModelChange(model.id)}
+                            >
+                              <ModelIcon
+                                modelId={model.id}
+                                size={16}
+                                className={model.isPro ? "pro" : ""}
+                              />
+                              <div className="dropdown-option-info">
+                                <div className="dropdown-option-name">
+                                  {model.name}
+                                  {model.isPro && (
+                                    <span className="pro-badge">Pro</span>
+                                  )}
                                 </div>
-                                {config.model === model.id && (
-                                  <span className="check-mark">✓</span>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="setting-hint">
-                  推荐: DeepSeek-V3.1 (最新) | DeepSeek-R1 (推理) | Qwen3系列
-                  (编程) | Pro版本性能更强
-                </div>
+                                <div className="dropdown-option-description">
+                                  {model.description}
+                                </div>
+                              </div>
+                              {config.model === model.id && (
+                                <span className="check-mark">✓</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
               </div>
+              <div className="setting-hint">
+                推荐: DeepSeek-V3.1 (最新) | DeepSeek-R1 (推理) | Qwen3系列
+                (编程) | Pro版本性能更强
+              </div>
+            </div>
 
-              {/* 高级设置 */}
-              <details className="advanced-settings">
-                <summary>高级设置</summary>
-                <div className="advanced-content">
-                  {/* API地址 */}
+            {/* 高级设置 */}
+            <details className="advanced-settings">
+              <summary>高级设置</summary>
+              <div className="advanced-content">
+                {/* API地址 */}
+                <div className="setting-group">
+                  <label>
+                    API地址
+                    <Tooltip content="硅基流动API服务地址，通常不需要修改">
+                      <span className="tooltip-trigger">?</span>
+                    </Tooltip>
+                  </label>
+                  <input
+                    type="text"
+                    value={config.baseURL}
+                    onChange={(e) =>
+                      handleInputChange("baseURL", e.target.value)
+                    }
+                    placeholder="https://api.siliconflow.cn/v1"
+                    className="setting-input"
+                  />
+                </div>
+
+                {/* 温度与Top P已迁移至角色管理，这里不再提供设置 */}
+
+                {/* 第二行：Thinking Budget和最大令牌数 */}
+                <div className="setting-row">
                   <div className="setting-group">
                     <label>
-                      API地址
-                      <Tooltip content="硅基流动API服务地址，通常不需要修改">
+                      Thinking Budget
+                      <Tooltip content="思考模式的预算限制，控制AI推理过程的长度，仅对支持思考链的模型有效">
                         <span className="tooltip-trigger">?</span>
                       </Tooltip>
                     </label>
                     <input
-                      type="text"
-                      value={config.baseURL}
+                      type="number"
+                      min="100"
+                      max="10000"
+                      step="100"
+                      value={config.thinkingBudget}
                       onChange={(e) =>
-                        handleInputChange("baseURL", e.target.value)
+                        handleInputChange(
+                          "thinkingBudget",
+                          parseInt(e.target.value)
+                        )
                       }
-                      placeholder="https://api.siliconflow.cn/v1"
                       className="setting-input"
                     />
                   </div>
 
-                  {/* 温度与Top P已迁移至角色管理，这里不再提供设置 */}
-
-                  {/* 第二行：Thinking Budget和最大令牌数 */}
-                  <div className="setting-row">
-                    <div className="setting-group">
-                      <label>
-                        Thinking Budget
-                        <Tooltip content="思考模式的预算限制，控制AI推理过程的长度，仅对支持思考链的模型有效">
-                          <span className="tooltip-trigger">?</span>
-                        </Tooltip>
-                      </label>
-                      <input
-                        type="number"
-                        min="100"
-                        max="10000"
-                        step="100"
-                        value={config.thinkingBudget}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "thinkingBudget",
-                            parseInt(e.target.value)
-                          )
-                        }
-                        className="setting-input"
-                      />
-                    </div>
-
-                    <div className="setting-group">
-                      <label>
-                        最大令牌数
-                        <Tooltip content="单次对话的最大输出长度，影响回复的详细程度">
-                          <span className="tooltip-trigger">?</span>
-                        </Tooltip>
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="8000"
-                        value={config.maxTokens}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "maxTokens",
-                            parseInt(e.target.value)
-                          )
-                        }
-                        className="setting-input"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 存储信息 */}
                   <div className="setting-group">
-                    <label>存储信息</label>
-                    {storageInfo ? (
-                      <div className="storage-info">
-                        <div className="storage-stats">
-                          <p>对话数量: {getConversationCount()}</p>
-                          <p>总大小: {storageInfo.totalSize}</p>
-                          <p>
-                            存储类型:{" "}
-                            {currentStorageType === "sqlite"
-                              ? "SQLite数据库"
-                              : currentStorageType === "tauri"
-                              ? "JSON文件"
-                              : "IndexedDB"}
-                          </p>
-                        </div>
-
-                        <button
-                          className="danger-button"
-                          onClick={handleClearHistory}
-                        >
-                          清除所有聊天历史
-                        </button>
-                      </div>
-                    ) : (
-                      <p>加载中...</p>
-                    )}
+                    <label>
+                      最大令牌数
+                      <Tooltip content="单次对话的最大输出长度，影响回复的详细程度">
+                        <span className="tooltip-trigger">?</span>
+                      </Tooltip>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="8000"
+                      value={config.maxTokens}
+                      onChange={(e) =>
+                        handleInputChange("maxTokens", parseInt(e.target.value))
+                      }
+                      className="setting-input"
+                    />
                   </div>
                 </div>
-              </details>
-            </div>
-          )}
 
-          {/* 全局记忆标签页 */}
-          {activeTab === "global-memory" && (
-            <div className="tab-content">
-              <div className="setting-group">
-                <label>全局记忆功能</label>
-                <div className="feature-description">
-                  <p>
-                    全局记忆功能允许AI记住跨对话的重要信息，提供更个性化的体验。
-                  </p>
-                </div>
+                {/* 存储信息 */}
+                <div className="setting-group">
+                  <label>存储信息</label>
+                  {storageInfo ? (
+                    <div className="storage-info">
+                      <div className="storage-stats">
+                        <p>对话数量: {getConversationCount()}</p>
+                        <p>总大小: {storageInfo.totalSize}</p>
+                        <p>
+                          存储类型:{" "}
+                          {currentStorageType === "sqlite"
+                            ? "SQLite数据库"
+                            : currentStorageType === "tauri"
+                            ? "JSON文件"
+                            : "IndexedDB"}
+                        </p>
+                      </div>
 
-                <div className="setting-item">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={false}
-                      onChange={() => {}}
-                    />
-                    <span className="checkmark"></span>
-                    启用全局记忆
-                  </label>
-                  <p className="setting-description">
-                    允许AI记住用户偏好和重要信息
-                  </p>
-                </div>
-
-                <div className="setting-item">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={false}
-                      onChange={() => {}}
-                    />
-                    <span className="checkmark"></span>
-                    自动记忆重要信息
-                  </label>
-                  <p className="setting-description">
-                    AI自动识别并记忆对话中的重要信息
-                  </p>
-                </div>
-
-                <div className="setting-item">
-                  <label>记忆保留时间</label>
-                  <select className="setting-input">
-                    <option value="7">7天</option>
-                    <option value="30">30天</option>
-                    <option value="90">90天</option>
-                    <option value="365">1年</option>
-                    <option value="permanent">永久</option>
-                  </select>
-                </div>
-
-                <div className="setting-item">
-                  <button className="danger-button">清除所有记忆</button>
-                  <p className="setting-description">
-                    删除所有已保存的全局记忆信息
-                  </p>
+                      <button
+                        className="danger-button"
+                        onClick={handleClearHistory}
+                      >
+                        清除所有聊天历史
+                      </button>
+                    </div>
+                  ) : (
+                    <p>加载中...</p>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
+            </details>
+          </div>
+        )}
 
-          {/* 网络搜索标签页 */}
-          {activeTab === "web-search" && (
-            <div className="tab-content">
-              <div className="setting-group">
-                <label>网络搜索功能</label>
-                <div className="feature-description">
-                  <p>
-                    网络搜索功能允许AI获取实时信息，提供更准确和最新的回答。
-                  </p>
-                </div>
+        {/* 全局记忆标签页 */}
+        {activeTab === "global-memory" && (
+          <div className="tab-content">
+            <div className="setting-group">
+              <label>全局记忆功能</label>
+              <div className="feature-description">
+                <p>
+                  全局记忆功能允许AI记住跨对话的重要信息，提供更个性化的体验。
+                </p>
+              </div>
 
-                <div className="setting-item">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={false}
-                      onChange={() => {}}
-                    />
-                    <span className="checkmark"></span>
-                    启用网络搜索
-                  </label>
-                  <p className="setting-description">
-                    允许AI搜索网络获取实时信息
-                  </p>
-                </div>
+              <div className="setting-item">
+                <label className="checkbox-label">
+                  <input type="checkbox" checked={false} onChange={() => {}} />
+                  <span className="checkmark"></span>
+                  启用全局记忆
+                </label>
+                <p className="setting-description">
+                  允许AI记住用户偏好和重要信息
+                </p>
+              </div>
 
-                <div className="setting-item">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={false}
-                      onChange={() => {}}
-                    />
-                    <span className="checkmark"></span>
-                    自动搜索最新信息
-                  </label>
-                  <p className="setting-description">
-                    当AI检测到需要最新信息时自动搜索
-                  </p>
-                </div>
+              <div className="setting-item">
+                <label className="checkbox-label">
+                  <input type="checkbox" checked={false} onChange={() => {}} />
+                  <span className="checkmark"></span>
+                  自动记忆重要信息
+                </label>
+                <p className="setting-description">
+                  AI自动识别并记忆对话中的重要信息
+                </p>
+              </div>
 
-                <div className="setting-item">
-                  <label>搜索引擎</label>
-                  <select className="setting-input">
-                    <option value="google">Google</option>
-                    <option value="bing">Bing</option>
-                    <option value="duckduckgo">DuckDuckGo</option>
-                  </select>
-                </div>
+              <div className="setting-item">
+                <label>记忆保留时间</label>
+                <select className="setting-input">
+                  <option value="7">7天</option>
+                  <option value="30">30天</option>
+                  <option value="90">90天</option>
+                  <option value="365">1年</option>
+                  <option value="permanent">永久</option>
+                </select>
+              </div>
 
-                <div className="setting-item">
-                  <label>搜索API密钥</label>
-                  <input
-                    type="password"
-                    placeholder="请输入搜索引擎API密钥"
-                    className="setting-input"
-                  />
-                  <p className="setting-description">
-                    用于访问搜索引擎API的密钥
-                  </p>
-                </div>
-
-                <div className="setting-item">
-                  <label>搜索结果数量</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    defaultValue="3"
-                    className="setting-input"
-                  />
-                  <p className="setting-description">每次搜索返回的结果数量</p>
-                </div>
+              <div className="setting-item">
+                <button className="danger-button">清除所有记忆</button>
+                <p className="setting-description">
+                  删除所有已保存的全局记忆信息
+                </p>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* 保存消息 */}
+        {/* 网络搜索标签页 */}
+        {activeTab === "web-search" && (
+          <div className="tab-content">
+            <div className="setting-group">
+              <label>网络搜索功能</label>
+              <div className="feature-description">
+                <p>网络搜索功能允许AI获取实时信息，提供更准确和最新的回答。</p>
+              </div>
+
+              <div className="setting-item">
+                <label className="checkbox-label">
+                  <input type="checkbox" checked={false} onChange={() => {}} />
+                  <span className="checkmark"></span>
+                  启用网络搜索
+                </label>
+                <p className="setting-description">
+                  允许AI搜索网络获取实时信息
+                </p>
+              </div>
+
+              <div className="setting-item">
+                <label className="checkbox-label">
+                  <input type="checkbox" checked={false} onChange={() => {}} />
+                  <span className="checkmark"></span>
+                  自动搜索最新信息
+                </label>
+                <p className="setting-description">
+                  当AI检测到需要最新信息时自动搜索
+                </p>
+              </div>
+
+              <div className="setting-item">
+                <label>搜索引擎</label>
+                <select className="setting-input">
+                  <option value="google">Google</option>
+                  <option value="bing">Bing</option>
+                  <option value="duckduckgo">DuckDuckGo</option>
+                </select>
+              </div>
+
+              <div className="setting-item">
+                <label>搜索API密钥</label>
+                <input
+                  type="password"
+                  placeholder="请输入搜索引擎API密钥"
+                  className="setting-input"
+                />
+                <p className="setting-description">用于访问搜索引擎API的密钥</p>
+              </div>
+
+              <div className="setting-item">
+                <label>搜索结果数量</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  defaultValue="3"
+                  className="setting-input"
+                />
+                <p className="setting-description">每次搜索返回的结果数量</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 保存消息 */}
+        {saveMessage && (
+          <div
+            className={`save-message ${
+              saveMessage.includes("失败") || saveMessage.includes("错误")
+                ? "error"
+                : "success"
+            }`}
+          >
+            {saveMessage}
+          </div>
+        )}
+      </div>
+
+      <div>
+        {/* 状态信息显示区域 */}
+        <div className="status-section">
           {saveMessage && (
             <div
-              className={`save-message ${
-                saveMessage.includes("失败") || saveMessage.includes("错误")
-                  ? "error"
-                  : "success"
+              className={`status-message ${
+                saveMessage.includes("成功") ? "success" : "error"
               }`}
             >
               {saveMessage}
             </div>
           )}
         </div>
-
-        <div className="settings-footer">
-          {/* 状态信息显示区域 */}
-          <div className="status-section">
-            {saveMessage && (
-              <div
-                className={`status-message ${
-                  saveMessage.includes("成功") ? "success" : "error"
-                }`}
-              >
-                {saveMessage}
-              </div>
-            )}
-          </div>
-
-          <div className="footer-buttons">
-            <button className="cancel-button" onClick={onClose}>
-              取消
-            </button>
-            <button
-              className={`save-button ${saveSuccess ? "success" : ""}`}
-              onClick={handleSave}
-              disabled={
-                isSaving ||
-                !config.baseURL ||
-                !config.apiKey ||
-                !config.model ||
-                saveSuccess
-              }
-            >
-              {isSaving ? "保存中..." : saveSuccess ? "保存成功 ✓" : "保存"}
-            </button>
-          </div>
-        </div>
+      </div>
     </Modal>
   );
 };
